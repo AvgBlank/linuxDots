@@ -144,7 +144,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 })
 
 -- Format File
-vim.keymap.set('n', '<leader>af', function()
+vim.keymap.set('n', '<leader>ff', function()
   require('conform').format { async = true, lsp_fallback = true }
 end, { desc = 'Format File' })
 
