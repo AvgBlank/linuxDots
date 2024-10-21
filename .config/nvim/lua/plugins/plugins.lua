@@ -87,6 +87,7 @@ require('mason-lspconfig').setup {
     'eslint',
     'ts_ls',
     'bashls',
+    'cssls',
     'emmet_language_server',
   },
   handlers = {
