@@ -173,6 +173,7 @@ require('conform').setup {
     sh = { 'beautysh' },
     json = { 'prettier', 'prettierd', stop_after_first = true },
     html = { 'prettier', 'prettierd', stop_after_first = true },
+    css = { 'prettier', 'prettierd', stop_after_first = true },
     c = { 'clang-format' },
     cpp = { 'clang-format' },
   },
