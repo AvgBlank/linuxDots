@@ -144,9 +144,9 @@ vim.api.nvim_create_autocmd('LspAttach', {
 })
 
 -- Format File
-vim.keymap.set('n', '<leader>ff', function()
-  require('conform').format { async = true, lsp_fallback = true }
-end, { desc = 'Format File' })
+-- vim.keymap.set('n', '<leader>ff', function()
+--   require('conform').format { async = true, lsp_fallback = true }
+-- end, { desc = 'Format File' })
 
 -- Todo Comments
 vim.keymap.set('n', '<leader>t', '<cmd>TodoTelescope<CR>', { desc = 'Show all todo comments' })
