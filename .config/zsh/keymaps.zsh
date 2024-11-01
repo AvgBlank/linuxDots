@@ -16,3 +16,5 @@ bindkey -s '^T' 'vimthing\n'
 bindkey -s '^Y' 'yazithing\n'
 # Ctrl + E to open change dir script
 bindkey -s '^E' 'cdthing\n'
+# Ctrl + R to open history selector
+bindkey -s '^R' 'fzfHist\n'

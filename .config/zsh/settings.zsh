@@ -15,6 +15,7 @@ export SAVEHIST=10000
 setopt INC_APPEND_HISTORY_TIME
 setopt EXTENDED_HISTORY
 setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_DUPS
 setopt HIST_SAVE_NO_DUPS
 
 ########### Setting Locale ###########
