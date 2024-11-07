@@ -13,13 +13,13 @@ function FormatFile(file)
   local ft = vim.fn.fnamemodify(file, ':e')
 
   if ft == 'html' or ft == 'css' or ft == 'js' or ft == 'json' or ft == 'md' or ft == 'yml' then
-    format_cmd = 'prettier ' .. file .. ' --write > /dev/null 2>&1'
+    format_cmd = 'prettier "' .. file .. '" --write > /dev/null 2>&1'
   elseif ft == 'lua' then
-    format_cmd = 'stylua --indent-type Spaces --indent-width 2 ' .. file .. ' > /dev/null 2>&1'
+    format_cmd = 'stylua --indent-type Spaces --indent-width 2 "' .. file .. '" > /dev/null 2>&1'
   elseif ft == 'py' then
-    format_cmd = 'black ' .. file .. ' > /dev/null 2>&1'
+    format_cmd = 'black "' .. file .. '" > /dev/null 2>&1'
   elseif ft == 'c' or ft == 'cpp' then
-    format_cmd = 'clang-format -i ' .. file .. ' > /dev/null 2>&1'
+    format_cmd = 'clang-format -i "' .. file .. '" > /dev/null 2>&1'
   else
     return 'No formatter configured for file type: ' .. ft
   end
