@@ -5,3 +5,17 @@
 .config/google-chrome
 .config/htop
 test
+.config/lazygit
+.local/bin
+.local/lib/python3.12/site-packages/__pycache__
+.local/lib/python3.12/site-packages/beautysh
+.local/lib/python3.12/site-packages/beautysh-6.2.1.dist-info
+.local/lib/python3.12/site-packages/black
+.local/lib/python3.12/site-packages/black-24.10.0.dist-info
+.local/lib/python3.12/site-packages/blackd
+.local/lib/python3.12/site-packages/blib2to3
+.local/lib/python3.12/site-packages/colorama-stubs
+.local/lib/python3.12/site-packages/mypy_extensions-1.0.0.dist-info
+.local/lib/python3.12/site-packages/packaging
+.local/lib/python3.12/site-packages/packaging-24.1.dist-info
+.local/lib/python3.12/site-packages
