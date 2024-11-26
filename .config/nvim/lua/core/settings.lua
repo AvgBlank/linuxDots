@@ -17,7 +17,7 @@ vim.opt.smartcase = true
 
 vim.opt.swapfile = false
 vim.opt.backup = false
-vim.opt.undodir = os.getenv("HOME") .. "/.vim/undodir"
+vim.opt.undodir = os.getenv 'HOME' .. '/.vim/undodir'
 vim.opt.undofile = true
 
 vim.opt.termguicolors = true
@@ -28,12 +28,12 @@ vim.opt.scrolloff = 10
 
 -- Netrw
 vim.g.netrw_keepdir = 0
-vim.g.netrw_localcopydircmd = "cp -r"
+vim.g.netrw_localcopydircmd = 'cp -r'
 
 -- Highlight when yanking
-vim.api.nvim_create_autocmd("TextYankPost", {
-  desc = "Highlight when yanking (copying) text",
-  group = vim.api.nvim_create_augroup("kickstart-highlight-yank", { clear = true }),
+vim.api.nvim_create_autocmd('TextYankPost', {
+  desc = 'Highlight when yanking (copying) text',
+  group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
   callback = function()
     vim.highlight.on_yank()
   end,
@@ -41,8 +41,8 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 
 -- Set up Indenting
 -- Set indentation to 2 spaces for specific file types (C, C++, HTML, JS, CSS, etc.)
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = { "lua", "c", "cpp", "html", "javascript", "css", "typescript", "json" },
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = { 'lua', 'c', 'cpp', 'html', 'javascript', 'css', 'typescript', 'json' },
   callback = function()
     vim.opt_local.tabstop = 2
     vim.opt_local.softtabstop = 2
@@ -51,11 +51,11 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 -- Restore default indentation (4 spaces) for everything else
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = "*", -- Matches all file types
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = '*', -- Matches all file types
   callback = function()
     -- If the filetype is NOT one of the specified ones, set to 4 spaces
-    local excluded_filetypes = { "lua", "c", "cpp", "html", "javascript", "css", "typescript", "json" }
+    local excluded_filetypes = { 'lua', 'c', 'cpp', 'html', 'javascript', 'css', 'typescript', 'json' }
     if not vim.tbl_contains(excluded_filetypes, vim.bo.filetype) then
       vim.opt_local.tabstop = 4
       vim.opt_local.softtabstop = 4
