@@ -78,12 +78,12 @@ vim.keymap.set('n', '<leader>r', function()
       vim.cmd 'MarkdownPreview'
     elseif filetype == 'html' then
       -- vim.cmd 'xdg-open "$file"' -- Running Native Linux
-      vim.fn.system(
-        '"/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" "$(wslpath -w '
-          .. vim.fn.expand '%:p'
-          .. ')"'
-      ) -- WSL
-      -- vim.cmd 'open "$file"' -- Mac OS
+      -- vim.fn.system(
+      --   '"/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" "$(wslpath -w '
+      --     .. vim.fn.expand '%:p'
+      --     .. ')"'
+      -- ) -- WSL
+      vim.cmd 'open "$file"' -- Mac OS
     else
       vim.cmd 'RunCode'
     end
@@ -107,12 +107,12 @@ vim.keymap.set('n', '<leader><CR>', function()
       vim.cmd 'MarkdownPreview'
     elseif filetype == 'html' then
       -- vim.cmd 'xdg-open "$file"' -- Running Native Linux
-      vim.fn.system(
-        '"/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" "$(wslpath -w '
-          .. vim.fn.expand '%:p'
-          .. ')"'
-      ) -- WSL
-      -- vim.cmd 'open "$file"' -- Mac OS
+      -- vim.fn.system(
+      --   '"/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" "$(wslpath -w '
+      --     .. vim.fn.expand '%:p'
+      --     .. ')"'
+      -- ) -- WSL
+      vim.cmd 'open "$file"' -- Mac OS
     else
       vim.cmd 'RunCode'
     end

@@ -27,5 +27,7 @@ fi
 #### Homebrew Arm MacOS ####
 if [ -d "/opt/homebrew/bin" ]; then
     export PATH="/opt/homebrew/bin:$PATH"
+    export CPATH="/opt/homebrew/include:$CPATH"
+    export LIBRARY_PATH="/opt/homebrew/lib:$LIBRARY_PATH"
 fi
 

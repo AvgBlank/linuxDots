@@ -19,3 +19,7 @@ test
 .local/lib/python3.12/site-packages/packaging
 .local/lib/python3.12/site-packages/packaging-24.1.dist-info
 .local/lib/python3.12/site-packages
+automatic_backups
+raycast
+test.*
+kitty.conf.bak
