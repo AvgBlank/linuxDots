@@ -1364,22 +1364,6 @@
                                 "from": { "key_code": "caps_lock" },
                                 "to": [{ "key_code": "delete_forward" }],
                                 "type": "basic"
-                            },
-                            {
-                                "from": {
-                                    "key_code": "right_command",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "to": [{ "key_code": "open_bracket" }],
-                                "type": "basic"
-                            },
-                            {
-                                "from": {
-                                    "key_code": "right_option",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "to": [{ "key_code": "close_bracket" }],
-                                "type": "basic"
                             }
                         ]
                     }
