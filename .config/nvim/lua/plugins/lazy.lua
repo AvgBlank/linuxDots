@@ -45,9 +45,9 @@ require('lazy').setup {
     {
       'NeogitOrg/neogit',
       dependencies = {
-        'nvim-lua/plenary.nvim', -- required
-        'sindrets/diffview.nvim', -- optional - Diff integration
-        'nvim-telescope/telescope.nvim', -- optional
+        'nvim-lua/plenary.nvim',
+        'sindrets/diffview.nvim',
+        'nvim-telescope/telescope.nvim',
       },
       config = true,
     },
@@ -107,10 +107,7 @@ require('lazy').setup {
     {
       'folke/trouble.nvim',
       cmd = 'Trouble',
-      opts = {}, -- for default options, refer to the configuration section for custom setup.
-    },
-    {
-      'nvim-telescope/telescope-frecency.nvim',
+      opts = {},
     },
   },
   install = { colorscheme = { 'catppuccin-mocha' } },

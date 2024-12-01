@@ -140,16 +140,19 @@ function cdthing() {
 
 
 ########### Search through history ###########
-# This script opens fzf showing all the commands executed and then runs them.
-function fzfHist() {
-    cat "$HISTFILE" | awk -F ';' '
-    {
-        epoch_time = substr($1, 3)
-        command = $2
-        timestamp = strftime("%Y-%m-%d %H:%M:%S", epoch_time)
-        printf "%-20s\t%s\n", timestamp, command
-    }' | tac | fzf --preview 'echo {2}' \
-        --header='Select a command to run' \
-        --bind 'enter:execute(echo {2} | zsh)+abort' \
-        --with-nth=2.. --delimiter="\t"
+function fzfHistory() {
+  local selected
+  selected=$(fc -rl 1 | awk '{$1=""; print substr($0,2)}' | fzf --header='Select a command to run')
+  if [[ -n $selected ]]; then
+    BUFFER="$selected"
+  fi
 }
+function fzfAcceptHistory() {
+  local selected
+  selected=$(fc -rl 1 | awk '{$1=""; print substr($0,2)}' | fzf --header='Select a command to run')
+  if [[ -n $selected ]]; then
+    BUFFER="$selected"
+    zle accept-line
+  fi
+}
+

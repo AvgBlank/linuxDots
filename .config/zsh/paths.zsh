@@ -31,6 +31,3 @@ if [ -d "/opt/homebrew/bin" ]; then
     export LIBRARY_PATH="/opt/homebrew/lib:$LIBRARY_PATH"
 fi
 
-### FZF ###
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-

@@ -16,3 +16,9 @@ bindkey -s '^T' 'vimthing\n'
 bindkey -s '^Y' 'yazithing\n'
 # Ctrl + E to open change dir script
 bindkey -s '^E' 'cdthing\n'
+# Ctrl + U to open history search and accept query.
+zle -N fzfHistory
+bindkey '^R' fzfHistory
+# Ctrl + R to just open history search.
+zle -N fzfAcceptHistory
+bindkey '^U' fzfAcceptHistory
