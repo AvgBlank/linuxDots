@@ -25,6 +25,21 @@ if [ ! -d "$HOME/.zsh-plugins/zsh-history-substring-search" ]; then
     cd "$HOME/.zsh-plugins" || exit
     git clone https://github.com/zsh-users/zsh-history-substring-search
 fi
+## FZF Keybindings ##
+if command -v fzf &> /dev/null; then
+  if [ ! -f ~/.fzf.zsh ]; then
+    if [[ "$(uname)" == "Darwin" ]]; then
+      FZF_DIR=$(brew --prefix fzf)
+    fi
+
+    if [ -d "$FZF_DIR" ]; then
+    echo "${YELLOW}FZF found, but fzf keybindings not installed. Installing...${NC}"
+    "$FZF_DIR/install" --key-bindings --completion --no-update-rc --no-bash --no-fish
+    source ~/.config/zsh/paths.zsh
+    fi
+  fi
+fi
+
 
 #### Autosuggestions press -> (right arrow) to activate ####
 source ~/.zsh-plugins/zsh-autosuggestions/zsh-autosuggestions.zsh

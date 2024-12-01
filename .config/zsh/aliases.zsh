@@ -15,6 +15,11 @@ else
     alias lln="ls -la | awk '{k=0;for(i=0;i<=8;i++)k+=((substr(\$1,i+2,1)~/[rwx]/)*2^(8-i));if(k)printf(\"%0o \",k);print}'"
 fi
 
+# If lazygit exists
+if command -v lazygit &> /dev/null; then
+    alias lg="lazygit"
+fi
+
 # If Yazi Exists
 if command -v yazi &> /dev/null; then
     alias y='yazi'
