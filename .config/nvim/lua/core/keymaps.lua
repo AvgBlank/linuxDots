@@ -266,5 +266,6 @@ vim.keymap.set(
 )
 
 -- Color Picker
-vim.keymap.set('n', '<C-i>', '<cmd>EasyColor<CR>', { desc = 'Open Color Picker' })
-vim.keymap.set('i', '<C-i>', '<esc><cmd>EasyColor<CR>', { desc = 'Open Color Picker' })
+vim.keymap.set('n', '<C-b>', '<cmd>EasyColor<CR>', { desc = 'Open Color Picker' })
+vim.keymap.set('i', '<C-b>', '<esc><cmd>EasyColor<CR>', { desc = 'Open Color Picker' })
+vim.keymap.set('v', '<C-b>', 'x<cmd>EasyColor<CR>', { desc = 'Open Color Picker' })

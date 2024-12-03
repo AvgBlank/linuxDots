@@ -200,6 +200,7 @@ require('easycolor').setup {
   ui = {
     mappings = {
       ['<C-c>'] = 'close_window', -- Map Ctrl+C to close the window
+      ['<C-b>'] = 'close_window', -- Map Ctrl+C to close the window
     },
   },
 }
