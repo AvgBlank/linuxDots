@@ -34,9 +34,9 @@ require('lazy').setup {
     { 'neovim/nvim-lspconfig' },
     { 'hrsh7th/cmp-nvim-lsp' },
     { 'hrsh7th/nvim-cmp' },
-    { 'L3MON4D3/LuaSnip' },
     { 'nvim-pack/nvim-spectre' },
     { 'catppuccin/nvim', name = 'catppuccin', priority = 1000 },
+    { 'L3MON4D3/LuaSnip', dependencies = { 'saadparwaiz1/cmp_luasnip', 'rafamadriz/friendly-snippets' } },
     {
       'vi013t/easycolor.nvim',
       dependencies = { 'stevearc/dressing.nvim' },
