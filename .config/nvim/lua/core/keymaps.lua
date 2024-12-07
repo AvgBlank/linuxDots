@@ -175,13 +175,13 @@ end, { desc = 'Show variable info' })
 
 -- Harpoon
 vim.keymap.set(
-  { 'n', 'i' },
+  'n',
   '<leader>ha',
   "<cmd>lua require('harpoon.mark').add_file()<CR><Esc>",
   { desc = 'Add File using Harpoon' }
 )
 vim.keymap.set(
-  { 'n', 'i' },
+  'n',
   '<leader>hs',
   "<cmd>lua require('harpoon.ui').toggle_quick_menu()<CR><Esc>",
   { desc = 'Show Harpoon Files' }
