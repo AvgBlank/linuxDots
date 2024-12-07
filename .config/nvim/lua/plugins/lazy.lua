@@ -26,7 +26,7 @@ require('lazy').setup {
     { 'CRAG666/code_runner.nvim' },
     { 'nvim-lua/plenary.nvim' },
     { 'ThePrimeagen/harpoon' },
-    -- { 'stevearc/conform.nvim' },
+    { 'stevearc/conform.nvim' },
     { 'windwp/nvim-ts-autotag' },
     { 'williamboman/mason.nvim' },
     { 'williamboman/mason-lspconfig.nvim' },
@@ -109,6 +109,20 @@ require('lazy').setup {
       cmd = 'Trouble',
       opts = {},
     },
+    {
+      'kdheepak/lazygit.nvim',
+      lazy = true,
+      cmd = {
+        'LazyGit',
+        'LazyGitConfig',
+        'LazyGitCurrentFile',
+        'LazyGitFilter',
+        'LazyGitFilterCurrentFile',
+      },
+      dependencies = {
+        'nvim-lua/plenary.nvim',
+      },
+    }
   },
   install = { colorscheme = { 'catppuccin-mocha' } },
   checker = { enabled = true, notify = false },

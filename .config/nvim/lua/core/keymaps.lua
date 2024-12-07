@@ -124,8 +124,8 @@ vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Show between existi
 -- Undo Tree
 vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle, { desc = '[U]ndo tree' })
 
--- Neo Git & Diffs
-vim.keymap.set('n', '<leader>gs', vim.cmd.Neogit, { desc = '[G]it [S]tatus' })
+-- Lazygit & Diffs
+vim.keymap.set('n', '<leader>gs', vim.cmd.LazyGit, { desc = '[G]it [S]tatus' })
 vim.keymap.set('n', '<leader>dv', vim.cmd.DiffviewOpen, { desc = '[D]iff [V]iew' })
 
 -- LSP
@@ -144,9 +144,9 @@ vim.api.nvim_create_autocmd('LspAttach', {
 })
 
 -- Format File (Moved to format.lua)
--- vim.keymap.set('n', '<leader>ff', function()
---   require('conform').format { async = true, lsp_fallback = true }
--- end, { desc = 'Format File' })
+vim.keymap.set('n', '<leader>ff', function()
+  require('conform').format { async = true, lsp_fallback = true }
+end, { desc = 'Format File' })
 
 -- Todo Comments
 vim.keymap.set('n', '<leader>t', '<cmd>TodoTelescope<CR>', { desc = 'Show all todo comments' })

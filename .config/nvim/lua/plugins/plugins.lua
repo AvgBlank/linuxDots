@@ -203,30 +203,30 @@ require('oil').setup {
   },
 }
 
--- -- Conform (Formatter)
--- require('conform').setup {
---   notify_on_error = false,
+-- Conform (Formatter)
+require('conform').setup {
+  notify_on_error = false,
 
---   -- Auto Format --
---   -- format_on_save = {
---   --   timeout_ms = 2000,
---   --   lsp_fallback = true,
---   -- },
+  -- Auto Format --
+  -- format_on_save = {
+  --   timeout_ms = 2000,
+  --   lsp_fallback = true,
+  -- },
 
---   formatters_by_ft = {
---     lua = { 'stylua' },
---     python = { 'black' },
---     javascript = { 'prettier', 'prettierd', stop_after_first = true },
---     markdown = { 'prettier', 'prettierd', stop_after_first = true },
---     bash = { 'beautysh' },
---     sh = { 'beautysh' },
---     json = { 'prettier', 'prettierd', stop_after_first = true },
---     html = { 'prettier', 'prettierd', stop_after_first = true },
---     css = { 'prettier', 'prettierd', stop_after_first = true },
---     c = { 'clang-format' },
---     cpp = { 'clang-format' },
---   },
--- }
+  formatters_by_ft = {
+    lua = { 'stylua' },
+    python = { 'black' },
+    javascript = { 'prettier', 'prettierd', stop_after_first = true },
+    markdown = { 'prettier', 'prettierd', stop_after_first = true },
+    bash = { 'beautysh' },
+    sh = { 'beautysh' },
+    json = { 'prettier', 'prettierd', stop_after_first = true },
+    html = { 'prettier', 'prettierd', stop_after_first = true },
+    css = { 'prettier', 'prettierd', stop_after_first = true },
+    c = { 'clang-format' },
+    cpp = { 'clang-format' },
+  },
+}
 
 -- Color Picker
 require('easycolor').setup {
