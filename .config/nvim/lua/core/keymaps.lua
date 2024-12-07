@@ -177,91 +177,91 @@ end, { desc = 'Show variable info' })
 vim.keymap.set(
   { 'n', 'i' },
   '<leader>ha',
-  "<cmd>lua require('harpoon.mark').add_file()<CR>",
+  "<cmd>lua require('harpoon.mark').add_file()<CR><Esc>",
   { desc = 'Add File using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<leader>hs',
-  "<cmd>lua require('harpoon.ui').toggle_quick_menu()<CR>",
+  "<cmd>lua require('harpoon.ui').toggle_quick_menu()<CR><Esc>",
   { desc = 'Show Harpoon Files' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-1>',
-  "<cmd>lua require('harpoon.ui').nav_file(1)<CR>",
+  "<cmd>lua require('harpoon.ui').nav_file(1)<CR><Esc>",
   { desc = 'Navigate to File 1 using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-2>',
-  "<cmd>lua require('harpoon.ui').nav_file(2)<CR>",
+  "<cmd>lua require('harpoon.ui').nav_file(2)<CR><Esc>",
   { desc = 'Navigate to File 2 using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-3>',
-  "<cmd>lua require('harpoon.ui').nav_file(3)<CR>",
+  "<cmd>lua require('harpoon.ui').nav_file(3)<CR><Esc>",
   { desc = 'Navigate to File 3 using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-4>',
-  "<cmd>lua require('harpoon.ui').nav_file(4)<CR>",
+  "<cmd>lua require('harpoon.ui').nav_file(4)<CR><Esc>",
   { desc = 'Navigate to File 4 using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-5>',
-  "<cmd>lua require('harpoon.ui').nav_file(5)<CR>",
+  "<cmd>lua require('harpoon.ui').nav_file(5)<CR><Esc>",
   { desc = 'Navigate to File 5 using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-6>',
-  "<cmd>lua require('harpoon.ui').nav_file(6)<CR>",
+  "<cmd>lua require('harpoon.ui').nav_file(6)<CR><Esc>",
   { desc = 'Navigate to File 6 using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-7>',
-  "<cmd>lua require('harpoon.ui').nav_file(7)<CR>",
+  "<cmd>lua require('harpoon.ui').nav_file(7)<CR><Esc>",
   { desc = 'Navigate to File 7 using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-8>',
-  "<cmd>lua require('harpoon.ui').nav_file(8)<CR>",
+  "<cmd>lua require('harpoon.ui').nav_file(8)<CR><Esc>",
   { desc = 'Navigate to File 8 using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-9>',
-  "<cmd>lua require('harpoon.ui').nav_file(9)<CR>",
+  "<cmd>lua require('harpoon.ui').nav_file(9)<CR><Esc>",
   { desc = 'Navigate to File 9 using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-q>',
-  "<cmd>lua require('harpoon.term').gotoTerminal(1)<CR>",
+  "<cmd>lua require('harpoon.term').gotoTerminal(1)<CR><Esc>",
   { desc = 'Navigate to Terminal 1 using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-w>',
-  "<cmd>lua require('harpoon.term').gotoTerminal(2)<CR>",
+  "<cmd>lua require('harpoon.term').gotoTerminal(2)<CR><Esc>",
   { desc = 'Navigate to Terminal 2 using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-e>',
-  "<cmd>lua require('harpoon.term').gotoTerminal(3)<CR>",
+  "<cmd>lua require('harpoon.term').gotoTerminal(3)<CR><Esc>",
   { desc = 'Navigate to Terminal 4 using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-r>',
-  "<cmd>lua require('harpoon.term').gotoTerminal(4)<CR>",
+  "<cmd>lua require('harpoon.term').gotoTerminal(4)<CR><Esc>",
   { desc = 'Navigate to Terminal 4 using Harpoon' }
 )
 
