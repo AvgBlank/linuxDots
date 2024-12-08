@@ -72,6 +72,9 @@ local lsp = require 'lsp-zero'
 lsp.preset 'recommended'
 local cmp = require 'cmp'
 require('nvim-highlight-colors').setup {}
+require("cmp").config.formatting = {
+  format = require("tailwindcss-colorizer-cmp").formatter
+}
 
 local cmp_autopairs = require 'nvim-autopairs.completion.cmp'
 local cmp_select = { behavior = cmp.SelectBehavior.Select }
@@ -137,6 +140,7 @@ require('mason-lspconfig').setup {
     'bashls',
     'cssls',
     'emmet_language_server',
+    'tailwindcss',
   },
   handlers = {
     function(server_name)

@@ -122,7 +122,15 @@ require('lazy').setup {
       dependencies = {
         'nvim-lua/plenary.nvim',
       },
-    }
+      {
+        'roobert/tailwindcss-colorizer-cmp.nvim',
+        config = function()
+          require('tailwindcss-colorizer-cmp').setup {
+            color_square_width = 2,
+          }
+        end,
+      },
+    },
   },
   install = { colorscheme = { 'catppuccin-mocha' } },
   checker = { enabled = true, notify = false },
