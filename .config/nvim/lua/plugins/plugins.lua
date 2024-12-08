@@ -24,9 +24,12 @@ require('telescope').setup {
 }
 
 -- Color Scheme
+-- Catpuccin Mocha
 vim.cmd.colorscheme 'catppuccin-mocha'
 vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
 vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'none' })
+-- Andromeda
+-- require("andromeda").setup()
 
 -- Treesitter
 require('nvim-treesitter.configs').setup {
@@ -72,8 +75,8 @@ local lsp = require 'lsp-zero'
 lsp.preset 'recommended'
 local cmp = require 'cmp'
 require('nvim-highlight-colors').setup {}
-require("cmp").config.formatting = {
-  format = require("tailwindcss-colorizer-cmp").formatter
+require('cmp').config.formatting = {
+  format = require('tailwindcss-colorizer-cmp').formatter,
 }
 
 local cmp_autopairs = require 'nvim-autopairs.completion.cmp'
@@ -230,6 +233,12 @@ require('conform').setup {
     c = { 'clang-format' },
     cpp = { 'clang-format' },
   },
+  format = function(bufnr)
+    local success, result = require('conform').format { bufnr = bufnr }
+    if not success then
+      vim.notify('Conform formatting failed: ' .. (result or 'Unknown error'), vim.log.levels.ERROR)
+    end
+  end,
 }
 
 -- Color Picker

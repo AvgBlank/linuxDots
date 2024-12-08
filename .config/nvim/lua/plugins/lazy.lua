@@ -130,6 +130,10 @@ require('lazy').setup {
           }
         end,
       },
+      {
+        'nobbmaestro/nvim-andromeda',
+        dependencies = { 'tjdevries/colorbuddy.nvim', branch = 'dev' },
+      },
     },
   },
   install = { colorscheme = { 'catppuccin-mocha' } },
