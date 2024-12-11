@@ -212,7 +212,8 @@ require('oil').setup {
 
 -- Conform (Formatter)
 require('conform').setup {
-  notify_on_error = false,
+  notify_on_error = true,
+  notify_no_formatters = true,
 
   -- Auto Format --
   -- format_on_save = {
@@ -234,12 +235,6 @@ require('conform').setup {
     cpp = { 'clang-format' },
     rust = { 'rustfmt' },
   },
-  format = function(bufnr)
-    local success, result = require('conform').format { bufnr = bufnr }
-    if not success then
-      vim.notify('Conform formatting failed: ' .. (result or 'Unknown error'), vim.log.levels.ERROR)
-    end
-  end,
 }
 
 -- Color Picker
