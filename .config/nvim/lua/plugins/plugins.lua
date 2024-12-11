@@ -232,6 +232,7 @@ require('conform').setup {
     css = { 'prettier', 'prettierd', stop_after_first = true },
     c = { 'clang-format' },
     cpp = { 'clang-format' },
+    rust = { 'rustfmt' },
   },
   format = function(bufnr)
     local success, result = require('conform').format { bufnr = bufnr }
