@@ -3,7 +3,7 @@
 To clone the repository, run the following command:
 
 ```sh
-git clone https://github.com/AverageBlank/dotfiles"
+git clone https://github.com/AvgBlank/dotfiles"
 ```
 
 ## Installing :-
