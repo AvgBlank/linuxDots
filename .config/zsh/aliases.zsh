@@ -20,6 +20,11 @@ if command -v lazygit &> /dev/null; then
     alias lg="lazygit"
 fi
 
+# If bat exists
+if command -v bat &> /dev/null; then
+    alias cat="bat"
+fi
+
 # If Yazi Exists
 if command -v yazi &> /dev/null; then
     alias y='yazi'
