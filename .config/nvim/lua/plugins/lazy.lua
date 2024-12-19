@@ -65,11 +65,11 @@ require('lazy').setup {
       end,
       ft = { 'markdown' },
     },
-    {
-      'stevearc/oil.nvim',
-      opts = {},
-      dependencies = { 'nvim-tree/nvim-web-devicons' },
-    },
+    -- {
+    --   'stevearc/oil.nvim',
+    --   opts = {},
+    --   dependencies = { 'nvim-tree/nvim-web-devicons' },
+    -- },
     {
       'windwp/nvim-autopairs',
       event = 'InsertEnter',
@@ -133,6 +133,16 @@ require('lazy').setup {
       {
         'nobbmaestro/nvim-andromeda',
         dependencies = { 'tjdevries/colorbuddy.nvim', branch = 'dev' },
+      },
+      {
+        'mikavilpas/yazi.nvim',
+        event = 'VeryLazy',
+        opts = {
+          open_for_directories = true,
+          keymaps = {
+            show_help = '<f1>',
+          },
+        },
       },
     },
   },

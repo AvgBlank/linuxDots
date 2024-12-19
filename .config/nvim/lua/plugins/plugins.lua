@@ -195,20 +195,20 @@ require('ibl').setup { scope = { highlight = highlight } }
 hooks.register(hooks.type.SCOPE_HIGHLIGHT, hooks.builtin.scope_highlight_from_extmark)
 
 -- Oil.nvim
-require('oil').setup {
-  default_file_explorer = true,
-  columns = { 'icon' },
-  skip_confirm_for_simple_edits = true,
-  keymaps = {
-    ['<C-h>'] = false,
-    ['<C-j>'] = false,
-    ['<C-k>'] = false,
-    ['<C-l>'] = false,
-  },
-  view_options = {
-    show_hidden = true,
-  },
-}
+-- require('oil').setup {
+--   default_file_explorer = true,
+--   columns = { 'icon' },
+--   skip_confirm_for_simple_edits = true,
+--   keymaps = {
+--     ['<C-h>'] = false,
+--     ['<C-j>'] = false,
+--     ['<C-k>'] = false,
+--     ['<C-l>'] = false,
+--   },
+--   view_options = {
+--     show_hidden = true,
+--   },
+-- }
 
 -- Conform (Formatter)
 require('conform').setup {

@@ -90,15 +90,15 @@ vim.keymap.set('n', '<leader>tO', function()
 end, { desc = 'Open a new tab along with telescope to the left' })
 vim.keymap.set('n', '<leader>t-', function()
   vim.cmd 'tabe'
-  vim.cmd 'Oil'
-end, { desc = 'Open a new tab along with oil.nvim' })
+  vim.cmd 'Yazi'
+end, { desc = 'Open a new tab along with yazi' })
 vim.keymap.set('n', '<leader>t_', function()
   vim.cmd '-1tabnew'
-  vim.cmd 'Oil'
-end, { desc = 'Open a new tab along with oil.nvim to the left' })
+  vim.cmd 'Yazi'
+end, { desc = 'Open a new tab along with yazi to the left' })
 
 -- Oil.nvim
-vim.keymap.set('n', '-', '<cmd>Oil<CR>', { desc = 'Open Parent Directory using oil.nvim' })
+-- vim.keymap.set('n', '-', '<cmd>Oil<CR>', { desc = 'Open Parent Directory using oil.nvim' })
 
 -- Exit terminal
 vim.keymap.set('t', '<C-o>', '<C-\\><C-n>', { desc = 'Exit insert mode inside terminal' })
@@ -269,3 +269,8 @@ vim.keymap.set(
 vim.keymap.set('n', '<C-b>', '<cmd>EasyColor<CR>', { desc = 'Open Color Picker' })
 vim.keymap.set('i', '<C-b>', '<esc><cmd>EasyColor<CR>', { desc = 'Open Color Picker' })
 vim.keymap.set('v', '<C-b>', 'x<cmd>EasyColor<CR>', { desc = 'Open Color Picker' })
+
+-- Yazi
+vim.keymap.set('n', '-', '<cmd>Yazi<cr>', { desc = 'Open yazi at the current file' })
+vim.keymap.set('n', '<leader>-', '<cmd>Yazi cwd<cr>', { desc = 'Open yazi at the current file' })
+
