@@ -83,7 +83,19 @@ vim.keymap.set('n', '<leader>r', function()
       --     .. vim.fn.expand '%:p'
       --     .. ')"'
       -- ) -- WSL
-      vim.cmd 'silent! !open %' -- Mac OS
+      --
+      -- Mac OS
+      RUNWITH = string.lower(vim.fn.input 'LiveSerer(l)/StopLiveServer(s)/RestartLiveServer(r)/Browser(b): ')
+      if RUNWITH == 'l' then
+        vim.cmd 'LiveServerStart'
+      elseif RUNWITH == 's' then
+        vim.cmd 'LiveServerStop'
+      elseif RUNWITH == 'r' then
+        vim.cmd 'LiveServerStop'
+        vim.cmd 'LiveServerStart'
+      else
+        vim.cmd 'silent! !open %'
+      end
     else
       vim.cmd 'RunCode'
     end
@@ -112,7 +124,7 @@ vim.keymap.set('n', '<leader><CR>', function()
       --     .. vim.fn.expand '%:p'
       --     .. ')"'
       -- ) -- WSL
-      vim.cmd 'silent! !open %' -- Mac OS
+      vim.cmd 'LiveServerStart' -- Live Server Mac OS
     else
       vim.cmd 'RunCode'
     end
