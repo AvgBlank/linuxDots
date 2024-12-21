@@ -18,7 +18,6 @@ vim.opt.rtp:prepend(lazypath)
 -- Plugins
 require('lazy').setup {
   spec = {
-    { 'tpope/vim-commentary' },
     { 'tpope/vim-surround' },
     { 'mbbill/undotree' },
     { 'lukas-reineke/indent-blankline.nvim' },
