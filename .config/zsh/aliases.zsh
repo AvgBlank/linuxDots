@@ -17,7 +17,7 @@ fi
 
 # If lazygit exists
 if command -v lazygit &> /dev/null; then
-    alias lg="lazygit"
+    alias gs="lazygit"
 fi
 
 # If bat exists
