@@ -43,7 +43,7 @@ dap.adapters.python = function(cb, config)
       if vim.v.shell_error ~= 0 then
         vim.api.nvim_echo({
           { 'Failed to execute command:\n', 'ErrorMsg' },
-          { out, 'WarningMsg' },
+          { out,                            'WarningMsg' },
         }, true, {})
         vim.fn.getchar()
       end
@@ -97,13 +97,29 @@ dap.configurations.python = {
   },
 }
 
--- C/C++
+-- C/C++/Rust
 dap.adapters.lldb = {
   type = 'executable',
   -- command = '/usr/bin/lldb-dap', -- Arch
   command = '/opt/homebrew/opt/llvm/bin/lldb-dap', -- Mac
   -- command = '/usr/bin/lldb-dap-18', -- Ubuntu
   name = 'lldb',
+}
+dap.configurations.c = {
+  {
+    name = 'Launch',
+    type = 'lldb',
+    request = 'launch',
+    program = function()
+      return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
+    end,
+    cwd = '${workspaceFolder}',
+    stopOnEntry = false,
+    args = {},
+    runInTerminal = true,
+    -- if you change `runInTerminal` to true, you might need to change the yama/ptrace_scope setting:
+    --    echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+  },
 }
 dap.configurations.cpp = {
   {
@@ -119,6 +135,44 @@ dap.configurations.cpp = {
     runInTerminal = true,
     -- if you change `runInTerminal` to true, you might need to change the yama/ptrace_scope setting:
     --    echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+  },
+}
+dap.configurations.rust = {
+  {
+    name = 'Launch',
+    type = 'lldb',
+    request = 'launch',
+    program = function()
+      return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
+    end,
+    cwd = '${workspaceFolder}',
+    stopOnEntry = false,
+    args = {},
+    runInTerminal = true,
+    -- if you change `runInTerminal` to true, you might need to change the yama/ptrace_scope setting:
+    --    echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+
+    -- ... the previous config goes here ...,
+    initCommands = function()
+      -- Find out where to look for the pretty printer Python module
+      local rustc_sysroot = vim.fn.trim(vim.fn.system('rustc --print sysroot'))
+
+      local script_import = 'command script import "' .. rustc_sysroot .. '/lib/rustlib/etc/lldb_lookup.py"'
+      local commands_file = rustc_sysroot .. '/lib/rustlib/etc/lldb_commands'
+
+      local commands = {}
+      local file = io.open(commands_file, 'r')
+      if file then
+        for line in file:lines() do
+          table.insert(commands, line)
+        end
+        file:close()
+      end
+      table.insert(commands, 1, script_import)
+
+      return commands
+    end,
+    -- ...,
   },
 }
 

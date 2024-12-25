@@ -4,11 +4,13 @@ local function get_command(filetype, quickRun)
   local fileName = vim.fn.expand '%:t'
   vim.cmd 'w'
   -- C/C++
-  if filetype == 'cpp' or filetype == 'c' then
+  if filetype == 'cpp' or filetype == 'c' or filetype == 'rust' then
     if filetype == 'cpp' then
       RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/cpp.bash -d "'
-    else
+    elseif filetype == 'c' then
       RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/c.bash -d "'
+    else
+      RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/rust.bash -d "'
     end
     if quickRun then
       RUNWITH = ' '
@@ -56,18 +58,18 @@ local function get_command(filetype, quickRun)
     RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/js.bash -d "'
     if quickRun then
       vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-      dir .. '" -f "' .. fileName .. '" -r "' .. ' ' .. '"')
+        dir .. '" -f "' .. fileName .. '" -r "' .. ' ' .. '"')
     else
       RUNWITH = vim.fn.input 'Vite(v)/Node(n): '
       vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-      dir .. '" -f "' .. fileName .. '" -r "' .. RUNWITH .. '"')
+        dir .. '" -f "' .. fileName .. '" -r "' .. RUNWITH .. '"')
     end
     return true
     -- Python
   elseif filetype == 'python' then
     vim.cmd('botright 12split | set nonu nornu | terminal bash ~/.config/nvim/lua/codeExec/cmds/py.bash -d "' ..
       dir .. '" -f "' .. fileName .. '"')
-      return true
+    return true
     -- HTML
   elseif filetype == 'html' then
     if quickRun then
