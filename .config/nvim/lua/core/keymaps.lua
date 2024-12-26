@@ -48,22 +48,16 @@ end, { desc = 'Swap tmux sessions' })
 
 -- Find and Replace
 vim.keymap.set(
-  'n',
+  { 'n', 'v' },
   '<leader>s',
   [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]],
-  { desc = 'Find and Replace/Rename using vim method' }
+  { desc = 'Find and Replace' }
 )
 vim.keymap.set(
-  'n',
-  '<leader>S',
-  '<cmd>lua require("spectre").toggle(); vim.cmd("wincmd L")<CR>',
-  { desc = 'Find and Replace entire project using nvim spectre' }
-)
-vim.keymap.set(
-  'n',
+  { 'n', 'v' },
   '<leader>sf',
-  '<cmd>lua require("spectre").open_file_search(); vim.cmd("wincmd L")<CR>',
-  { desc = 'Find and Replace in file using nvim spectre' }
+  vim.lsp.buf.rename,
+  { desc = 'LSP Buffer Rename' }
 )
 
 -- Tabs
@@ -273,4 +267,3 @@ vim.keymap.set('v', '<C-b>', 'x<cmd>EasyColor<CR>', { desc = 'Open Color Picker'
 -- Yazi
 vim.keymap.set('n', '-', '<cmd>Yazi<cr>', { desc = 'Open yazi at the current file' })
 vim.keymap.set('n', '<leader>-', '<cmd>Yazi cwd<cr>', { desc = 'Open yazi at the current file' })
-
