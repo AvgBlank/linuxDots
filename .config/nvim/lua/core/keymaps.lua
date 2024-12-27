@@ -55,9 +55,21 @@ vim.keymap.set(
 )
 vim.keymap.set(
   { 'n', 'v' },
-  '<leader>sf',
+  '<leader>rn',
   vim.lsp.buf.rename,
   { desc = 'LSP Buffer Rename' }
+)
+vim.keymap.set(
+  { 'n', 'v' },
+  '<leader>S',
+  '<cmd>lua require("spectre").toggle(); vim.cmd("wincmd L")<CR>',
+  { desc = 'Find and Replace entire project using nvim spectre' }
+)
+vim.keymap.set(
+  { 'n', 'v' },
+  '<leader>sf',
+  '<cmd>lua require("spectre").open_file_search(); vim.cmd("wincmd L")<CR>',
+  { desc = 'Find and Replace in file using nvim spectre' }
 )
 
 -- Tabs

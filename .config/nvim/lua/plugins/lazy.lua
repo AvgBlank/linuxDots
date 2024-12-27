@@ -31,6 +31,7 @@ require('lazy').setup {
     { 'VonHeikemen/lsp-zero.nvim',          branch = 'v3.x' },
     { 'neovim/nvim-lspconfig' },
     { 'hrsh7th/cmp-nvim-lsp' },
+    { 'nvim-pack/nvim-spectre' },
     { 'hrsh7th/nvim-cmp' },
     { 'catppuccin/nvim',                    name = 'catppuccin',                                                          priority = 1000 },
     { 'L3MON4D3/LuaSnip',                   dependencies = { 'saadparwaiz1/cmp_luasnip', 'rafamadriz/friendly-snippets' } },
