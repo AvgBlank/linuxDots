@@ -24,10 +24,14 @@ require('telescope').setup {
 }
 
 -- Color Scheme
--- Catpuccin Mocha
-vim.cmd.colorscheme 'catppuccin-mocha'
+-- Rose Pine
+vim.cmd.colorscheme 'rose-pine'
 vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
 vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'none' })
+-- Catppuccin Mocha
+-- vim.cmd.colorscheme 'catppuccin-mocha'
+-- vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
+-- vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'none' })
 -- Andromeda
 -- require("andromeda").setup()
 
@@ -167,7 +171,10 @@ require('nvim-ts-autotag').setup()
 
 -- Lua line
 require('lualine').setup {
-  options = { theme = 'catppuccin-mocha' },
+  -- Rose Pine
+  options = { theme = 'rose-pine' },
+  -- Catppuccin Mocha
+  -- options = { theme = 'catppuccin-mocha' },
 }
 
 -- Highlight Indents

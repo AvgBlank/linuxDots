@@ -34,6 +34,7 @@ require('lazy').setup {
     { 'nvim-pack/nvim-spectre' },
     { 'hrsh7th/nvim-cmp' },
     { 'catppuccin/nvim',                    name = 'catppuccin',                                                          priority = 1000 },
+    { "rose-pine/neovim",                   name = "rose-pine" },
     { 'L3MON4D3/LuaSnip',                   dependencies = { 'saadparwaiz1/cmp_luasnip', 'rafamadriz/friendly-snippets' } },
     {
       'vi013t/easycolor.nvim',
@@ -152,6 +153,6 @@ require('lazy').setup {
       },
     },
   },
-  install = { colorscheme = { 'catppuccin-mocha' } },
+  install = { colorscheme = { 'rose-pine' } },
   checker = { enabled = true, notify = false },
 }

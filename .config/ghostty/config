@@ -1,0 +1,12 @@
+font-family = "JetBrainsMono Nerd Font"
+
+# Rose Pine
+theme = "rose-pine"
+# Catppuccin Mocha
+# theme = "catppuccin-mocha"
+
+
+cursor-style = "bar"
+cursor-style-blink = "true"
+
+background-opacity = "0.9"
