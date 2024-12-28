@@ -86,12 +86,15 @@
             ]
           },
           {
-            "description": "Function Key Remaps that don't work in kitty",
+            "description": "Function Key Remaps that don't work in terminal",
             "manipulators": [
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_unless"
                   }
                 ],
@@ -113,7 +116,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_unless"
                   }
                 ],
@@ -135,7 +141,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_unless"
                   }
                 ],
@@ -157,7 +166,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_unless"
                   }
                 ],
@@ -179,7 +191,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_unless"
                   }
                 ],
@@ -198,12 +213,15 @@
             ]
           },
           {
-            "description": "Kitty only Remaps",
+            "description": "Terminal only Remaps",
             "manipulators": [
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -225,7 +243,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -244,7 +265,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -266,7 +290,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -285,7 +312,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -304,7 +334,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -323,7 +356,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -342,7 +378,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -361,7 +400,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -380,7 +422,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -399,7 +444,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -418,7 +466,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -437,7 +488,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -456,7 +510,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -475,7 +532,10 @@
               {
                 "conditions": [
                   {
-                    "bundle_identifiers": ["^net\\.kovidgoyal\\.kitty$"],
+                    "bundle_identifiers": [
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^com\\.github\\.wez\\.wezterm$"
+                    ],
                     "type": "frontmost_application_if"
                   }
                 ],

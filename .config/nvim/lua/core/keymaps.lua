@@ -119,7 +119,13 @@ vim.keymap.set(
   { desc = 'Open telescope' }
 )
 vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]how [H]elp' })
-vim.keymap.set('n', '<leader>/', builtin.live_grep, { desc = 'Search word between files' })
+vim.keymap.set('n', '<leader>/', function()
+  require('telescope.builtin').live_grep({
+    additional_args = function(opts)
+      return { '--hidden', '--glob', '!.git/*', '--glob', '!node_modules/*' }  -- Exclude .git and node_modules folders
+    end
+  })
+end, { desc = 'Search any word between files' })
 vim.keymap.set('n', '<leader>sn', function()
   builtin.find_files { cwd = vim.fn.stdpath 'config' }
 end, { desc = '[S]earch [N]eovim files' })
