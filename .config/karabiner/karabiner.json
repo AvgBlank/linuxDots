@@ -7,6 +7,18 @@
             "description": "Function Key Remaps",
             "manipulators": [
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "c",
                   "modifiers": {
@@ -23,6 +35,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "v",
                   "modifiers": { "mandatory": ["fn", "left_shift"] }
@@ -36,6 +60,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "z",
                   "modifiers": {
@@ -52,6 +88,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "caps_lock",
                   "modifiers": {
@@ -68,6 +116,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "delete_or_backspace",
                   "modifiers": {
@@ -90,6 +150,16 @@
             "manipulators": [
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
@@ -117,6 +187,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
                       "^com\\.mitchellh\\.ghostty$",
@@ -142,6 +222,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
@@ -169,6 +259,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
                       "^com\\.mitchellh\\.ghostty$",
@@ -194,6 +294,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
@@ -223,6 +333,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
                       "^com\\.mitchellh\\.ghostty$",
@@ -249,6 +369,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
                       "^com\\.mitchellh\\.ghostty$",
@@ -271,6 +401,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
@@ -298,6 +438,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
                       "^com\\.mitchellh\\.ghostty$",
@@ -320,6 +470,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
@@ -344,6 +504,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
                       "^com\\.mitchellh\\.ghostty$",
@@ -366,6 +536,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
@@ -390,6 +570,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
                       "^com\\.mitchellh\\.ghostty$",
@@ -412,6 +602,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
@@ -436,6 +636,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
                       "^com\\.mitchellh\\.ghostty$",
@@ -458,6 +668,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
@@ -482,6 +702,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
                       "^com\\.mitchellh\\.ghostty$",
@@ -504,6 +734,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
@@ -528,6 +768,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
                       "^com\\.mitchellh\\.ghostty$",
@@ -550,6 +800,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^net\\.kovidgoyal\\.kitty$",
@@ -622,6 +882,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
@@ -648,6 +918,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^company\\.thebrowser\\.Browser$",
@@ -676,6 +956,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
@@ -703,6 +993,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
@@ -726,6 +1026,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^company\\.thebrowser\\.Browser$",
@@ -751,6 +1061,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
@@ -774,6 +1094,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^company\\.thebrowser\\.Browser$",
@@ -799,6 +1129,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
@@ -822,6 +1162,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^company\\.thebrowser\\.Browser$",
@@ -847,6 +1197,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
@@ -870,6 +1230,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^company\\.thebrowser\\.Browser$",
@@ -895,6 +1265,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
@@ -919,6 +1299,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": [
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
@@ -942,6 +1332,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": [
                       "^company\\.thebrowser\\.Browser$",
@@ -972,6 +1372,16 @@
               {
                 "conditions": [
                   {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
+                  {
                     "bundle_identifiers": ["^com\\.spotify\\.client$"],
                     "type": "frontmost_application_if"
                   }
@@ -993,6 +1403,16 @@
               },
               {
                 "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  },
                   {
                     "bundle_identifiers": ["^com\\.spotify\\.client$"],
                     "type": "frontmost_application_if"
@@ -1019,6 +1439,18 @@
             "description": "Arrow key Remaps",
             "manipulators": [
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "h",
                   "modifiers": {
@@ -1035,6 +1467,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "j",
                   "modifiers": {
@@ -1051,6 +1495,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "k",
                   "modifiers": {
@@ -1067,6 +1523,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "l",
                   "modifiers": {
@@ -1083,6 +1551,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "h",
                   "modifiers": {
@@ -1094,6 +1574,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "j",
                   "modifiers": {
@@ -1105,6 +1597,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "k",
                   "modifiers": {
@@ -1116,6 +1620,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "l",
                   "modifiers": {
@@ -1127,6 +1643,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "right_arrow",
                   "modifiers": {
@@ -1143,6 +1671,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "left_arrow",
                   "modifiers": {
@@ -1164,6 +1704,18 @@
             "description": "Swap Desktops",
             "manipulators": [
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "comma",
                   "modifiers": {
@@ -1180,6 +1732,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "period",
                   "modifiers": {
@@ -1201,6 +1765,18 @@
             "description": "Launch Apps",
             "manipulators": [
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "return_or_enter",
                   "modifiers": {
@@ -1217,6 +1793,41 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
+                "from": {
+                  "key_code": "e",
+                  "modifiers": {
+                    "mandatory": ["left_control"],
+                    "optional": []
+                  }
+                },
+                "to": [{ "shell_command": "open -a Finder" }],
+                "type": "basic"
+              },
+              {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "return_or_enter",
                   "modifiers": {
@@ -1228,6 +1839,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "b",
                   "modifiers": {
@@ -1239,6 +1862,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "d",
                   "modifiers": {
@@ -1255,6 +1890,18 @@
             "description": "Close Apps",
             "manipulators": [
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "c",
                   "modifiers": {
@@ -1271,6 +1918,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "w",
                   "modifiers": {
@@ -1289,9 +1948,21 @@
             ]
           },
           {
-            "description": "For Arc Users!!",
+            "description": "For Browsers",
             "manipulators": [
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "tab",
                   "modifiers": {
@@ -1308,6 +1979,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "tab",
                   "modifiers": {
@@ -1329,6 +2012,18 @@
             "description": "For Rectangle Users!!",
             "manipulators": [
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "t",
                   "modifiers": {
@@ -1350,6 +2045,18 @@
             "description": "For Vim and tmux Users!!",
             "manipulators": [
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "e",
                   "modifiers": {
@@ -1366,6 +2073,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "r",
                   "modifiers": {
@@ -1382,6 +2101,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "d",
                   "modifiers": {
@@ -1398,6 +2129,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "u",
                   "modifiers": {
@@ -1414,6 +2157,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "b",
                   "modifiers": {
@@ -1430,6 +2185,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "w",
                   "modifiers": {
@@ -1446,6 +2213,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "f",
                   "modifiers": {
@@ -1462,6 +2241,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "h",
                   "modifiers": {
@@ -1478,6 +2269,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "j",
                   "modifiers": {
@@ -1494,6 +2297,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "k",
                   "modifiers": {
@@ -1510,6 +2325,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "l",
                   "modifiers": {
@@ -1526,6 +2353,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "s",
                   "modifiers": {
@@ -1542,6 +2381,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "a",
                   "modifiers": {
@@ -1558,6 +2409,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "z",
                   "modifiers": {
@@ -1574,6 +2437,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "n",
                   "modifiers": {
@@ -1590,6 +2465,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "p",
                   "modifiers": {
@@ -1606,6 +2493,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "y",
                   "modifiers": {
@@ -1622,6 +2521,18 @@
                 "type": "basic"
               },
               {
+                "conditions": [
+                  {
+                    "type": "device_unless",
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ]
+                  }
+                ],
                 "from": {
                   "key_code": "g",
                   "modifiers": {
