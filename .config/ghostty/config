@@ -10,3 +10,6 @@ cursor-style = "bar"
 cursor-style-blink = "true"
 
 background-opacity = "0.9"
+
+# Macos option as alt
+macos-option-as-alt = "true"

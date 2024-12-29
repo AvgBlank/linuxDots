@@ -86,9 +86,7 @@ function tmuxthing() {
         fi
 
         tmux switch-client -t $selected_name > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            tmux attach-session -t "$selected_name"
-        fi
+        tmux attach-session -t "$selected_name"
     fi
 
 }
