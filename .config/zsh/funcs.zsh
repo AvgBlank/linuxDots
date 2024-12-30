@@ -85,8 +85,6 @@ function tmuxthing() {
             tmux new-session -ds $selected_name -c $selected
         fi
 
-        if [ $? -ne 0 ]; then
-        fi
         if [ -n "$TMUX" ]; then
             tmux switch-client -t $selected_name > /dev/null 2>&1
         else
