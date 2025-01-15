@@ -36,3 +36,8 @@ if [ -d "$HOME/.cargo/bin:$PATH" ]; then
     PATH="$HOME/.cargo/bin:$PATH"
 fi
 
+### The Fuck ###
+if command -v fuck &> /dev/null; then
+    eval $(thefuck --alias)
+fi
+
