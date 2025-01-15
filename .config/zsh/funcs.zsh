@@ -158,6 +158,24 @@ function fzfAcceptHistory() {
     fi
 }
 
+
+########### Dir Touch ###########
+# Command to automatically create both files and folders automatically.
+function mdt() {
+  for item in "$@"; do
+    parent_dir=$(dirname "$item")
+    if [[ "$parent_dir" != "." && ! -d "$parent_dir" ]]; then
+      mkdir -p "$parent_dir"  # Create parent directories if they don't exist
+    fi
+    if [[ "$item" == */ ]]; then
+      mkdir -p "$item"  # Create directory
+    else
+      touch "$item"     # Create file
+    fi
+  done
+}
+
+
 ########### Misc Functions ###########
 if command -v yazi &> /dev/null; then
     function y() {
