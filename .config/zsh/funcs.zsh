@@ -143,18 +143,30 @@ function cdthing() {
 
 ########### Search through history ###########
 function fzfHistory() {
-  local selected
-  selected=$(fc -rl 1 | awk '{$1=""; print substr($0,2)}' | fzf --header='Select a command to run')
-  if [[ -n $selected ]]; then
-    BUFFER="$selected"
-  fi
+    local selected
+    selected=$(fc -rl 1 | awk '{$1=""; print substr($0,2)}' | fzf --header='Select a command to run')
+    if [[ -n $selected ]]; then
+        BUFFER="$selected"
+    fi
 }
 function fzfAcceptHistory() {
-  local selected
-  selected=$(fc -rl 1 | awk '{$1=""; print substr($0,2)}' | fzf --header='Select a command to run')
-  if [[ -n $selected ]]; then
-    BUFFER="$selected"
-    zle accept-line
-  fi
+    local selected
+    selected=$(fc -rl 1 | awk '{$1=""; print substr($0,2)}' | fzf --header='Select a command to run')
+    if [[ -n $selected ]]; then
+        BUFFER="$selected"
+        zle accept-line
+    fi
 }
+
+########### Misc Functions ###########
+if command -v yazi &> /dev/null; then
+    function y() {
+        local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+        yazi "$@" --cwd-file="$tmp"
+        if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+            builtin cd -- "$cwd"
+        fi
+        rm -f -- "$tmp"
+    }
+fi
 

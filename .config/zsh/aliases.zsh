@@ -25,11 +25,6 @@ if command -v bat &> /dev/null; then
     alias cat="bat"
 fi
 
-# If Yazi Exists
-if command -v yazi &> /dev/null; then
-    alias y='yazi'
-fi
-
 
 #### Setting Vim as NeoVim if exists ####
 if command -v nvim &> /dev/null; then
