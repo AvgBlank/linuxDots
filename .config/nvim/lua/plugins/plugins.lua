@@ -137,6 +137,7 @@ require('cmp').setup {
 }
 require('mason').setup {}
 local lsp_config = require 'lspconfig'
+local capabilities = vim.lsp.protocol.make_client_capabilities()
 require('mason-lspconfig').setup {
   ensure_installed = {
     'pyright',
@@ -164,6 +165,19 @@ lsp_config.lua_ls.setup {
     },
   },
 }
+lsp_config.emmet_language_server.setup({
+  -- on_attach = on_attach,
+  capabilities = capabilities,
+  filetypes = { 'html', 'typescriptreact', 'javascriptreact', 'css', 'sass', 'scss', 'less', 'javascript' },
+  init_options = {
+    html = {
+      options = {
+        -- For possible options, see: https://github.com/emmetio/emmet/blob/master/src/config.ts#L79-L267
+        ["bem.enabled"] = true,
+      },
+    },
+  }
+})
 lsp.setup()
 
 -- Autoclose html Tags

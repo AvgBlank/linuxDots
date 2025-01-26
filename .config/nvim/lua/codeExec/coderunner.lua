@@ -60,7 +60,7 @@ local function get_command(filetype, quickRun)
       vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
         dir .. '" -f "' .. fileName .. '" -r "' .. ' ' .. '"')
     else
-      RUNWITH = vim.fn.input 'Vite(v)/Node(n): '
+      RUNWITH = vim.fn.input 'npm run dev(v)/Node(n): '
       vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
         dir .. '" -f "' .. fileName .. '" -r "' .. RUNWITH .. '"')
     end
