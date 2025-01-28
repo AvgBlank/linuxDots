@@ -29,10 +29,16 @@ case $runwith in
         echo -e "${YELLOW}$(printf '%*s' 75 | tr ' ' -)${NC}"
         npm run dev
         ;;
-    *)
-        echo -e "${YELLOW}[Running] tsc \"$dir/$fileName\" && node \"$dir/$fileNameWithoutExt.js\"${NC}"
+    c)
+        echo -e "${YELLOW}[Running] tsc \"$dir/$fileName\"${NC}"
         echo -e "${YELLOW}$(printf '%*s' 75 | tr ' ' -)${NC}"
         tsc "$fileName"
-        node "$fileNameWithoutExt".js
+        echo "Compiled $fileName."
+        ;;
+    *)
+        echo -e "${YELLOW}[Running] tsc${NC}"
+        echo -e "${YELLOW}$(printf '%*s' 75 | tr ' ' -)${NC}"
+        tsc
+        echo "Compiled all TypeScript files."
         ;;
 esac
