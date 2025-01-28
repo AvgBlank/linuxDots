@@ -168,7 +168,7 @@ lsp_config.lua_ls.setup {
 lsp_config.emmet_language_server.setup({
   -- on_attach = on_attach,
   capabilities = capabilities,
-  filetypes = { 'html', 'typescriptreact', 'javascriptreact', 'css', 'sass', 'scss', 'less', 'javascript' },
+  filetypes = { 'html', 'typescriptreact', 'javascriptreact', 'typescript', 'css', 'sass', 'scss', 'less', 'javascript' },
   init_options = {
     html = {
       options = {
@@ -246,6 +246,9 @@ require('conform').setup {
     lua = { 'stylua' },
     python = { 'black' },
     javascript = { 'prettier', 'prettierd', stop_after_first = true },
+    typescript = { 'prettier', 'prettierd', stop_after_first = true },
+    javascriptreact = { 'prettier', 'prettierd', stop_after_first = true },
+    typescriptreact = { 'prettier', 'prettierd', stop_after_first = true },
     markdown = { 'prettier', 'prettierd', stop_after_first = true },
     bash = { 'beautysh' },
     sh = { 'beautysh' },

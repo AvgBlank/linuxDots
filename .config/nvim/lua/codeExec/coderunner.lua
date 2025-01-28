@@ -65,6 +65,30 @@ local function get_command(filetype, quickRun)
         dir .. '" -f "' .. fileName .. '" -r "' .. RUNWITH .. '"')
     end
     return true
+    -- JavaScript React
+  elseif filetype == 'javascriptreact' then
+    RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/js.bash -d "'
+    vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
+      dir .. '" -f "' .. fileName .. '" -r "' .. "v" .. '"')
+    return true
+    -- Typescript
+  elseif filetype == 'typescript' then
+    RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/ts.bash -d "'
+    if quickRun then
+      vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
+        dir .. '" -f "' .. fileName .. '" -r "' .. ' ' .. '"')
+    else
+      RUNWITH = vim.fn.input 'npm run dev(v)/Node(n): '
+      vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
+        dir .. '" -f "' .. fileName .. '" -r "' .. RUNWITH .. '"')
+    end
+    return true
+    -- JavaScript React
+  elseif filetype == 'typescriptreact' then
+    RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/ts.bash -d "'
+    vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
+      dir .. '" -f "' .. fileName .. '" -r "' .. "v" .. '"')
+    return true
     -- Python
   elseif filetype == 'python' then
     vim.cmd('botright 12split | set nonu nornu | terminal bash ~/.config/nvim/lua/codeExec/cmds/py.bash -d "' ..
