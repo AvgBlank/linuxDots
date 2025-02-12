@@ -106,23 +106,18 @@ require('cmp').setup {
   mapping = cmp.mapping.preset.insert {
     ['<C-p>'] = cmp.mapping.select_prev_item(cmp_select),
     ['<C-n>'] = cmp.mapping.select_next_item(cmp_select),
-    ['<C-Space>'] = cmp.mapping.complete(),
     ['<C-y>'] = cmp.mapping.confirm { select = true }, -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
     ['<C-e>'] = cmp.mapping.abort(),
-    ['<Tab>'] = cmp.mapping(function(fallback)
+    ['<C-Space>'] = cmp.mapping(function(fallback)
       if luasnip.expand_or_jumpable() then
         luasnip.expand_or_jump()
-      elseif cmp.visible() then
-        cmp.select_next_item()
       else
         fallback()
       end
     end, { 'i', 's' }),
-    ['<S-Tab>'] = cmp.mapping(function(fallback)
+    ['<C-S-Space>'] = cmp.mapping(function(fallback)
       if luasnip.jumpable(-1) then
         luasnip.jump(-1)
-      elseif cmp.visible() then
-        cmp.select_prev_item()
       else
         fallback()
       end

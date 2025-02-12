@@ -25,6 +25,7 @@ require('lazy').setup {
     { 'nvim-lua/plenary.nvim' },
     { 'ThePrimeagen/harpoon' },
     { 'stevearc/conform.nvim' },
+    { 'github/copilot.vim' },
     { 'windwp/nvim-ts-autotag' },
     { 'williamboman/mason.nvim' },
     { 'williamboman/mason-lspconfig.nvim' },

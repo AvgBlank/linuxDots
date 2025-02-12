@@ -23,7 +23,7 @@ sign('DapStopped', { text = '', texthl = 'DapStopped', linehl = 'DapStopped',
 
 -- Python
 dap.adapters.python = function(cb, config)
-  local debugPyPath = vim.fn.expand '~/.venv/debugpy'
+  local debugPyPath = vim.fn.expand '~/.debug/debugpy'
 
   local function path_exists(path)
     return (vim.uv or vim.loop).fs_stat(path) ~= nil
@@ -32,9 +32,9 @@ dap.adapters.python = function(cb, config)
   if not path_exists(debugPyPath) then
     print 'DebugPy not found, installing!'
     local commands = {
-      'mkdir -p ~/.venv',
-      'python3 -m venv ~/.venv/debugpy',
-      '~/.venv/debugpy/bin/python -m pip install debugpy',
+      'mkdir -p ~/.debug',
+      'python3 -m venv ~/.debug/debugpy',
+      '~/.debug/debugpy/bin/python -m pip install debugpy',
     }
 
     -- Run each command in sequence
@@ -65,7 +65,7 @@ dap.adapters.python = function(cb, config)
   else
     cb {
       type = 'executable',
-      command = vim.fn.expand '~' .. '/.venv/debugpy/bin/python',
+      command = vim.fn.expand '~' .. '/.debug/debugpy/bin/python',
       args = { '-m', 'debugpy.adapter' },
       options = {
         source_filetype = 'python',
@@ -175,6 +175,41 @@ dap.configurations.rust = {
     -- ...,
   },
 }
+
+-- JavaScript / TypeScript
+require("dap").adapters["pwa-node"] = {
+  type = "server",
+  host = "localhost",
+  port = "${port}",
+  executable = {
+    command = "node",
+    -- 💀 Make sure to update this path to point to your installation
+    -- Install from: https://github.com/microsoft/vscode-js-debug/releases
+    -- Extract to .debug/js using `tar xvzf path/to/vscode-js-debug.tar.gz`
+    args = { vim.fn.expand '~/.debug/js-debug/src/dapDebugServer.js', "${port}" },
+  }
+}
+require("dap").configurations.javascript = {
+  {
+    type = "pwa-node",
+    request = "launch",
+    name = "Launch file",
+    program = "${file}",
+    cwd = "${workspaceFolder}",
+    runtimeExecutable = "node",
+  },
+}
+require("dap").configurations.typescript = {
+  {
+    type = "pwa-node",
+    request = "launch",
+    name = "Launch Program",
+    program = "${workspaceFolder}/src/index.ts",
+    preLaunchTask = "tsc: build - tsconfig.json",
+    outFiles = "${workspaceFolder}/**/*.js"
+  }
+}
+
 
 -- Running
 require('dapui').setup()

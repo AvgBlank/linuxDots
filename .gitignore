@@ -25,3 +25,4 @@ test.*
 kitty.conf.bak
 .config/neofetch
 __pycache__
+.config/github-copilot
