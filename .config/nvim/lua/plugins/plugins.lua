@@ -139,7 +139,6 @@ require('mason-lspconfig').setup {
     'clangd',
     'lua_ls',
     'eslint',
-    'ts_ls',
     'bashls',
     'cssls',
     'emmet_language_server',
