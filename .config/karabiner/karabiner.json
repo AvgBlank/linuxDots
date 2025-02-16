@@ -1032,7 +1032,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1069,7 +1070,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1106,7 +1108,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1140,7 +1143,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1174,7 +1178,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1208,7 +1213,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1242,7 +1248,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1276,7 +1283,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1310,7 +1318,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1344,7 +1353,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1378,7 +1388,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1412,7 +1423,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1446,7 +1458,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1459,6 +1472,321 @@
                   {
                     "key_code": "9",
                     "modifiers": ["left_command"]
+                  }
+                ],
+                "type": "basic"
+              },
+              {
+                "conditions": [
+                  {
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ],
+                    "type": "device_unless"
+                  },
+                  {
+                    "bundle_identifiers": [
+                      "^company\\.thebrowser\\.Browser$",
+                      "^com\\.google\\.Chrome$",
+                      "^com\\.microsoft\\.edgemac$",
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
+                    ],
+                    "type": "frontmost_application_if"
+                  }
+                ],
+                "from": {
+                  "key_code": "1",
+                  "modifiers": { "mandatory": ["left_command"] }
+                },
+                "to": [
+                  {
+                    "key_code": "1",
+                    "modifiers": ["left_option"]
+                  }
+                ],
+                "type": "basic"
+              },
+              {
+                "conditions": [
+                  {
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ],
+                    "type": "device_unless"
+                  },
+                  {
+                    "bundle_identifiers": [
+                      "^company\\.thebrowser\\.Browser$",
+                      "^com\\.google\\.Chrome$",
+                      "^com\\.microsoft\\.edgemac$",
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
+                    ],
+                    "type": "frontmost_application_if"
+                  }
+                ],
+                "from": {
+                  "key_code": "2",
+                  "modifiers": { "mandatory": ["left_command"] }
+                },
+                "to": [
+                  {
+                    "key_code": "2",
+                    "modifiers": ["left_option"]
+                  }
+                ],
+                "type": "basic"
+              },
+              {
+                "conditions": [
+                  {
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ],
+                    "type": "device_unless"
+                  },
+                  {
+                    "bundle_identifiers": [
+                      "^company\\.thebrowser\\.Browser$",
+                      "^com\\.google\\.Chrome$",
+                      "^com\\.microsoft\\.edgemac$",
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
+                    ],
+                    "type": "frontmost_application_if"
+                  }
+                ],
+                "from": {
+                  "key_code": "3",
+                  "modifiers": { "mandatory": ["left_command"] }
+                },
+                "to": [
+                  {
+                    "key_code": "3",
+                    "modifiers": ["left_option"]
+                  }
+                ],
+                "type": "basic"
+              },
+              {
+                "conditions": [
+                  {
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ],
+                    "type": "device_unless"
+                  },
+                  {
+                    "bundle_identifiers": [
+                      "^company\\.thebrowser\\.Browser$",
+                      "^com\\.google\\.Chrome$",
+                      "^com\\.microsoft\\.edgemac$",
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
+                    ],
+                    "type": "frontmost_application_if"
+                  }
+                ],
+                "from": {
+                  "key_code": "4",
+                  "modifiers": { "mandatory": ["left_command"] }
+                },
+                "to": [
+                  {
+                    "key_code": "4",
+                    "modifiers": ["left_option"]
+                  }
+                ],
+                "type": "basic"
+              },
+              {
+                "conditions": [
+                  {
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ],
+                    "type": "device_unless"
+                  },
+                  {
+                    "bundle_identifiers": [
+                      "^company\\.thebrowser\\.Browser$",
+                      "^com\\.google\\.Chrome$",
+                      "^com\\.microsoft\\.edgemac$",
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
+                    ],
+                    "type": "frontmost_application_if"
+                  }
+                ],
+                "from": {
+                  "key_code": "5",
+                  "modifiers": { "mandatory": ["left_command"] }
+                },
+                "to": [
+                  {
+                    "key_code": "5",
+                    "modifiers": ["left_option"]
+                  }
+                ],
+                "type": "basic"
+              },
+              {
+                "conditions": [
+                  {
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ],
+                    "type": "device_unless"
+                  },
+                  {
+                    "bundle_identifiers": [
+                      "^company\\.thebrowser\\.Browser$",
+                      "^com\\.google\\.Chrome$",
+                      "^com\\.microsoft\\.edgemac$",
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
+                    ],
+                    "type": "frontmost_application_if"
+                  }
+                ],
+                "from": {
+                  "key_code": "6",
+                  "modifiers": { "mandatory": ["left_command"] }
+                },
+                "to": [
+                  {
+                    "key_code": "6",
+                    "modifiers": ["left_option"]
+                  }
+                ],
+                "type": "basic"
+              },
+              {
+                "conditions": [
+                  {
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ],
+                    "type": "device_unless"
+                  },
+                  {
+                    "bundle_identifiers": [
+                      "^company\\.thebrowser\\.Browser$",
+                      "^com\\.google\\.Chrome$",
+                      "^com\\.microsoft\\.edgemac$",
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
+                    ],
+                    "type": "frontmost_application_if"
+                  }
+                ],
+                "from": {
+                  "key_code": "7",
+                  "modifiers": { "mandatory": ["left_command"] }
+                },
+                "to": [
+                  {
+                    "key_code": "7",
+                    "modifiers": ["left_option"]
+                  }
+                ],
+                "type": "basic"
+              },
+              {
+                "conditions": [
+                  {
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ],
+                    "type": "device_unless"
+                  },
+                  {
+                    "bundle_identifiers": [
+                      "^company\\.thebrowser\\.Browser$",
+                      "^com\\.google\\.Chrome$",
+                      "^com\\.microsoft\\.edgemac$",
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
+                    ],
+                    "type": "frontmost_application_if"
+                  }
+                ],
+                "from": {
+                  "key_code": "8",
+                  "modifiers": { "mandatory": ["left_command"] }
+                },
+                "to": [
+                  {
+                    "key_code": "8",
+                    "modifiers": ["left_option"]
+                  }
+                ],
+                "type": "basic"
+              },
+              {
+                "conditions": [
+                  {
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ],
+                    "type": "device_unless"
+                  },
+                  {
+                    "bundle_identifiers": [
+                      "^company\\.thebrowser\\.Browser$",
+                      "^com\\.google\\.Chrome$",
+                      "^com\\.microsoft\\.edgemac$",
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
+                    ],
+                    "type": "frontmost_application_if"
+                  }
+                ],
+                "from": {
+                  "key_code": "9",
+                  "modifiers": { "mandatory": ["left_command"] }
+                },
+                "to": [
+                  {
+                    "key_code": "9",
+                    "modifiers": ["left_option"]
                   }
                 ],
                 "type": "basic"
@@ -3510,7 +3838,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -3547,7 +3876,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -3584,7 +3914,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -3618,7 +3949,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -3652,7 +3984,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -3686,7 +4019,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -3720,7 +4054,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -3754,7 +4089,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -3788,7 +4124,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -3822,7 +4159,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -3856,7 +4194,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -3890,7 +4229,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -3924,7 +4264,8 @@
                       "^company\\.thebrowser\\.Browser$",
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
-                      "^com\\.brave\\.Browser$"
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
                     ],
                     "type": "frontmost_application_if"
                   }
