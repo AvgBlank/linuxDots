@@ -1505,8 +1505,8 @@
                 },
                 "to": [
                   {
-                    "key_code": "1",
-                    "modifiers": ["left_option"]
+                    "key_code": "i",
+                    "modifiers": ["left_control"]
                   }
                 ],
                 "type": "basic"
@@ -1540,8 +1540,8 @@
                 },
                 "to": [
                   {
-                    "key_code": "2",
-                    "modifiers": ["left_option"]
+                    "key_code": "o",
+                    "modifiers": ["left_control"]
                   }
                 ],
                 "type": "basic"
@@ -1575,8 +1575,8 @@
                 },
                 "to": [
                   {
-                    "key_code": "3",
-                    "modifiers": ["left_option"]
+                    "key_code": "p",
+                    "modifiers": ["left_control"]
                   }
                 ],
                 "type": "basic"
@@ -1610,8 +1610,8 @@
                 },
                 "to": [
                   {
-                    "key_code": "4",
-                    "modifiers": ["left_option"]
+                    "key_code": "j",
+                    "modifiers": ["left_control"]
                   }
                 ],
                 "type": "basic"
@@ -1645,8 +1645,8 @@
                 },
                 "to": [
                   {
-                    "key_code": "5",
-                    "modifiers": ["left_option"]
+                    "key_code": "k",
+                    "modifiers": ["left_control"]
                   }
                 ],
                 "type": "basic"
@@ -1680,8 +1680,8 @@
                 },
                 "to": [
                   {
-                    "key_code": "6",
-                    "modifiers": ["left_option"]
+                    "key_code": "l",
+                    "modifiers": ["left_control"]
                   }
                 ],
                 "type": "basic"
@@ -1715,8 +1715,8 @@
                 },
                 "to": [
                   {
-                    "key_code": "7",
-                    "modifiers": ["left_option"]
+                    "key_code": "b",
+                    "modifiers": ["left_control"]
                   }
                 ],
                 "type": "basic"
@@ -1751,7 +1751,7 @@
                 "to": [
                   {
                     "key_code": "8",
-                    "modifiers": ["left_option"]
+                    "modifiers": ["left_control"]
                   }
                 ],
                 "type": "basic"
@@ -1785,8 +1785,43 @@
                 },
                 "to": [
                   {
-                    "key_code": "9",
-                    "modifiers": ["left_option"]
+                    "key_code": ",",
+                    "modifiers": ["left_control"]
+                  }
+                ],
+                "type": "basic"
+              },
+              {
+                "conditions": [
+                  {
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ],
+                    "type": "device_unless"
+                  },
+                  {
+                    "bundle_identifiers": [
+                      "^company\\.thebrowser\\.Browser$",
+                      "^com\\.google\\.Chrome$",
+                      "^com\\.microsoft\\.edgemac$",
+                      "^com\\.brave\\.Browser$",
+                      "^app\\.zen-browser\\.zen$"
+                    ],
+                    "type": "frontmost_application_if"
+                  }
+                ],
+                "from": {
+                  "key_code": "0",
+                  "modifiers": { "mandatory": ["left_command"] }
+                },
+                "to": [
+                  {
+                    "key_code": ";",
+                    "modifiers": ["left_control"]
                   }
                 ],
                 "type": "basic"
