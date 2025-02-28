@@ -13,6 +13,9 @@ require('telescope').setup {
 }
 require('telescope').load_extension 'fzf'
 
+-- Harpoon
+require("telescope").load_extension('harpoon')
+
 -- Telescope Frecency
 require('telescope').setup {
   extensions = {

@@ -121,8 +121,8 @@ vim.keymap.set(
 vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]how [H]elp' })
 vim.keymap.set('n', '<leader>/', function()
   require('telescope.builtin').live_grep({
-    additional_args = function(opts)
-      return { '--hidden', '--glob', '!.git/*', '--glob', '!node_modules/*' }  -- Exclude .git and node_modules folders
+    additional_args = function(_)
+      return { '--hidden', '--glob', '!.git/*', '--glob', '!node_modules/*' } -- Exclude .git and node_modules folders
     end
   })
 end, { desc = 'Search any word between files' })
@@ -255,25 +255,25 @@ vim.keymap.set(
 vim.keymap.set(
   { 'n', 'i' },
   '<M-q>',
-  "<cmd>lua require('harpoon.term').gotoTerminal(1)<CR><Esc>",
+  "<cmd>lua require('harpoon.tmux').gotoTerminal(1)<CR><Esc>",
   { desc = 'Navigate to Terminal 1 using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-w>',
-  "<cmd>lua require('harpoon.term').gotoTerminal(2)<CR><Esc>",
+  "<cmd>lua require('harpoon.tmux').gotoTerminal(2)<CR><Esc>",
   { desc = 'Navigate to Terminal 2 using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-e>',
-  "<cmd>lua require('harpoon.term').gotoTerminal(3)<CR><Esc>",
+  "<cmd>lua require('harpoon.tmux').gotoTerminal(3)<CR><Esc>",
   { desc = 'Navigate to Terminal 4 using Harpoon' }
 )
 vim.keymap.set(
   { 'n', 'i' },
   '<M-r>',
-  "<cmd>lua require('harpoon.term').gotoTerminal(4)<CR><Esc>",
+  "<cmd>lua require('harpoon.tmux').gotoTerminal(4)<CR><Esc>",
   { desc = 'Navigate to Terminal 4 using Harpoon' }
 )
 
