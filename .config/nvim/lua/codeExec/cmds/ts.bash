@@ -24,10 +24,20 @@ fileNameWithoutExt="${fileName%.*}"
 
 # Print the running message
 case $runwith in
-    v)
+    d)
         echo -e "${YELLOW}[Running] npm run dev${NC}"
         echo -e "${YELLOW}$(printf '%*s' 75 | tr ' ' -)${NC}"
         npm run dev
+        ;;
+    b)
+        echo -e "${YELLOW}[Running] npm run dev${NC}"
+        echo -e "${YELLOW}$(printf '%*s' 75 | tr ' ' -)${NC}"
+        npm run build
+        ;;
+    s)
+        echo -e "${YELLOW}[Running] npm run dev${NC}"
+        echo -e "${YELLOW}$(printf '%*s' 75 | tr ' ' -)${NC}"
+        npm start
         ;;
     c)
         echo -e "${YELLOW}[Running] tsc \"$dir/$fileName\"${NC}"

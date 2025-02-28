@@ -60,16 +60,10 @@ local function get_command(filetype, quickRun)
       vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
         dir .. '" -f "' .. fileName .. '" -r "' .. ' ' .. '"')
     else
-      RUNWITH = vim.fn.input 'npm run dev(v)/Node(n): '
+      RUNWITH = vim.fn.input 'Dev(d)/Build(b)/Start(s)/Node(n): '
       vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
         dir .. '" -f "' .. fileName .. '" -r "' .. RUNWITH .. '"')
     end
-    return true
-    -- JavaScript React
-  elseif filetype == 'javascriptreact' then
-    RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/js.bash -d "'
-    vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-      dir .. '" -f "' .. fileName .. '" -r "' .. "v" .. '"')
     return true
     -- Typescript
   elseif filetype == 'typescript' then
@@ -78,16 +72,22 @@ local function get_command(filetype, quickRun)
       vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
         dir .. '" -f "' .. fileName .. '" -r "' .. ' ' .. '"')
     else
-      RUNWITH = vim.fn.input 'npm run dev(v)/Tsc(t)/TscCurrentFile(c): '
+      RUNWITH = vim.fn.input 'Dev(d)/Build(b)/Start(s)/TscCurrentFile(c)/Tsc(t): '
       vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
         dir .. '" -f "' .. fileName .. '" -r "' .. RUNWITH .. '"')
     end
     return true
     -- JavaScript React
+  elseif filetype == 'javascriptreact' then
+    RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/js.bash -d "'
+    vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
+      dir .. '" -f "' .. fileName .. '" -r "' .. "d" .. '"')
+    return true
+    -- Typescript React
   elseif filetype == 'typescriptreact' then
     RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/ts.bash -d "'
     vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-      dir .. '" -f "' .. fileName .. '" -r "' .. "v" .. '"')
+      dir .. '" -f "' .. fileName .. '" -r "' .. "d" .. '"')
     return true
     -- Python
   elseif filetype == 'python' then
