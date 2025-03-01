@@ -22,7 +22,6 @@ require('lazy').setup {
     { 'mbbill/undotree' },
     { 'lukas-reineke/indent-blankline.nvim' },
     { 'brenoprata10/nvim-highlight-colors' },
-    { 'nvim-lua/plenary.nvim' },
     { 'ThePrimeagen/harpoon' },
     { 'stevearc/conform.nvim' },
     { 'github/copilot.vim' },
@@ -34,22 +33,14 @@ require('lazy').setup {
     { 'hrsh7th/cmp-nvim-lsp' },
     { 'nvim-pack/nvim-spectre' },
     { 'hrsh7th/nvim-cmp' },
-    { 'catppuccin/nvim',                    name = 'catppuccin',                                                          priority = 1000 },
+    -- { 'catppuccin/nvim',                    name = 'catppuccin',                                                          priority = 1000 },
+    { 'sindrets/diffview.nvim' },
     { "rose-pine/neovim",                   name = "rose-pine" },
     { 'L3MON4D3/LuaSnip',                   dependencies = { 'saadparwaiz1/cmp_luasnip', 'rafamadriz/friendly-snippets' } },
     {
       'vi013t/easycolor.nvim',
       dependencies = { 'stevearc/dressing.nvim' },
       opts = {},
-    },
-    {
-      'NeogitOrg/neogit',
-      dependencies = {
-        'nvim-lua/plenary.nvim',
-        'sindrets/diffview.nvim',
-        'nvim-telescope/telescope.nvim',
-      },
-      config = true,
     },
     {
       'MeanderingProgrammer/render-markdown.nvim',
@@ -130,10 +121,10 @@ require('lazy').setup {
           }
         end,
       },
-      {
-        'nobbmaestro/nvim-andromeda',
-        dependencies = { 'tjdevries/colorbuddy.nvim', branch = 'dev' },
-      },
+      -- {
+      --   'nobbmaestro/nvim-andromeda',
+      --   dependencies = { 'tjdevries/colorbuddy.nvim', branch = 'dev' },
+      -- },
       {
         'mikavilpas/yazi.nvim',
         event = 'VeryLazy',

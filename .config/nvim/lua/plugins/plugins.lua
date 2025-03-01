@@ -10,21 +10,23 @@ require('telescope').setup {
       },
     },
   },
+  pickers = {
+    find_files = {
+      file_ignore_patterns = {
+        'node_modules',
+      },
+    },
+  },
+  extensions = {
+    fzf = {}
+  },
 }
+
+-- FZF Native
 require('telescope').load_extension 'fzf'
 
 -- Harpoon
 require("telescope").load_extension('harpoon')
-
--- Telescope Frecency
-require('telescope').setup {
-  extensions = {
-    frecency = {
-      show_scores = true,
-      show_filter_column = false,
-    },
-  },
-}
 
 -- Color Scheme
 -- Rose Pine
