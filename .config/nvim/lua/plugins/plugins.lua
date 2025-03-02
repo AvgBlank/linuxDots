@@ -248,6 +248,7 @@ require('conform').setup {
     typescript = { 'prettierd', 'prettier', stop_after_first = true },
     javascriptreact = { 'prettierd', 'prettier', stop_after_first = true },
     typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
+    astro = { 'prettierd', 'prettier', stop_after_first = true },
     markdown = { 'prettierd', 'prettier', stop_after_first = true },
     bash = { 'beautysh' },
     sh = { 'beautysh' },
@@ -264,8 +265,8 @@ require('conform').setup {
 require('easycolor').setup {
   ui = {
     mappings = {
-      ['<C-c>'] = 'close_window', -- Map Ctrl+C to close the window
-      ['<C-b>'] = 'close_window', -- Map Ctrl+C to close the window
+      ['<C-c>'] = 'close_window', -- Map Ctrl + C to close the window
+      ['<C-b>'] = 'close_window', -- Map Ctrl + B to close the window
     },
   },
 }

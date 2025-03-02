@@ -35,8 +35,21 @@ require('lazy').setup {
     { 'hrsh7th/nvim-cmp' },
     -- { 'catppuccin/nvim',                    name = 'catppuccin',                                                          priority = 1000 },
     { 'sindrets/diffview.nvim' },
-    { "rose-pine/neovim",                   name = "rose-pine" },
-    { 'L3MON4D3/LuaSnip',                   dependencies = { 'saadparwaiz1/cmp_luasnip', 'rafamadriz/friendly-snippets' } },
+    {
+      "rose-pine/neovim",
+      name = "rose-pine",
+      lazy = false,    -- Ensures it loads immediately
+      priority = 1000, -- Load before other plugins
+      config = function()
+        require("rose-pine").setup({
+          dark_variant = "main", -- Options: "main", "moon", "dawn"
+          integrations = {
+            bufferline = true,   -- Enables bufferline colors
+          }
+        })
+      end
+    },
+    { 'L3MON4D3/LuaSnip', dependencies = { 'saadparwaiz1/cmp_luasnip', 'rafamadriz/friendly-snippets' } },
     {
       'vi013t/easycolor.nvim',
       dependencies = { 'stevearc/dressing.nvim' },
@@ -143,6 +156,26 @@ require('lazy').setup {
           config = true,
         },
       },
+      {
+        "akinsho/bufferline.nvim",
+        dependencies = { "nvim-tree/nvim-web-devicons" },
+        lazy = false,
+        config = function()
+          require("bufferline").setup({
+            options = {
+              mode = "tabs",
+              show_buffer_close_icons = true,
+              show_close_icon = false,
+              separator_style = "thin",
+              tab_size = 14,
+              always_show_bufferline = false,
+              themable = true,
+              numbers = "ordinal",
+              truncate_names = true,
+            },
+          })
+        end,
+      }
     },
   },
   install = { colorscheme = { 'rose-pine' } },
