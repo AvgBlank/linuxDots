@@ -285,3 +285,26 @@ vim.keymap.set('v', '<C-b>', 'x<cmd>EasyColor<CR>', { desc = 'Open Color Picker'
 -- Yazi
 vim.keymap.set('n', '-', '<cmd>Yazi<cr>', { desc = 'Open yazi at the current file' })
 vim.keymap.set('n', '<leader>-', '<cmd>Yazi cwd<cr>', { desc = 'Open yazi at the current file' })
+
+-- Tab key for snippets
+local luasnip = require('luasnip')
+local opts = { silent = true }
+
+vim.keymap.set({ "i", "s" }, "<Tab>", function()
+    if luasnip.expand_or_jumpable() then
+        luasnip.expand_or_jump()
+    else
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, true, true), "n", false)
+    end
+end, opts)
+
+vim.keymap.set({ "i", "s" }, "<S-Tab>", function()
+    if luasnip.jumpable(-1) then
+        luasnip.jump(-1)
+    end
+end, opts)
+
+vim.keymap.set("s", "<BS>", function()
+  vim.api.nvim_feedkeys("a" .. vim.api.nvim_replace_termcodes("<BS>", true, true, true), "n", false)
+end, { silent = true })
+
