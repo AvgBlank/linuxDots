@@ -60,7 +60,7 @@ local function get_command(filetype, quickRun)
       vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
         dir .. '" -f "' .. fileName .. '" -r "' .. ' ' .. '"')
     else
-      RUNWITH = vim.fn.input 'Dev(d)/Build(b)/Start(s)/Node(n): '
+      RUNWITH = vim.fn.input 'Dev(d)/Build(b)/Start(s)/Node(n)/Bun(r): '
       vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
         dir .. '" -f "' .. fileName .. '" -r "' .. RUNWITH .. '"')
     end
@@ -72,7 +72,7 @@ local function get_command(filetype, quickRun)
       vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
         dir .. '" -f "' .. fileName .. '" -r "' .. ' ' .. '"')
     else
-      RUNWITH = vim.fn.input 'Dev(d)/Build(b)/Start(s)/TscCurrentFile(c)/Tsc(t): '
+      RUNWITH = vim.fn.input 'Dev(d)/Build(b)/Start(s)/TscCurrentFile(c)/Tsc(t)/Bun(r): '
       vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
         dir .. '" -f "' .. fileName .. '" -r "' .. RUNWITH .. '"')
     end

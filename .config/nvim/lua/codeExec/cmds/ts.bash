@@ -45,10 +45,15 @@ case $runwith in
         tsc "$fileName"
         echo "Compiled $fileName."
         ;;
-    *)
+    t)
         echo -e "${YELLOW}[Running] tsc${NC}"
         echo -e "${YELLOW}$(printf '%*s' 75 | tr ' ' -)${NC}"
         tsc
         echo "Compiled all TypeScript files."
+        ;;
+    *)
+        echo -e "${YELLOW}[Running] bun \"$dir/$fileName\"${NC}"
+        echo -e "${YELLOW}$(printf '%*s' 75 | tr ' ' -)${NC}"
+        bun "$fileName"
         ;;
 esac

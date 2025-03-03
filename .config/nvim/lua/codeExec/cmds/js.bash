@@ -37,9 +37,14 @@ case $runwith in
         echo -e "${YELLOW}$(printf '%*s' 75 | tr ' ' -)${NC}"
         npm start
         ;;
-    *)
+    n)
         echo -e "${YELLOW}[Running] node \"$dir/$fileName\"${NC}"
         echo -e "${YELLOW}$(printf '%*s' 75 | tr ' ' -)${NC}"
         node "$fileName"
+        ;;
+    *)
+        echo -e "${YELLOW}[Running] bun \"$dir/$fileName\"${NC}"
+        echo -e "${YELLOW}$(printf '%*s' 75 | tr ' ' -)${NC}"
+        bun "$fileName"
         ;;
 esac
