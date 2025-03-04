@@ -88,11 +88,11 @@ vim.keymap.set('n', '<leader>tt', vim.cmd.tabnew, { desc = 'Open a new tab' })
 vim.keymap.set('n', '<leader>tT', '<cmd>-1tabnew<CR>', { desc = 'Open a new tab to the left' })
 vim.keymap.set('n', '<leader>to', function()
   vim.cmd 'tabe'
-  vim.cmd "lua require'telescope.builtin'.find_files({ find_command = {'rg', '--files', '--hidden', '-g', '!.git' }})"
+  vim.cmd "lua require'telescope.builtin'.find_files({ find_command = {'rg', '--files', '--hidden', '-g', '!.venv', '-g', '!.git', '-g', '!node_modules' }})"
 end, { desc = 'Open a new tab along with telescope' })
 vim.keymap.set('n', '<leader>tO', function()
   vim.cmd '-1tabnew'
-  vim.cmd "lua require'telescope.builtin'.find_files({ find_command = {'rg', '--files', '--hidden', '-g', '!.git' }})"
+  vim.cmd "lua require'telescope.builtin'.find_files({ find_command = {'rg', '--files', '--hidden', '-g', '!.venv', '-g', '!.git', '-g', '!node_modules' }})"
 end, { desc = 'Open a new tab along with telescope to the left' })
 vim.keymap.set('n', '<leader>t-', function()
   vim.cmd 'tabe'
@@ -115,14 +115,14 @@ local builtin = require 'telescope.builtin'
 vim.keymap.set(
   'n',
   '<leader><space>',
-  "<cmd>lua require'telescope.builtin'.find_files({ find_command = {'rg', '--files', '--hidden', '-g', '!.git' }})<cr>",
+  "<cmd>lua require'telescope.builtin'.find_files({ find_command = {'rg', '--files', '--hidden', '-g', '!.git', '-g', '!.venv', '-g', '!node_modules' }})<cr>",
   { desc = 'Open telescope' }
 )
 vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]how [H]elp' })
 vim.keymap.set('n', '<leader>/', function()
   require('telescope.builtin').live_grep({
     additional_args = function(_)
-      return { '--hidden', '--glob', '!.git/*', '--glob', '!node_modules/*' } -- Exclude .git and node_modules folders
+      return { '--hidden', '--glob', '!.git/*', '--glob', '!node_modules/*', '--glob', '!.venv/*' } -- Exclude .git and node_modules folders
     end
   })
 end, { desc = 'Search any word between files' })
