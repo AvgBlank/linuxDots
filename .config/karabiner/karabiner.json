@@ -2329,8 +2329,72 @@
             ]
           },
           {
-            "description": "Swap Desktops",
+            "description": "Swap Desktops / Monitors",
             "manipulators": [
+              {
+                "conditions": [
+                  {
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ],
+                    "type": "device_unless"
+                  }
+                ],
+                "from": {
+                  "key_code": "comma",
+                  "modifiers": {
+                    "mandatory": ["left_control", "left_shift"],
+                    "optional": ["any"]
+                  }
+                },
+                "to": [
+                  {
+                    "key_code": "left_arrow",
+                    "modifiers": ["left_control", "left_option", "left_command"]
+                  },
+                  {
+                    "key_code": "return_or_enter",
+                    "modifiers": ["left_option", "left_control"]
+                  }
+                ],
+                "type": "basic"
+              },
+              {
+                "conditions": [
+                  {
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ],
+                    "type": "device_unless"
+                  }
+                ],
+                "from": {
+                  "key_code": "period",
+                  "modifiers": {
+                    "mandatory": ["left_control", "left_shift"],
+                    "optional": ["any"]
+                  }
+                },
+                "to": [
+                  {
+                    "key_code": "right_arrow",
+                    "modifiers": ["left_control", "left_option", "left_command"]
+                  },
+                  {
+                    "key_code": "return_or_enter",
+                    "modifiers": ["left_option", "left_control"]
+                  }
+                ],
+                "type": "basic"
+              },
               {
                 "conditions": [
                   {
@@ -3151,8 +3215,72 @@
             ]
           },
           {
-            "description": "Swap Desktops -- External Keyboard",
+            "description": "Swap Desktops / Monitors -- External Keyboard",
             "manipulators": [
+              {
+                "conditions": [
+                  {
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ],
+                    "type": "device_if"
+                  }
+                ],
+                "from": {
+                  "key_code": "comma",
+                  "modifiers": {
+                    "mandatory": ["left_command", "left_shift"],
+                    "optional": ["any"]
+                  }
+                },
+                "to": [
+                  {
+                    "key_code": "left_arrow",
+                    "modifiers": ["left_control", "left_option", "left_command"]
+                  },
+                  {
+                    "key_code": "return_or_enter",
+                    "modifiers": ["left_option", "left_control"]
+                  }
+                ],
+                "type": "basic"
+              },
+              {
+                "conditions": [
+                  {
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ],
+                    "type": "device_if"
+                  }
+                ],
+                "from": {
+                  "key_code": "period",
+                  "modifiers": {
+                    "mandatory": ["left_command", "left_shift"],
+                    "optional": ["any"]
+                  }
+                },
+                "to": [
+                  {
+                    "key_code": "right_arrow",
+                    "modifiers": ["left_control", "left_option", "left_command"]
+                  },
+                  {
+                    "key_code": "return_or_enter",
+                    "modifiers": ["left_option", "left_control"]
+                  }
+                ],
+                "type": "basic"
+              },
               {
                 "conditions": [
                   {
