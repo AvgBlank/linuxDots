@@ -33,8 +33,18 @@ require('lazy').setup {
     { 'hrsh7th/cmp-nvim-lsp' },
     { 'nvim-pack/nvim-spectre' },
     { 'hrsh7th/nvim-cmp' },
-    -- { 'catppuccin/nvim',                    name = 'catppuccin',                                                          priority = 1000 },
     { 'sindrets/diffview.nvim' },
+    -- { 'catppuccin/nvim',                    name = 'catppuccin',                                                          priority = 1000 },
+    -- {
+    --   'nobbmaestro/nvim-andromeda',
+    --   dependencies = { 'tjdevries/colorbuddy.nvim', branch = 'dev' },
+    -- },
+    {
+      "folke/tokyonight.nvim",
+      lazy = false,
+      priority = 1000,
+      opts = {},
+    },
     {
       "rose-pine/neovim",
       name = "rose-pine",
@@ -134,10 +144,6 @@ require('lazy').setup {
           }
         end,
       },
-      -- {
-      --   'nobbmaestro/nvim-andromeda',
-      --   dependencies = { 'tjdevries/colorbuddy.nvim', branch = 'dev' },
-      -- },
       {
         'mikavilpas/yazi.nvim',
         event = 'VeryLazy',
