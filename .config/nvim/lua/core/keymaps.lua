@@ -5,7 +5,25 @@ vim.g.maplocalleader = '\\'
 -- Eror Messages
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous error message' })
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next error message' })
-vim.keymap.set('n', '<leader>e', '<cmd>Trouble diagnostics toggle<CR>', { desc = 'Show all error messages' })
+vim.keymap.set('n', "<leader>xx",
+  "<cmd>Trouble diagnostics toggle<cr>",
+  { desc = "Diagnostics (Trouble)" })
+vim.keymap.set('n', "<leader>xX",
+  "<cmd>Trouble diagnostics toggle filter.buf=0<cr>",
+  { desc = "Buffer Diagnostics (Trouble)" })
+vim.keymap.set('n', "<leader>cs",
+  "<cmd>Trouble symbols toggle focus=false<cr>",
+  { desc = "Symbols (Trouble)" })
+vim.keymap.set('n', "<leader>cl",
+  "<cmd>Trouble lsp toggle focus=false win.position=right<cr>",
+  { desc = "LSP Definitions / references / ... (Trouble)" })
+vim.keymap.set('n', "<leader>xL",
+  "<cmd>Trouble loclist toggle<cr>",
+  { desc = "Location List (Trouble)" })
+vim.keymap.set('n', "<leader>xQ",
+  "<cmd>Trouble qflist toggle<cr>",
+  { desc = "Quickfix List (Trouble)" })
+
 
 -- Exit vim
 vim.keymap.set('n', '<leader>w', '<cmd>wqa<CR>', { desc = 'Save and quit' })
@@ -34,6 +52,7 @@ vim.keymap.set('n', '<C-z>', 'zh', { desc = 'Move to the Left of the Page' })
 -- Yank and Pastes
 vim.keymap.set('x', 'p', [["_dP]], { desc = 'Paste without deleting text' })
 vim.keymap.set('v', '<leader>y', '"+y', { desc = 'System Clipboard Yank' })
+vim.keymap.set("n", "<Space>y", '"+y', { noremap = true, desc = 'System Clipboard Yank' })
 vim.keymap.set('v', '<leader>p', '"+p', { desc = 'System Clipboard Paste' })
 vim.keymap.set('i', '<C-a>', '<Esc>pa', { desc = 'Paste in insert mode' })
 vim.keymap.set('n', '<CR>', 'o<Esc>', { desc = 'Create new line without exiting normal mode' })
@@ -52,12 +71,6 @@ vim.keymap.set(
   '<leader>s',
   [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]],
   { desc = 'Find and Replace' }
-)
-vim.keymap.set(
-  { 'n', 'v' },
-  '<leader>rn',
-  vim.lsp.buf.rename,
-  { desc = 'LSP Buffer Rename' }
 )
 vim.keymap.set(
   { 'n', 'v' },
@@ -291,25 +304,24 @@ local luasnip = require('luasnip')
 local opts = { silent = true }
 
 vim.keymap.set({ "i", "s" }, "<Tab>", function()
-    if luasnip.expand_or_jumpable() then
-        luasnip.expand_or_jump()
+  if luasnip.expand_or_jumpable() then
+    luasnip.expand_or_jump()
+  else
+    local copilot_keys = vim.fn["copilot#Accept"]()
+    if copilot_keys ~= "" then
+      vim.api.nvim_feedkeys(copilot_keys, "i", true)
     else
-        local copilot_keys = vim.fn["copilot#Accept"]()
-        if copilot_keys ~= "" then
-            vim.api.nvim_feedkeys(copilot_keys, "i", true)
-        else
-            vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, true, true), "n", false)
-        end
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, true, true), "n", false)
     end
+  end
 end, opts)
 
 vim.keymap.set({ "i", "s" }, "<S-Tab>", function()
-    if luasnip.jumpable(-1) then
-        luasnip.jump(-1)
-    end
+  if luasnip.jumpable(-1) then
+    luasnip.jump(-1)
+  end
 end, opts)
 
 vim.keymap.set("s", "<BS>", function()
   vim.api.nvim_feedkeys("a" .. vim.api.nvim_replace_termcodes("<BS>", true, true, true), "n", false)
 end, { silent = true })
-

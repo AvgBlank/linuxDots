@@ -12,7 +12,7 @@ function ex ()
             *.tbz2)      tar xjf $1   ;;
             *.tgz)       tar xzf $1   ;;
             *.zip)       unzip $1     ;;
-            *.Z)         uncompress $1;;
+            *.Z)         uncompress $1 ;;
             *.7z)        7z x $1      ;;
             *.deb)       ar x $1      ;;
             *.tar.xz)    tar xf $1    ;;
@@ -69,7 +69,7 @@ function tmuxthing() {
             # Get Windows username
             WIN_HOME=$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r')
             WIN_DIR="/mnt/c/Users/$WIN_HOME"
-            
+
             # Run find in both Linux and Windows home and coding directories
             selected=$(find ~ ~/Projects /mnt/c/Projects "$WIN_DIR" "$WIN_DIR/Projects" -mindepth 1 -maxdepth 2 -type d | fzf)
         else
@@ -133,7 +133,7 @@ function cdthing() {
         selected=$1
     else
         selected=$(find . -type d \( ! -path '*/.git*' -a ! -path '*/.venv*' -a ! -path '*/node_modules*' -a ! -path '*/build*' \) | fzf)
-        fi
+    fi
 
     if [[ $selected ]]; then
         cd "$selected"
@@ -162,17 +162,17 @@ function fzfAcceptHistory() {
 ########### Dir Touch ###########
 # Command to automatically create both files and folders automatically.
 function mdt() {
-  for item in "$@"; do
-    parent_dir=$(dirname "$item")
-    if [[ "$parent_dir" != "." && ! -d "$parent_dir" ]]; then
-      mkdir -p "$parent_dir"  # Create parent directories if they don't exist
-    fi
-    if [[ "$item" == */ ]]; then
-      mkdir -p "$item"  # Create directory
-    else
-      touch "$item"     # Create file
-    fi
-  done
+    for item in "$@"; do
+        parent_dir=$(dirname "$item")
+        if [[ "$parent_dir" != "." && ! -d "$parent_dir" ]]; then
+            mkdir -p "$parent_dir"  # Create parent directories if they don't exist
+        fi
+        if [[ "$item" == */ ]]; then
+            mkdir -p "$item"  # Create directory
+        else
+            touch "$item"     # Create file
+        fi
+    done
 }
 
 

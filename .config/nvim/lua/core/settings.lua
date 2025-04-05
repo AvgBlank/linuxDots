@@ -56,11 +56,24 @@ vim.api.nvim_create_autocmd('FileType', {
   pattern = '*', -- Matches all file types
   callback = function()
     -- If the filetype is NOT one of the specified ones, set to 4 spaces
-    local excluded_filetypes = { 'lua', 'c', 'cpp', 'html', 'javascript', 'javascriptreact', 'css', 'typescript', 'typescriptreact', 'json' }
+    local excluded_filetypes = { 'lua', 'c', 'cpp', 'html', 'javascript', 'javascriptreact', 'css', 'typescript',
+      'typescriptreact', 'json' }
     if not vim.tbl_contains(excluded_filetypes, vim.bo.filetype) then
       vim.opt_local.tabstop = 4
       vim.opt_local.softtabstop = 4
       vim.opt_local.shiftwidth = 4
     end
   end,
+})
+
+-- Error on lines
+vim.diagnostic.config({
+  -- Use the default configuration
+  -- virtual_lines = true;
+
+  -- Alternatively, customize specific options
+  virtual_lines = {
+    -- Only show virtual line diagnostics for the current cursor line
+    current_line = true,
+  },
 })

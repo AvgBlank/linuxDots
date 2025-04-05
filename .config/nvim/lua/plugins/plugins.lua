@@ -151,6 +151,7 @@ require('mason-lspconfig').setup {
     'clangd',
     'lua_ls',
     'eslint',
+    'ts_ls',
     'bashls',
     'emmet_language_server',
     'tailwindcss',
@@ -246,6 +247,9 @@ require('conform').setup {
     c = { 'clang-format' },
     cpp = { 'clang-format' },
     rust = { 'rustfmt' },
+    bash = { "beautysh" },
+    zsh = { "beautysh" },
+    sh = { "beautysh" },
   },
 }
 
