@@ -1,4 +1,5 @@
 {
+  "global": { "show_in_menu_bar": false },
   "profiles": [
     {
       "complex_modifications": {
@@ -3230,9 +3231,7 @@
                     "type": "device_unless"
                   },
                   {
-                    "bundle_identifiers": [
-                      "^com\\.azul\\.zulu\\.java$"
-                    ],
+                    "bundle_identifiers": ["^com\\.azul\\.zulu\\.java$"],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -5568,9 +5567,7 @@
                     "type": "device_if"
                   },
                   {
-                    "bundle_identifiers": [
-                      "^com\\.azul\\.zulu\\.java$"
-                    ],
+                    "bundle_identifiers": ["^com\\.azul\\.zulu\\.java$"],
                     "type": "frontmost_application_if"
                   }
                 ],
@@ -5602,17 +5599,13 @@
                     "type": "device_if"
                   },
                   {
-                    "bundle_identifiers": [
-                      "^com\\.azul\\.zulu\\.java$"
-                    ],
+                    "bundle_identifiers": ["^com\\.azul\\.zulu\\.java$"],
                     "type": "frontmost_application_if"
                   }
                 ],
                 "from": {
                   "key_code": "delete_or_backspace",
-                  "modifiers": {
-                    "mandatory": ["left_control"]
-                  }
+                  "modifiers": { "mandatory": ["left_control"] }
                 },
                 "to": [
                   {
@@ -5687,6 +5680,14 @@
             "product_id": 247,
             "vendor_id": 13027
           }
+        },
+        {
+          "identifiers": {
+            "is_keyboard": true,
+            "product_id": 49278,
+            "vendor_id": 1133
+          },
+          "ignore": true
         }
       ],
       "name": "Default profile",
@@ -5695,3 +5696,4 @@
     }
   ]
 }
+

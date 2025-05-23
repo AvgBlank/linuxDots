@@ -5,6 +5,7 @@ command_timeout = 1000
 add_newline = false
 
 format = """
+$username\
 $directory\
 ${custom.giturl}\
 $git_branch\
@@ -67,9 +68,16 @@ Debian = "󰣚"
 Redhat = "󱄛"
 RedHatEnterprise = "󱄛"
 
+[username]
+style_user="teal"
+style_root="red"
+format = "[ $user ]($style)"
+show_always=true
+disabled=false
+
 [directory]
-style = "sapphire"
-format = "[ $path ]($style)"
+style = "blue"
+format = "in[ $path ]($style)"
 #truncation_length = 4
 #truncation_symbol = "…/"
 
@@ -115,7 +123,7 @@ disabled = false
 style = "italic red"
 
 [git_status]
-format = '[($all_status$ahead_behind )]($style)'
+format = '[($all_status$ahead_behind) ]($style)'
 stashed = "[${count}*](green)" 
 modified = "[${count}+](yellow)" 
 deleted =  "[${count}-](red)" 
@@ -191,8 +199,8 @@ disabled = false
 
 [character]
 disabled = false
-success_symbol = ' [>](bold fg:green)'
-error_symbol = ' [x](italic bold fg:red)'
+success_symbol = " [➜](bold green)"
+error_symbol = " [✗](italic red)"
 vimcmd_symbol = ' [](bold fg:creen)'
 vimcmd_replace_one_symbol = ' [](bold fg:purple)'
 vimcmd_replace_symbol = ' [](bold fg:purple)'
