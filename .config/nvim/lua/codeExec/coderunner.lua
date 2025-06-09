@@ -20,79 +20,154 @@ local function get_command(filetype, quickRun)
     if RUNWITH == 'r' or RUNWITH == 'cr' then
       local userArgs = vim.fn.input 'If required, enter space separated arguemnts: '
       if userArgs ~= '' then
-        vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-          dir .. '" -f "' .. fileName .. '" -r "' .. RUNWITH .. '"' .. '2 ' .. userArgs)
+        vim.cmd(
+          'botright 12split | set nonu nornu | terminal '
+            .. RUN
+            .. dir
+            .. '" -f "'
+            .. fileName
+            .. '" -r "'
+            .. RUNWITH
+            .. '"'
+            .. '2 '
+            .. userArgs
+        )
       else
-        vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-          dir .. '" -f "' .. fileName .. '" -r "' .. RUNWITH .. '"')
+        vim.cmd(
+          'botright 12split | set nonu nornu | terminal '
+            .. RUN
+            .. dir
+            .. '" -f "'
+            .. fileName
+            .. '" -r "'
+            .. RUNWITH
+            .. '"'
+        )
       end
     else
-      vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-        dir .. '" -f "' .. fileName .. '" -r "' .. RUNWITH .. '"')
+      vim.cmd(
+        'botright 12split | set nonu nornu | terminal '
+          .. RUN
+          .. dir
+          .. '" -f "'
+          .. fileName
+          .. '" -r "'
+          .. RUNWITH
+          .. '"'
+      )
     end
     return true
     -- SH
   elseif filetype == 'sh' then
     RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/sh.bash -d "'
     if quickRun then
-      vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-        dir .. '" -f "' .. fileName .. '" -r "' .. ' ' .. '"')
+      vim.cmd(
+        'botright 12split | set nonu nornu | terminal ' .. RUN .. dir .. '" -f "' .. fileName .. '" -r "' .. ' ' .. '"'
+      )
     else
       local userArgs = vim.fn.input 'If required, enter space separated arguemnts: '
       if userArgs ~= '' then
-        vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-          dir .. '" -f "' .. fileName .. '" -r "' .. 'r' .. '"' .. '2 ' .. userArgs)
+        vim.cmd(
+          'botright 12split | set nonu nornu | terminal '
+            .. RUN
+            .. dir
+            .. '" -f "'
+            .. fileName
+            .. '" -r "'
+            .. 'r'
+            .. '"'
+            .. '2 '
+            .. userArgs
+        )
       else
-        vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-          dir .. '" -f "' .. fileName .. '" -r "' .. 'r' .. '"')
+        vim.cmd(
+          'botright 12split | set nonu nornu | terminal '
+            .. RUN
+            .. dir
+            .. '" -f "'
+            .. fileName
+            .. '" -r "'
+            .. 'r'
+            .. '"'
+        )
       end
     end
     return true
     -- Svelte
   elseif filetype == 'svelte' then
-    vim.cmd('botright 12split | set nonu nornu | terminal bash ~/.config/nvim/lua/codeExec/cmds/svelte.bash -d "' ..
-      dir .. '" -f "' .. fileName .. '"')
+    vim.cmd(
+      'botright 12split | set nonu nornu | terminal bash ~/.config/nvim/lua/codeExec/cmds/svelte.bash -d "'
+        .. dir
+        .. '" -f "'
+        .. fileName
+        .. '"'
+    )
     return true
     -- JavaScript
   elseif filetype == 'javascript' then
     RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/js.bash -d "'
     if quickRun then
-      vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-        dir .. '" -f "' .. fileName .. '" -r "' .. ' ' .. '"')
+      vim.cmd(
+        'botright 12split | set nonu nornu | terminal ' .. RUN .. dir .. '" -f "' .. fileName .. '" -r "' .. ' ' .. '"'
+      )
     else
       RUNWITH = vim.fn.input 'Dev(d)/Build(b)/Start(s)/Node(n)/Bun(r): '
-      vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-        dir .. '" -f "' .. fileName .. '" -r "' .. RUNWITH .. '"')
+      vim.cmd(
+        'botright 12split | set nonu nornu | terminal '
+          .. RUN
+          .. dir
+          .. '" -f "'
+          .. fileName
+          .. '" -r "'
+          .. RUNWITH
+          .. '"'
+      )
     end
     return true
     -- Typescript
   elseif filetype == 'typescript' then
     RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/ts.bash -d "'
     if quickRun then
-      vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-        dir .. '" -f "' .. fileName .. '" -r "' .. ' ' .. '"')
+      vim.cmd(
+        'botright 12split | set nonu nornu | terminal ' .. RUN .. dir .. '" -f "' .. fileName .. '" -r "' .. ' ' .. '"'
+      )
     else
       RUNWITH = vim.fn.input 'Dev(d)/Build(b)/Start(s)/TscCurrentFile(c)/Tsc(t)/Bun(r): '
-      vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-        dir .. '" -f "' .. fileName .. '" -r "' .. RUNWITH .. '"')
+      vim.cmd(
+        'botright 12split | set nonu nornu | terminal '
+          .. RUN
+          .. dir
+          .. '" -f "'
+          .. fileName
+          .. '" -r "'
+          .. RUNWITH
+          .. '"'
+      )
     end
     return true
     -- JavaScript React
   elseif filetype == 'javascriptreact' then
     RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/js.bash -d "'
-    vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-      dir .. '" -f "' .. fileName .. '" -r "' .. "d" .. '"')
+    vim.cmd(
+      'botright 12split | set nonu nornu | terminal ' .. RUN .. dir .. '" -f "' .. fileName .. '" -r "' .. 'd' .. '"'
+    )
     return true
     -- Typescript React
   elseif filetype == 'typescriptreact' then
     RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/ts.bash -d "'
-    vim.cmd('botright 12split | set nonu nornu | terminal ' .. RUN ..
-      dir .. '" -f "' .. fileName .. '" -r "' .. "d" .. '"')
+    vim.cmd(
+      'botright 12split | set nonu nornu | terminal ' .. RUN .. dir .. '" -f "' .. fileName .. '" -r "' .. 'd' .. '"'
+    )
     return true
     -- Python
   elseif filetype == 'python' then
-    vim.cmd('botright 12split | set nonu nornu | terminal bash ~/.config/nvim/lua/codeExec/cmds/py.bash -d "' ..
-      dir .. '" -f "' .. fileName .. '"')
+    vim.cmd(
+      'botright 12split | set nonu nornu | terminal bash ~/.config/nvim/lua/codeExec/cmds/py.bash -d "'
+        .. dir
+        .. '" -f "'
+        .. fileName
+        .. '"'
+    )
     return true
     -- HTML
   elseif filetype == 'html' then
@@ -122,7 +197,7 @@ local function get_command(filetype, quickRun)
         vim.cmd 'LiveServerStop'
         vim.cmd 'LiveServerStart'
       else
-        vim.cmd 'silent! !open %'
+        vim.ui.open(vim.fn.expand '%')
       end
     end
     return true

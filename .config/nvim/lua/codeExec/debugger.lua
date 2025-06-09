@@ -1,6 +1,7 @@
 -- Configuring UI
 local dap = require 'dap'
 local dapui = require 'dapui'
+local uname = vim.loop.os_uname().sysname
 dap.listeners.before.attach.dapui_config = function()
   dapui.open()
 end
@@ -43,7 +44,7 @@ dap.adapters.python = function(cb, config)
       if vim.v.shell_error ~= 0 then
         vim.api.nvim_echo({
           { 'Failed to execute command:\n', 'ErrorMsg' },
-          { out,                            'WarningMsg' },
+          { out, 'WarningMsg' },
         }, true, {})
         vim.fn.getchar()
       end
@@ -98,11 +99,16 @@ dap.configurations.python = {
 }
 
 -- C/C++/Rust
+local lldb_path
+if uname == 'Darwin' then
+  lldb_path = '/opt/homebrew/opt/llvm/bin/lldb-dap'
+else
+  lldb_path = '/usr/bin/lldb-dap-18'
+end
+
 dap.adapters.lldb = {
   type = 'executable',
-  -- command = '/usr/bin/lldb-dap', -- Arch
-  command = '/opt/homebrew/opt/llvm/bin/lldb-dap', -- Mac
-  -- command = '/usr/bin/lldb-dap-18', -- Ubuntu
+  command = lldb_path,
   name = 'lldb',
 }
 dap.configurations.c = {
@@ -155,7 +161,7 @@ dap.configurations.rust = {
     -- ... the previous config goes here ...,
     initCommands = function()
       -- Find out where to look for the pretty printer Python module
-      local rustc_sysroot = vim.fn.trim(vim.fn.system('rustc --print sysroot'))
+      local rustc_sysroot = vim.fn.trim(vim.fn.system 'rustc --print sysroot')
 
       local script_import = 'command script import "' .. rustc_sysroot .. '/lib/rustlib/etc/lldb_lookup.py"'
       local commands_file = rustc_sysroot .. '/lib/rustlib/etc/lldb_commands'
@@ -177,39 +183,38 @@ dap.configurations.rust = {
 }
 
 -- JavaScript / TypeScript
-require("dap").adapters["pwa-node"] = {
-  type = "server",
-  host = "localhost",
-  port = "${port}",
+require('dap').adapters['pwa-node'] = {
+  type = 'server',
+  host = 'localhost',
+  port = '${port}',
   executable = {
-    command = "node",
+    command = 'node',
     -- 💀 Make sure to update this path to point to your installation
     -- Install from: https://github.com/microsoft/vscode-js-debug/releases
     -- Extract to .debug/js using `tar xvzf path/to/vscode-js-debug.tar.gz`
-    args = { vim.fn.expand '~/.debug/js-debug/src/dapDebugServer.js', "${port}" },
-  }
-}
-require("dap").configurations.javascript = {
-  {
-    type = "pwa-node",
-    request = "launch",
-    name = "Launch file",
-    program = "${file}",
-    cwd = "${workspaceFolder}",
-    runtimeExecutable = "node",
+    args = { vim.fn.expand '~/.debug/js-debug/src/dapDebugServer.js', '${port}' },
   },
 }
-require("dap").configurations.typescript = {
+require('dap').configurations.javascript = {
   {
-    type = "pwa-node",
-    request = "launch",
-    name = "Launch Program",
-    program = "${workspaceFolder}/src/index.ts",
-    preLaunchTask = "tsc: build - tsconfig.json",
-    outFiles = "${workspaceFolder}/**/*.js"
-  }
+    type = 'pwa-node',
+    request = 'launch',
+    name = 'Launch file',
+    program = '${file}',
+    cwd = '${workspaceFolder}',
+    runtimeExecutable = 'node',
+  },
 }
-
+require('dap').configurations.typescript = {
+  {
+    type = 'pwa-node',
+    request = 'launch',
+    name = 'Launch Program',
+    program = '${workspaceFolder}/src/index.ts',
+    preLaunchTask = 'tsc: build - tsconfig.json',
+    outFiles = '${workspaceFolder}/**/*.js',
+  },
+}
 
 -- Running
 require('dapui').setup()

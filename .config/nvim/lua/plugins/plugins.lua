@@ -18,7 +18,7 @@ require('telescope').setup {
     },
   },
   extensions = {
-    fzf = {}
+    fzf = {},
   },
 }
 
@@ -26,7 +26,7 @@ require('telescope').setup {
 require('telescope').load_extension 'fzf'
 
 -- Harpoon
-require("telescope").load_extension('harpoon')
+require('telescope').load_extension 'harpoon'
 
 -- Color Scheme
 -- Rose Pine
@@ -41,11 +41,11 @@ vim.cmd.colorscheme 'rose-pine'
 -- Setting Transparency
 vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
 vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'none' })
-vim.api.nvim_set_hl(0, 'NormalNC', { bg = 'none' })     -- Inactive windows
-vim.api.nvim_set_hl(0, 'FloatBorder', { bg = 'none' })  -- Floating borders
+vim.api.nvim_set_hl(0, 'NormalNC', { bg = 'none' }) -- Inactive windows
+vim.api.nvim_set_hl(0, 'FloatBorder', { bg = 'none' }) -- Floating borders
 vim.api.nvim_set_hl(0, 'WinSeparator', { bg = 'none' }) -- Window separators
-vim.api.nvim_set_hl(0, 'SignColumn', { bg = 'none' })   -- Sign column (gutter)
-vim.api.nvim_set_hl(0, 'EndOfBuffer', { bg = 'none' })  -- End-of-buffer lines
+vim.api.nvim_set_hl(0, 'SignColumn', { bg = 'none' }) -- Sign column (gutter)
+vim.api.nvim_set_hl(0, 'EndOfBuffer', { bg = 'none' }) -- End-of-buffer lines
 
 -- Treesitter
 require('nvim-treesitter.configs').setup {
@@ -158,7 +158,7 @@ require('mason-lspconfig').setup {
     'astro',
     'dockerls',
     'jsonls',
-    'prismals'
+    'prismals',
   },
   handlers = {
     function(server_name)
@@ -175,19 +175,30 @@ lsp_config.lua_ls.setup {
     },
   },
 }
-lsp_config.emmet_language_server.setup({
+lsp_config.emmet_language_server.setup {
   -- on_attach = on_attach,
   capabilities = capabilities,
-  filetypes = { 'html', 'htmldjango', 'typescriptreact', 'javascriptreact', 'typescript', 'css', 'sass', 'scss', 'less', 'javascript' },
+  filetypes = {
+    'html',
+    'htmldjango',
+    'typescriptreact',
+    'javascriptreact',
+    'typescript',
+    'css',
+    'sass',
+    'scss',
+    'less',
+    'javascript',
+  },
   init_options = {
     html = {
       options = {
         -- For possible options, see: https://github.com/emmetio/emmet/blob/master/src/config.ts#L79-L267
-        ["bem.enabled"] = true,
+        ['bem.enabled'] = true,
       },
     },
-  }
-})
+  },
+}
 lsp.setup()
 
 -- Autoclose html Tags
@@ -202,7 +213,7 @@ require('lualine').setup {
 }
 
 -- Indent Blankline
-require("ibl").setup()
+require('ibl').setup()
 
 -- Oil.nvim
 -- require('oil').setup {
@@ -247,9 +258,9 @@ require('conform').setup {
     c = { 'clang-format' },
     cpp = { 'clang-format' },
     rust = { 'rustfmt' },
-    bash = { "beautysh" },
-    zsh = { "beautysh" },
-    sh = { "beautysh" },
+    bash = { 'beautysh' },
+    zsh = { 'beautysh' },
+    sh = { 'beautysh' },
   },
 }
 

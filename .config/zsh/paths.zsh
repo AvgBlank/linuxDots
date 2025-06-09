@@ -42,9 +42,16 @@ if command -v fuck &> /dev/null; then
 fi
 
 ### Bun ###
-if [ -s "$HOME/.bun/_bun" ]; then
-    source "$HOME/.bun/_bun"
+if [ -s "$HOME/.bun/" ]; then
+    [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
     export BUN_INSTALL="$HOME/.bun"
     export PATH="$BUN_INSTALL/bin:$PATH"
+fi
+
+### NVM ###
+if [ -s "$HOME/.nvm/" ]; then
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 fi
 
