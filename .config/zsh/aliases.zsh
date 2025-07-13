@@ -120,3 +120,8 @@ alias ops='optimus-manager --print-mode'
 
 ####  ArcoLinux ####
 alias skel='cp -Rf ~/.config ~/.config-backup-$(date +%Y.%m.%d-%H.%M.%S)'
+
+### WSL ###
+if [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
+    alias explorer='/mnt/c/Windows/explorer.exe'
+fi
