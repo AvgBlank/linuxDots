@@ -2693,6 +2693,34 @@
                   }
                 ],
                 "type": "basic"
+              },
+              {
+                "conditions": [
+                  {
+                    "identifiers": [
+                      {
+                        "is_keyboard": true,
+                        "product_id": 247,
+                        "vendor_id": 13027
+                      }
+                    ],
+                    "type": "device_unless"
+                  }
+                ],
+                "from": {
+                  "key_code": "f",
+                  "modifiers": {
+                    "mandatory": ["left_shift", "left_control"],
+                    "optional": ["any"]
+                  }
+                },
+                "to": [
+                  {
+                    "key_code": "return_or_enter",
+                    "modifiers": ["left_option", "left_control"]
+                  }
+                ],
+                "type": "basic"
               }
             ]
           },
