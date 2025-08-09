@@ -23,6 +23,9 @@ fi
 if [ -d "/home/linuxbrew/.linuxbrew" ]; then
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
+if [ -d "/home/linuxbrew/.linuxbrew/opt/postgresql@17" ]; then
+    export PATH="/home/linuxbrew/.linuxbrew/opt/postgresql@17/bin:$PATH"
+fi
 
 #### Homebrew Arm MacOS ####
 if [ -d "/opt/homebrew/bin" ]; then
@@ -42,16 +45,21 @@ if command -v fuck &> /dev/null; then
 fi
 
 ### Bun ###
-if [ -s "$HOME/.bun/" ]; then
+if [ -d "$HOME/.bun/" ]; then
     [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
     export BUN_INSTALL="$HOME/.bun"
     export PATH="$BUN_INSTALL/bin:$PATH"
 fi
 
 ### NVM ###
-if [ -s "$HOME/.nvm/" ]; then
+if [ -d "$HOME/.nvm/" ]; then
     export NVM_DIR="$HOME/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
     [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+fi
+
+### PGVM ###
+if [ -d "$HOME/.pgvm/" ]; then
+    source "$HOME/.pgvm/pgvm_env"
 fi
 
