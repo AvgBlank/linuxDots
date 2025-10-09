@@ -10,6 +10,7 @@ if [ ! -d "$HOME/.zsh-plugins/zsh-autosuggestions" ]; then
     mkdir -p "$HOME/.zsh-plugins"
     cd "$HOME/.zsh-plugins" || exit
     git clone https://github.com/zsh-users/zsh-autosuggestions
+    cd "$HOME"
 fi
 ## Syntax Highlighting ##
 if [ ! -d "$HOME/.zsh-plugins/zsh-syntax-highlighting" ]; then
@@ -17,6 +18,7 @@ if [ ! -d "$HOME/.zsh-plugins/zsh-syntax-highlighting" ]; then
     mkdir -p "$HOME/.zsh-plugins"
     cd "$HOME/.zsh-plugins" || exit
     git clone https://github.com/zsh-users/zsh-syntax-highlighting.git
+    cd "$HOME"
 fi
 ## History Substring Search ##
 if [ ! -d "$HOME/.zsh-plugins/zsh-history-substring-search" ]; then
@@ -24,6 +26,7 @@ if [ ! -d "$HOME/.zsh-plugins/zsh-history-substring-search" ]; then
     mkdir -p "$HOME/.zsh-plugins"
     cd "$HOME/.zsh-plugins" || exit
     git clone https://github.com/zsh-users/zsh-history-substring-search
+    cd "$HOME"
 fi
 
 
