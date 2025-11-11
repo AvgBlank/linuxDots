@@ -41,11 +41,11 @@ vim.cmd.colorscheme 'rose-pine'
 -- Setting Transparency
 vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
 vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'none' })
-vim.api.nvim_set_hl(0, 'NormalNC', { bg = 'none' }) -- Inactive windows
-vim.api.nvim_set_hl(0, 'FloatBorder', { bg = 'none' }) -- Floating borders
+vim.api.nvim_set_hl(0, 'NormalNC', { bg = 'none' })     -- Inactive windows
+vim.api.nvim_set_hl(0, 'FloatBorder', { bg = 'none' })  -- Floating borders
 vim.api.nvim_set_hl(0, 'WinSeparator', { bg = 'none' }) -- Window separators
-vim.api.nvim_set_hl(0, 'SignColumn', { bg = 'none' }) -- Sign column (gutter)
-vim.api.nvim_set_hl(0, 'EndOfBuffer', { bg = 'none' }) -- End-of-buffer lines
+vim.api.nvim_set_hl(0, 'SignColumn', { bg = 'none' })   -- Sign column (gutter)
+vim.api.nvim_set_hl(0, 'EndOfBuffer', { bg = 'none' })  -- End-of-buffer lines
 
 -- Treesitter
 require('nvim-treesitter.configs').setup {
@@ -142,8 +142,8 @@ require('cmp').setup {
     { name = 'buffer' },
   }),
 }
+
 require('mason').setup {}
-local lsp_config = require 'lspconfig'
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 require('mason-lspconfig').setup {
   ensure_installed = {
@@ -162,11 +162,11 @@ require('mason-lspconfig').setup {
   },
   handlers = {
     function(server_name)
-      require('lspconfig')[server_name].setup {}
+      vim.lsp.config(server_name)
     end,
   },
 }
-lsp_config.lua_ls.setup {
+vim.lsp.config("lua_ls", {
   settings = {
     Lua = {
       diagnostics = {
@@ -174,8 +174,8 @@ lsp_config.lua_ls.setup {
       },
     },
   },
-}
-lsp_config.emmet_language_server.setup {
+})
+vim.lsp.config("emmet_language_server", {
   -- on_attach = on_attach,
   capabilities = capabilities,
   filetypes = {
@@ -198,8 +198,7 @@ lsp_config.emmet_language_server.setup {
       },
     },
   },
-}
-lsp.setup()
+})
 
 -- Autoclose html Tags
 require('nvim-ts-autotag').setup()
