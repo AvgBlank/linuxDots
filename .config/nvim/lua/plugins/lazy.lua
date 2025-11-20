@@ -34,11 +34,11 @@ require('lazy').setup {
     { 'nvim-pack/nvim-spectre' },
     { 'hrsh7th/nvim-cmp' },
     { 'sindrets/diffview.nvim' },
-    -- { 'catppuccin/nvim',                    name = 'catppuccin',                                                          priority = 1000 },
-    -- {
-    --   'nobbmaestro/nvim-andromeda',
-    --   dependencies = { 'tjdevries/colorbuddy.nvim', branch = 'dev' },
-    -- },
+    { 'catppuccin/nvim',                    name = 'catppuccin',                                                          priority = 1000 },
+    {
+      'nobbmaestro/nvim-andromeda',
+      dependencies = { 'tjdevries/colorbuddy.nvim', branch = 'dev' },
+    },
     {
       "folke/tokyonight.nvim",
       lazy = false,

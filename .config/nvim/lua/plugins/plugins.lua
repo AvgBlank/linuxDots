@@ -30,9 +30,9 @@ require('telescope').load_extension 'harpoon'
 
 -- Color Scheme
 -- Rose Pine
-vim.cmd.colorscheme 'rose-pine'
+-- vim.cmd.colorscheme 'rose-pine'
 -- Catppuccin Mocha
--- vim.cmd.colorscheme 'catppuccin-mocha'
+vim.cmd.colorscheme 'catppuccin-mocha'
 -- vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
 -- vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'none' })
 -- Andromeda

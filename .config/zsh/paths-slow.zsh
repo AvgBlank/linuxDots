@@ -1,11 +1,11 @@
 #### Bin ####
 if [ -d "$HOME/.bin" ]; then
-    PATH="$HOME/.bin:$PATH"
+    export PATH="$HOME/.bin:$PATH"
 fi
 
 #### Local Bin ####
 if [ -d "$HOME/.local/bin" ]; then
-    PATH="$HOME/.local/bin:$PATH"
+    export PATH="$HOME/.local/bin:$PATH"
 fi
 
 #### FNM ####
@@ -16,7 +16,7 @@ fi
 
 ### Cargo ###
 if [ -d "$HOME/.cargo/bin:$PATH" ]; then
-    PATH="$HOME/.cargo/bin:$PATH"
+    export PATH="$HOME/.cargo/bin:$PATH"
 fi
 
 ### The Fuck ###

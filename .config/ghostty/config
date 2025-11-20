@@ -1,16 +1,15 @@
 font-family = "JetBrainsMono Nerd Font"
 
 # Rose Pine
-theme = "Rose Pine"
+# theme = "Rose Pine"
 # Catppuccin Mocha
-# theme = "catppuccin-mocha"
+theme = "Catppuccin Mocha"
 
 
 cursor-style = "bar"
 cursor-style-blink = "true"
 
 background-opacity = "0.8"
-background-blur = "true"
 
 # Macos option as alt
 macos-option-as-alt = "true"
