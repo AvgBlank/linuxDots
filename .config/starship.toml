@@ -144,55 +144,10 @@ bisect = "bisect"
 am = "am"	
 am_or_rebase = "am/rebase"
 
-
-[nodejs]
-symbol = ""
-format = '[$symbol( $version) ]($style)'
-
-[c]
-symbol = ""
-format = '[$symbol( $version) ]($style)'
-
-[rust]
-symbol = ""
-format = '[$symbol( $version) ]($style)'
-
-[golang]
-symbol = ""
-format = '[$symbol( $version) ]($style)'
-
-[php]
-symbol = ""
-format = '[$symbol( $version) ]($style)'
-
-[java]
-symbol = " "
-format = '[$symbol( $version) ]($style)'
-
-[kotlin]
-symbol = ""
-format = '[$symbol( $version) ]($style)'
-
-[haskell]
-symbol = ""
-format = '[$symbol( $version) ]($style)'
-
-[python]
-symbol = ""
-format = '[${symbol} (${version} )(\($virtualenv\) )]($style)'
-python_binary = ["./venv/bin/python", "python", "python3", "python2"]
-
-
-[docker_context]
-symbol = ""
-format = '[$symbol( $version) ]($style)'
-
-
 [time]
-disabled = true
+disabled = false
 time_format = "%R"
-style = "bg:peach"
-format = '[[  $time ](fg:mantle bg:foam)]($style)'
+format = '[[ $time](fg:peach)]($style)'
 
 [line_break]
 disabled = false

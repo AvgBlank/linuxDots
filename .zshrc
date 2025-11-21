@@ -14,9 +14,11 @@ source ~/.config/zsh/paths-fast.zsh
 source ~/.config/zsh/aliases.zsh
 source ~/.config/zsh/funcs.zsh
 source ~/.config/zsh/keymaps.zsh
-source ~/.config/zsh/startup.zsh
 
 ########### Plugins and Paths (Deferred) ###########
 zsh-defer source ~/.config/zsh/paths-slow.zsh
 zsh-defer source ~/.config/zsh/plugins.zsh
 
+
+########### Startup (Has to run in the end) ###########
+source ~/.config/zsh/startup.zsh
