@@ -18,3 +18,8 @@ if [ -d "/opt/homebrew/bin" ]; then
     export LIBRARY_PATH="/opt/homebrew/lib:$LIBRARY_PATH"
 fi
 
+### Cargo ###
+if [ -d "$HOME/.cargo/bin" ]; then
+    export PATH="$HOME/.cargo/bin:$PATH"
+fi
+

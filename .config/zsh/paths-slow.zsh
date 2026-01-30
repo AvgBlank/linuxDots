@@ -14,11 +14,6 @@ if [ -d "$HOME/.local/share/fnm" ]; then
     eval "`fnm env`"
 fi
 
-### Cargo ###
-if [ -d "$HOME/.cargo/bin:$PATH" ]; then
-    export PATH="$HOME/.cargo/bin:$PATH"
-fi
-
 ### The Fuck ###
 if command -v fuck &> /dev/null; then
     eval $(thefuck --alias)

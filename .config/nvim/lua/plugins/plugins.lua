@@ -48,23 +48,15 @@ vim.api.nvim_set_hl(0, 'SignColumn', { bg = 'none' })   -- Sign column (gutter)
 vim.api.nvim_set_hl(0, 'EndOfBuffer', { bg = 'none' })  -- End-of-buffer lines
 
 -- Treesitter
-require('nvim-treesitter.configs').setup {
-  -- A list of parser names, or "all" (the listed parsers MUST always be installed)
+require('nvim-treesitter').setup {
   ensure_installed = { 'c', 'lua', 'vim', 'markdown', 'cpp', 'javascript', 'typescript', 'python' },
-
-  -- Install parsers synchronously (only applied to `ensure_installed`)
-  sync_install = false,
-
-  -- Automatically install missing parsers when entering buffer
-  -- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
-  auto_install = true,
-
-  highlight = {
-    enable = true,
-
-    additional_vim_regex_highlighting = false,
-  },
 }
+
+-- Enable treesitter highlighting for all filetypes with installed parsers
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = { 'c', 'lua', 'vim', 'markdown', 'cpp', 'javascript', 'typescript', 'python' },
+  callback = function() vim.treesitter.start() end,
+})
 
 -- Auto Close Bracket
 require('nvim-autopairs').setup {
