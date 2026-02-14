@@ -38,44 +38,21 @@ fi
 alias grep='grep --color=auto'
 
 
-#### Package Managers ####
-### Pacman ###
-## Aliasing Pacman ##
-alias pacman='sudo pacman --color auto'
-alias sps='sudo pacman -S $1 --noconfirm'
-alias spss='sudo pacman -Ss'
-alias spr='sudo pacman -R $1 --noconfirm'
-alias spq='sudo pacman -Q'
-alias spu='sudo pacman -Syu --noconfirm'
+#### Arch Linux ####
 ## Unlocking Pacman ##
-alias punlock='sudo rm /var/lib/pacman/db.lck'
+if command -v pacman &> /dev/null; then
+    alias punlock='sudo rm /var/lib/pacman/db.lck'
+fi
 ## Using Yay as Paru ##
 if command -v paru &> /dev/null; then
     alias yay='paru'
 fi
-## Aliasing Yay ##
-alias yys='yay -S $1 --noconfirm'
-alias yyss='yay -Ss'
-alias yyr='yay -R $1 --noconfirm'
-alias yyq='yay -Q'
-alias yyu='yay -Syu --noconfirm'
-## Updating the System ##
-alias update='sudo pacman -Syu --noconfirm'
-alias upall='yay -Syu --noconfirm'
-
-### HomeBrew ###
-## Aliasing brew ##
-alias hbs='brew install $1'
-alias hbss='brew search $1'
-alias hbr='brew uninstall $1'
-alias hbq='brew list'
-alias hbu='brew upgrade'
-
-
-#### Fastest Mirrors ####
-alias mirror="sudo reflector -f 30 -l 30 --number 10 --verbose --save /etc/pacman.d/mirrorlist"
-alias mirrors="sudo reflector --latest 30 --number 10 --sort score --save /etc/pacman.d/mirrorlist"
-alias mirrorlist="sudo reflector --age 6 --latest 21 --fastest 21 --threads 21 --sort rate --protocol https --save /etc/pacman.d/mirrorlist"
+## Reflector Mirorrs ##
+if command -v reflector &> /dev/null; then
+    alias mirror="sudo reflector -f 30 -l 30 --number 10 --verbose --save /etc/pacman.d/mirrorlist"
+    alias mirrors="sudo reflector --latest 30 --number 10 --sort score --save /etc/pacman.d/mirrorlist"
+    alias mirrorlist="sudo reflector --age 6 --latest 21 --fastest 21 --threads 21 --sort rate --protocol https --save /etc/pacman.d/mirrorlist"
+fi
 
 
 #### Miscellaneous ####
@@ -91,8 +68,6 @@ alias python="python3"
 alias py="python3"
 ## Emacs ##
 alias emacs="emacsclient -c -a 'emacs'"
-## Iso ##
-alias iso="cat /etc/dev-rel | awk -F '=' '/ISO/ {print $2}'"
 ## Shutdown/Reboot ##
 alias ssn="sudo shutdown now"
 alias sr="sudo reboot"
@@ -101,14 +76,6 @@ alias sfr="sudo systemctl reboot --firmware-setup"
 alias fucking="sudo"
 ## Exit Terminal ##
 alias kys="echo 'Fakyu, I also have feelings. ☹️'; sleep 1; exit"
-
-
-####  Git ####
-alias gss="git status"
-alias ga="git add ."
-alias gc="git commit -m"
-alias gp="git push -u origin"
-alias gpl="git pull"
 
 
 ####  Optimus Manager ####

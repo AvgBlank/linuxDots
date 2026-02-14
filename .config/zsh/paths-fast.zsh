@@ -1,3 +1,13 @@
+#### Bin ####
+if [ -d "$HOME/.bin" ]; then
+    export PATH="$HOME/.bin:$PATH"
+fi
+
+#### Local Bin ####
+if [ -d "$HOME/.local/bin" ]; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
 #### Nix Packages ####
 if [ -f $HOME/.nix-profile/etc/profile.d/nix.sh ]; then
     source $HOME/.nix-profile/etc/profile.d/nix.sh
