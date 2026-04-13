@@ -116,6 +116,9 @@ symbol = "[](black) "
 style = "fg:lavender bg:black"
 format =  '  on [$symbol$branch]($style)[](black) '
 
+[aws]
+disabled = true
+
 [cmd_duration]
 min_time = 4
 show_milliseconds = true
