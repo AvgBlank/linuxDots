@@ -71,10 +71,10 @@ function tmuxthing() {
             WIN_DIR="/mnt/c/Users/$WIN_HOME"
 
             # Run find in both Linux and Windows home and coding directories
-            selected=$( (find ~ ~/Projects "$WIN_DIR" "$WIN_DIR/Projects" -mindepth 1 -maxdepth 1 -type d; find ~/Organizations "$WIN_DIR/Organizations" -mindepth 1 -maxdepth 2 -type d) | fzf )
+            selected=$( (find ~ ~/projects "$WIN_DIR" "$WIN_DIR/Projects" -mindepth 1 -maxdepth 1 -type d; find ~/organizations "$WIN_DIR/Organizations" -mindepth 1 -maxdepth 2 -type d) | fzf )
         else
             # Run find in Linux home and coding directories
-            selected=$( (find ~ ~/Projects -mindepth 1 -maxdepth 1 -type d; find ~/Organizations -mindepth 1 -maxdepth 2 -type d) | fzf )
+            selected=$( (find ~ ~/projects -mindepth 1 -maxdepth 1 -type d; find ~/organizations -mindepth 1 -maxdepth 2 -type d) | fzf )
         fi
     fi
 

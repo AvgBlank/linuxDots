@@ -48,9 +48,7 @@ vim.api.nvim_set_hl(0, 'SignColumn', { bg = 'none' })   -- Sign column (gutter)
 vim.api.nvim_set_hl(0, 'EndOfBuffer', { bg = 'none' })  -- End-of-buffer lines
 
 -- Treesitter
-require('nvim-treesitter').setup {
-  ensure_installed = { 'c', 'lua', 'vim', 'markdown', 'cpp', 'javascript', 'typescript', 'python' },
-}
+require('nvim-treesitter').install { 'c', 'lua', 'vim', 'markdown', 'cpp', 'javascript', 'typescript', 'python' }
 
 -- Enable treesitter highlighting for all filetypes with installed parsers
 vim.api.nvim_create_autocmd('FileType', {
@@ -181,6 +179,7 @@ vim.lsp.config("emmet_language_server", {
     'scss',
     'less',
     'javascript',
+    'rust',
   },
   init_options = {
     html = {
@@ -246,6 +245,7 @@ require('conform').setup {
     html = { 'prettierd', 'prettier', stop_after_first = true },
     htmldjango = { 'prettierd', 'prettier', stop_after_first = true },
     css = { 'prettierd', 'prettier', stop_after_first = true },
+    yaml = { 'prettierd', 'prettier', stop_after_first = true },
     c = { 'clang-format' },
     cpp = { 'clang-format' },
     rust = { 'rustfmt' },
