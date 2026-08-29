@@ -6,7 +6,7 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
   if vim.v.shell_error ~= 0 then
     vim.api.nvim_echo({
       { 'Failed to clone lazy.nvim:\n', 'ErrorMsg' },
-      { out,                            'WarningMsg' },
+      { out, 'WarningMsg' },
       { '\nPress any key to exit...' },
     }, true, {})
     vim.fn.getchar()
@@ -28,38 +28,46 @@ require('lazy').setup {
     { 'windwp/nvim-ts-autotag' },
     { 'williamboman/mason.nvim' },
     { 'williamboman/mason-lspconfig.nvim' },
-    { 'VonHeikemen/lsp-zero.nvim',          branch = 'v3.x' },
+    { 'VonHeikemen/lsp-zero.nvim', branch = 'v3.x' },
     { 'neovim/nvim-lspconfig' },
     { 'hrsh7th/cmp-nvim-lsp' },
     { 'nvim-pack/nvim-spectre' },
     { 'hrsh7th/nvim-cmp' },
     { 'sindrets/diffview.nvim' },
-    { 'catppuccin/nvim',                    name = 'catppuccin',                                                          priority = 1000 },
+    {
+      'catppuccin/nvim',
+      name = 'catppuccin',
+      priority = 1000,
+    },
     {
       'nobbmaestro/nvim-andromeda',
       dependencies = { 'tjdevries/colorbuddy.nvim', branch = 'dev' },
     },
     {
-      "folke/tokyonight.nvim",
+      'folke/tokyonight.nvim',
       lazy = false,
       priority = 1000,
       opts = {},
     },
     {
-      "rose-pine/neovim",
-      name = "rose-pine",
-      lazy = false,    -- Ensures it loads immediately
+      'rose-pine/neovim',
+      name = 'rose-pine',
+      lazy = false, -- Ensures it loads immediately
       priority = 1000, -- Load before other plugins
       config = function()
-        require("rose-pine").setup({
-          dark_variant = "main", -- Options: "main", "moon", "dawn"
+        require('rose-pine').setup {
+          dark_variant = 'main', -- Options: "main", "moon", "dawn"
           integrations = {
-            bufferline = true,   -- Enables bufferline colors
-          }
-        })
-      end
+            bufferline = true, -- Enables bufferline colors
+          },
+        }
+      end,
     },
-    { 'L3MON4D3/LuaSnip', dependencies = { 'saadparwaiz1/cmp_luasnip', 'rafamadriz/friendly-snippets' } },
+    {
+      'L3MON4D3/LuaSnip',
+      dependencies = { 'saadparwaiz1/cmp_luasnip', 'rafamadriz/friendly-snippets' },
+      build = 'make install_jsregexp',
+    },
     {
       'vi013t/easycolor.nvim',
       dependencies = { 'stevearc/dressing.nvim' },
@@ -163,34 +171,34 @@ require('lazy').setup {
         },
       },
       {
-        "akinsho/bufferline.nvim",
-        dependencies = { "nvim-tree/nvim-web-devicons" },
+        'akinsho/bufferline.nvim',
+        dependencies = { 'nvim-tree/nvim-web-devicons' },
         lazy = false,
         config = function()
-          require("bufferline").setup({
+          require('bufferline').setup {
             options = {
-              mode = "tabs",
+              mode = 'tabs',
               show_buffer_close_icons = true,
               show_close_icon = false,
-              separator_style = "thin",
+              separator_style = 'thin',
               tab_size = 14,
               always_show_bufferline = false,
               themable = true,
-              numbers = "ordinal",
+              numbers = 'ordinal',
               truncate_names = true,
             },
-          })
+          }
         end,
       },
       {
-        "folke/flash.nvim",
-        event = "VeryLazy",
+        'folke/flash.nvim',
+        event = 'VeryLazy',
         opts = {
           modes = {
             search = {
               enabled = true,
               keymaps = {
-                ["<C-c>"] = "cancel", -- Allow Ctrl-C to cancel search
+                ['<C-c>'] = 'cancel', -- Allow Ctrl-C to cancel search
               },
             },
           },
