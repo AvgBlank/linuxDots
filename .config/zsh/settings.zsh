@@ -21,3 +21,6 @@ setopt HIST_SAVE_NO_DUPS
 ########### Setting Locale ###########
 export LC_CTYPE="en_US.utf8"
 export LC_ALL="en_US.UTF-8"
+
+########### Additional Configurations ###########
+export XDG_CONFIG_HOME="$HOME/.config"

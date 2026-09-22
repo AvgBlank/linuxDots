@@ -14,27 +14,11 @@ bindkey '^R' fzfHistory
 # Ctrl + R to just open history search.
 zle -N fzfAcceptHistory
 bindkey '^U' fzfAcceptHistory
-
 # Ctrl + F to open tmux script
-tmuxthing_widget() {
-  BUFFER="tmuxthing"
-  zle accept-line
-}
-zle -N tmuxthing_widget
-bindkey '^F' tmuxthing_widget
+bindkey -s '^F' 'tmuxthing\n'
 # Ctrl + T to open vim script
-vimthing_widget() {
-  vimthing
-  zle reset-prompt
-}
-zle -N vimthing_widget
-bindkey '^T' vimthing_widget
+bindkey -s '^T' 'vimthing\n'
 # Ctrl + Y to open yazi script
-yazithing_widget() {
-  yazithing
-  zle reset-prompt
-}
-zle -N yazithing_widget
-bindkey '^Y' yazithing_widget
+bindkey -s '^Y' 'yazithing\n'
 # Ctrl + E to open change dir script
 bindkey -s '^E' 'cdthing\n'

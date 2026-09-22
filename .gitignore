@@ -5,7 +5,6 @@
 .config/google-chrome
 .config/htop
 test
-.config/lazygit
 .local/bin
 .local/lib/python3.12
 automatic_backups

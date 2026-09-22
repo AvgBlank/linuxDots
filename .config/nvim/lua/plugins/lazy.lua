@@ -164,7 +164,7 @@ require('lazy').setup {
       },
       {
         {
-          'barrett-ruth/live-server.nvim',
+          'https://forge.barrettruth.com/barrettruth/live-server.nvim',
           build = 'npm install -g live-server',
           cmd = { 'LiveServerStart', 'LiveServerStop' },
           config = true,

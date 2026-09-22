@@ -137,18 +137,20 @@ require('mason').setup {}
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 require('mason-lspconfig').setup {
   ensure_installed = {
+    -- Python
     'pyright',
-    'clangd',
-    'lua_ls',
+    'ruff',
+
+    -- JavaScript/CSS/HTML/Web Dev
     'eslint',
     'ts_ls',
-    'bashls',
     'emmet_language_server',
-    'tailwindcss',
-    'astro',
+
+    -- Other languages I haven't bothered labelling yet
+    'clangd',
+    'lua_ls',
+    'bashls',
     'dockerls',
-    'jsonls',
-    'prismals',
   },
   handlers = {
     function(server_name)
@@ -156,6 +158,15 @@ require('mason-lspconfig').setup {
     end,
   },
 }
+
+-- Setup Lsp Configs
+-- -- JavaScript/CSS/HTML/Web Dev
+vim.lsp.config("stylelint_lsp", {})
+vim.lsp.config("astro", {})
+vim.lsp.config("tailwindcss", {})
+vim.lsp.config("prismals", {})
+vim.lsp.config("jsonls", {})
+
 vim.lsp.config("lua_ls", {
   settings = {
     Lua = {
@@ -197,9 +208,9 @@ require('nvim-ts-autotag').setup()
 -- Lua line
 require('lualine').setup {
   -- Rose Pine
-  options = { theme = 'rose-pine' },
+  -- options = { theme = 'rose-pine' },
   -- Catppuccin Mocha
-  -- options = { theme = 'catppuccin-mocha' },
+  options = { theme = 'catppuccin-mocha' },
 }
 
 -- Indent Blankline
@@ -234,7 +245,7 @@ require('conform').setup {
 
   formatters_by_ft = {
     lua = { 'stylua' },
-    python = { 'black' },
+    python = { 'ruff_format', 'black', stop_after_first = true },
     javascript = { 'prettierd', 'prettier', stop_after_first = true },
     typescript = { 'prettierd', 'prettier', stop_after_first = true },
     javascriptreact = { 'prettierd', 'prettier', stop_after_first = true },
