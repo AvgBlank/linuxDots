@@ -3,7 +3,7 @@ local function get_command(filetype, quickRun)
   local dir = vim.fn.expand '%:p:h'
   local fileName = vim.fn.expand '%:t'
   vim.cmd 'w'
-  -- C/C++
+  -- C/C++/Rust
   if filetype == 'cpp' or filetype == 'c' or filetype == 'rust' then
     if filetype == 'cpp' then
       RUN = 'bash ~/.config/nvim/lua/codeExec/cmds/cpp.bash -d "'
