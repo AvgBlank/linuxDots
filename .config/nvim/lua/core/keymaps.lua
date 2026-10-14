@@ -34,10 +34,6 @@ vim.keymap.set('v', '<leader>q', '<cmd>qa!<CR>', { desc = 'Quit without saving v
 -- Splits
 vim.keymap.set('n', '<leader>c', '<C-w>c', { desc = 'Close highlighted split' })
 vim.keymap.set('n', '<leader>C', '<cmd>only<CR><cmd>tabonly<CR>', { desc = 'Close everything but highlighted split' })
-vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move to left split' })
-vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move to right split' })
-vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move to top split' })
-vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move to bottom split' })
 
 -- Move Up and Down in visual mode
 vim.keymap.set('v', 'K', ":m '<-2<CR>gv=gv", { desc = 'Move highlighted line up in visual mode' })

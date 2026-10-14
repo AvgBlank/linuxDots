@@ -6,7 +6,7 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
   if vim.v.shell_error ~= 0 then
     vim.api.nvim_echo({
       { 'Failed to clone lazy.nvim:\n', 'ErrorMsg' },
-      { out, 'WarningMsg' },
+      { out,                            'WarningMsg' },
       { '\nPress any key to exit...' },
     }, true, {})
     vim.fn.getchar()
@@ -28,7 +28,7 @@ require('lazy').setup {
     { 'windwp/nvim-ts-autotag' },
     { 'williamboman/mason.nvim' },
     { 'williamboman/mason-lspconfig.nvim' },
-    { 'VonHeikemen/lsp-zero.nvim', branch = 'v3.x' },
+    { 'VonHeikemen/lsp-zero.nvim',          branch = 'v3.x' },
     { 'neovim/nvim-lspconfig' },
     { 'hrsh7th/cmp-nvim-lsp' },
     { 'nvim-pack/nvim-spectre' },
@@ -52,16 +52,34 @@ require('lazy').setup {
     {
       'rose-pine/neovim',
       name = 'rose-pine',
-      lazy = false, -- Ensures it loads immediately
+      lazy = false,    -- Ensures it loads immediately
       priority = 1000, -- Load before other plugins
       config = function()
         require('rose-pine').setup {
           dark_variant = 'main', -- Options: "main", "moon", "dawn"
           integrations = {
-            bufferline = true, -- Enables bufferline colors
+            bufferline = true,   -- Enables bufferline colors
           },
         }
       end,
+    },
+    {
+      "christoomey/vim-tmux-navigator",
+      cmd = {
+        "TmuxNavigateLeft",
+        "TmuxNavigateDown",
+        "TmuxNavigateUp",
+        "TmuxNavigateRight",
+        "TmuxNavigatePrevious",
+        "TmuxNavigatorProcessList",
+      },
+      keys = {
+        { "<c-h>",  "<cmd><C-U>TmuxNavigateLeft<cr>" },
+        { "<c-j>",  "<cmd><C-U>TmuxNavigateDown<cr>" },
+        { "<c-k>",  "<cmd><C-U>TmuxNavigateUp<cr>" },
+        { "<c-l>",  "<cmd><C-U>TmuxNavigateRight<cr>" },
+        { "<c-\\>", "<cmd><C-U>TmuxNavigatePrevious<cr>" },
+      },
     },
     {
       'L3MON4D3/LuaSnip',

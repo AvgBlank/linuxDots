@@ -5,11 +5,13 @@ font-family = "JetBrainsMono Nerd Font"
 # Catppuccin Mocha
 theme = "Catppuccin Mocha"
 
-
+# Cursor style
 cursor-style = "bar"
 cursor-style-blink = "true"
 
-background-opacity = "0.8"
+# Background Opacity
+background-opacity = "0.9"
+background-blur = "true"
 
 # Macos option as alt
 macos-option-as-alt = "true"

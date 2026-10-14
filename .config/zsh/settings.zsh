@@ -24,3 +24,5 @@ export LC_ALL="en_US.UTF-8"
 
 ########### Additional Configurations ###########
 export XDG_CONFIG_HOME="$HOME/.config"
+# Increase open file descriptor limit
+ulimit -Sn 65536

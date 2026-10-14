@@ -1133,7 +1133,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1171,7 +1172,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1209,7 +1211,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1244,7 +1247,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1279,7 +1283,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1314,7 +1319,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1349,7 +1355,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1384,7 +1391,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1419,7 +1427,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1454,7 +1463,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1489,7 +1499,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1524,7 +1535,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1559,7 +1571,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1594,7 +1607,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1629,7 +1643,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1664,7 +1679,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1699,7 +1715,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1734,7 +1751,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1769,7 +1787,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1804,7 +1823,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1839,7 +1859,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1874,7 +1895,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1909,7 +1931,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -1944,7 +1967,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4141,7 +4165,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4179,7 +4204,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4217,7 +4243,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4252,7 +4279,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4287,7 +4315,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4322,7 +4351,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4357,7 +4387,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4392,7 +4423,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4427,7 +4459,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4462,7 +4495,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4497,7 +4531,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4532,7 +4567,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4567,7 +4603,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4602,7 +4639,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4637,7 +4675,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4672,7 +4711,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4707,7 +4747,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4742,7 +4783,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4777,7 +4819,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4812,7 +4855,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4847,7 +4891,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4882,7 +4927,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4917,7 +4963,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
@@ -4952,7 +4999,8 @@
                       "^com\\.google\\.Chrome$",
                       "^com\\.microsoft\\.edgemac$",
                       "^com\\.brave\\.Browser$",
-                      "^app\\.zen-browser\\.zen$"
+                      "^app\\.zen-browser\\.zen$",
+                      "^app\\.floorp\\.Floorp$"
                     ],
                     "type": "frontmost_application_if"
                   }
