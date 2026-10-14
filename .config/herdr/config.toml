@@ -160,6 +160,13 @@ type = "pane"
 command = 'sh "$HOME/.config/herdr/helpers/lazygit.sh"'
 description = "open lazygit"
 
+# Bind Prefix + m to open the plugin manager
+[[keys.command]]
+key = "prefix+m"
+type = "plugin_action"
+command = "ray.plugin-manager.open"
+description = "open plugin manager"
+
 # Smart pane switching with awareness of Vim splits
 # Bind Ctrl + h/l to move between panes or pass through to Vim/Neovim/fzf
 [[keys.command]]
