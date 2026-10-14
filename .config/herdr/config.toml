@@ -1,0 +1,406 @@
+# Disable first-run setup
+onboarding = false
+
+[ui]
+# Show agent states using symbols
+status_indicators = "symbols"
+
+# Hide the sidebar completely when collapsed
+sidebar_collapsed_mode = "hidden"
+
+# Enable mouse mode and copy selected text automatically
+mouse_capture = true
+copy_on_select = true
+
+# Disable confirmation when closing workspaces
+confirm_close = false
+
+# Create tabs without asking for a name
+prompt_new_tab_name = false
+
+# Show the tab bar at the bottom
+tab_bar_position = "bottom"
+
+# Show workspace number and name, time, and date on the right
+# The Python helper also updates tab names from their running processes
+tab_bar_right = [
+  { type = "command", command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" status', interval_seconds = 1, timeout_seconds = 2 },
+  { type = "datetime", format = "%H:%M %d-%b-%y" },
+]
+tab_bar_right_separator = " | "
+
+[ui.sound]
+# Enable notification sounds
+enabled = true
+
+[theme]
+# Use the terminal's colours without automatic theme switching
+name = "terminal"
+auto_switch = false
+
+[theme.custom]
+# Use Mocha Mantle for the bar and Surface 0 for inactive tabs
+# These shared colours also apply to other Herdr controls
+panel_bg = "#181825"
+surface0 = "#313244"
+
+# Use Overlay 2 for separators and Lavender for status text
+overlay0 = "#9399b2"
+overlay1 = "#b4befe"
+
+# Highlight the active tab in Mauve with dark text
+accent = "#cba6f7"
+
+[ui.toast]
+# Send notifications through the operating system
+delivery = "system"
+
+[terminal]
+# Use zsh for new panes
+default_shell = "zsh"
+
+# Open new panes and tabs in the current pane's directory
+new_cwd = "follow"
+
+# Enable image rendering for yazi
+kitty_graphics = true
+
+[keys]
+# Change prefix from Ctrl + b to Ctrl + a
+prefix = "ctrl+a"
+
+# Bind Prefix + d to detach without stopping the session
+detach = "prefix+d"
+
+# Bind Prefix + p to toggle the sidebar
+toggle_sidebar = "prefix+p"
+
+# Reload Herdr config using Prefix + r
+reload_config = "prefix+r"
+
+# Bind Prefix + Shift + r to resize panes
+resize_mode = "prefix+shift+r"
+
+# Bind Prefix + s to native Go To instead of sidebar navigation
+workspace_picker = ""
+goto = "prefix+s"
+
+# Bind Prefix + ( and ) to cycle through open workspaces
+previous_workspace = "prefix+("
+next_workspace = "prefix+)"
+
+# Bind Prefix + - and = to cycle through open agents
+previous_agent = "prefix+-"
+next_agent = "prefix+="
+
+# Bind Prefix + Alt + Shift + 1–9 to focus agents in their current panel order
+focus_agent = "prefix+alt+shift+1..9"
+
+# Bind Prefix + g to open an existing Git worktree
+open_worktree = "prefix+g"
+
+# Bind Prefix + Shift + g to create a Git worktree
+new_worktree = "prefix+shift+g"
+
+# Bind Prefix + Shift + x to delete a worktree checkout after confirmation
+# The Git branch is kept; Prefix + q only closes the workspace
+remove_worktree = "prefix+shift+x"
+
+# Use Ctrl + h, j, k, l for pane movement in sidebar navigation
+# These bindings do not change movement inside native Go To
+navigate_pane_up = "ctrl+k"
+navigate_pane_down = "ctrl+j"
+navigate_pane_left = "ctrl+h"
+navigate_pane_right = "ctrl+l"
+
+# Bind Prefix + $ and Prefix + comma to rename workspaces and tabs
+rename_workspace = "prefix+$"
+rename_tab = "prefix+comma"
+
+# Bind Prefix + Left/Right to switch tabs
+next_tab = ["prefix+n", "prefix+right"]
+previous_tab = "prefix+left"
+
+# Use helper commands below for persistent tab slots
+move_tab_previous = ""
+move_tab_next = ""
+new_tab = ""
+
+# Disable positional selection; helper commands select slots 1–9
+switch_tab = ""
+
+# Bind Prefix + & to close the current tab
+close_tab = "prefix+ampersand"
+
+# Bind Prefix + % and double quote to split panes right and down
+split_vertical = "prefix+%"
+split_horizontal = 'prefix+"'
+
+# Bind Prefix + q to close the current workspace
+close_workspace = "prefix+q"
+
+# Bind Prefix + z to zoom the current pane
+zoom = "prefix+z"
+
+# Bind Prefix + ^ and semicolon to return to the previous pane
+last_pane = ["prefix+^", "prefix+semicolon"]
+
+# Bind Ctrl + f to open herdrthing (project picker)
+# The temporary pane closes after selection or cancellation
+[[keys.command]]
+key = "ctrl+f"
+type = "pane"
+command = "zsh -c 'source \"$HOME/.config/zsh/funcs.zsh\"; herdrthing'"
+description = "pick project directory"
+
+# Bind Prefix + Alt + g to open lazygit in a full-size native popup
+[[keys.command]]
+key = "prefix+alt+g"
+type = "pane"
+command = 'sh "$HOME/.config/herdr/helpers/lazygit.sh"'
+description = "open lazygit"
+
+# Smart pane switching with awareness of Vim splits
+# Bind Ctrl + h/l to move between panes or pass through to Vim/Neovim/fzf
+[[keys.command]]
+key = "ctrl+h"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" navigate left ctrl+h'
+description = "focus left split or pane"
+
+[[keys.command]]
+key = "ctrl+l"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" navigate right ctrl+l'
+description = "focus right split or pane"
+
+# Bind Prefix + Alt + 1–9 to select the displayed workspace number
+[[keys.command]]
+key = "prefix+alt+1"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" workspace 1'
+description = "select workspace 1"
+
+[[keys.command]]
+key = "prefix+alt+2"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" workspace 2'
+description = "select workspace 2"
+
+[[keys.command]]
+key = "prefix+alt+3"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" workspace 3'
+description = "select workspace 3"
+
+[[keys.command]]
+key = "prefix+alt+4"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" workspace 4'
+description = "select workspace 4"
+
+[[keys.command]]
+key = "prefix+alt+5"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" workspace 5'
+description = "select workspace 5"
+
+[[keys.command]]
+key = "prefix+alt+6"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" workspace 6'
+description = "select workspace 6"
+
+[[keys.command]]
+key = "prefix+alt+7"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" workspace 7'
+description = "select workspace 7"
+
+[[keys.command]]
+key = "prefix+alt+8"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" workspace 8'
+description = "select workspace 8"
+
+[[keys.command]]
+key = "prefix+alt+9"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" workspace 9'
+description = "select workspace 9"
+
+# Bind Alt + u to return to the repository's primary checkout
+[[keys.command]]
+key = "alt+u"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr_worktrees.py" root'
+description = "focus root repository"
+
+# Bind Alt + i/o/p to persistent worktree slots 1/2/3
+# Empty slots offer existing checkouts or creation with Herdr's default name
+[[keys.command]]
+key = "alt+i"
+type = "popup"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr_worktrees.py" 1'
+description = "open or assign worktree slot 1"
+width = "80%"
+height = "60%"
+
+[[keys.command]]
+key = "alt+o"
+type = "popup"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr_worktrees.py" 2'
+description = "open or assign worktree slot 2"
+width = "80%"
+height = "60%"
+
+[[keys.command]]
+key = "alt+p"
+type = "popup"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr_worktrees.py" 3'
+description = "open or assign worktree slot 3"
+width = "80%"
+height = "60%"
+
+# Bind Prefix + c to create a tab in the lowest free slot
+[[keys.command]]
+key = "prefix+c"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" new-tab'
+description = "create tab in first free slot"
+
+# Bind Prefix + < and > to move or swap the current tab by slot
+[[keys.command]]
+key = "prefix+<"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" move-tab left'
+description = "move tab one slot left"
+
+[[keys.command]]
+key = "prefix+>"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" move-tab right'
+description = "move tab one slot right"
+
+# Bind Prefix + 1–9 to select existing tab slots without creating tabs
+[[keys.command]]
+key = "prefix+1"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" select-tab 1'
+description = "select tab slot 1"
+
+[[keys.command]]
+key = "prefix+2"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" select-tab 2'
+description = "select tab slot 2"
+
+[[keys.command]]
+key = "prefix+3"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" select-tab 3'
+description = "select tab slot 3"
+
+[[keys.command]]
+key = "prefix+4"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" select-tab 4'
+description = "select tab slot 4"
+
+[[keys.command]]
+key = "prefix+5"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" select-tab 5'
+description = "select tab slot 5"
+
+[[keys.command]]
+key = "prefix+6"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" select-tab 6'
+description = "select tab slot 6"
+
+[[keys.command]]
+key = "prefix+7"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" select-tab 7'
+description = "select tab slot 7"
+
+[[keys.command]]
+key = "prefix+8"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" select-tab 8'
+description = "select tab slot 8"
+
+[[keys.command]]
+key = "prefix+9"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" select-tab 9'
+description = "select tab slot 9"
+
+# Bind Alt + q, w, e, r, t to select slots 1–5, creating only the requested tab
+[[keys.command]]
+key = "alt+q"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" tab 1'
+description = "select or create tab 1"
+
+[[keys.command]]
+key = "alt+w"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" tab 2'
+description = "select or create tab 2"
+
+[[keys.command]]
+key = "alt+e"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" tab 3'
+description = "select or create tab 3"
+
+[[keys.command]]
+key = "alt+r"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" tab 4'
+description = "select or create tab 4"
+
+[[keys.command]]
+key = "alt+t"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" tab 5'
+description = "select or create tab 5"
+
+# Bind Alt + 1–6 to switch panes, passing through to Vim/Neovim/fzf
+[[keys.command]]
+key = "alt+1"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" pane 1 alt+1'
+description = "focus pane 1"
+
+[[keys.command]]
+key = "alt+2"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" pane 2 alt+2'
+description = "focus pane 2"
+
+[[keys.command]]
+key = "alt+3"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" pane 3 alt+3'
+description = "focus pane 3"
+
+[[keys.command]]
+key = "alt+4"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" pane 4 alt+4'
+description = "focus pane 4"
+
+[[keys.command]]
+key = "alt+5"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" pane 5 alt+5'
+description = "focus pane 5"
+
+[[keys.command]]
+key = "alt+6"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" pane 6 alt+6'
+description = "focus pane 6"

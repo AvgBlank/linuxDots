@@ -56,11 +56,6 @@ vim.keymap.set('n', '<CR>', 'o<Esc>', { desc = 'Create new line without exiting 
 -- For Visual Block mode...
 vim.keymap.set('i', '<C-C>', '<Esc>', { desc = 'Just exit any current mode.' })
 
--- Switching Projects
-vim.keymap.set({ 'i', 'v', 'n' }, '<C-f>', function()
-  vim.cmd "silent !tmux neww zsh -ic 'tmuxthing'"
-end, { desc = 'Swap tmux sessions' })
-
 -- Find and Replace
 vim.keymap.set(
   { 'n', 'v' },

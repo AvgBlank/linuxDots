@@ -96,6 +96,62 @@ function tmuxthing() {
 }
 
 
+########### Herdr Script ###########
+# Pick the same project directories as tmuxthing, then reuse or create a workspace.
+function herdrthing() {
+    local selected win_user win_dir
+    if (( $# > 1 )); then
+        print -u2 'Usage: herdrthing [directory]'
+        return 2
+    fi
+    if (( $# == 1 )); then
+        selected=$1
+    else
+        if (( ! $+commands[fzf] )); then
+            print -u2 'herdrthing requires fzf.'
+            return 1
+        fi
+        local -a roots=()
+        if [[ -f /proc/sys/fs/binfmt_misc/WSLInterop ]]; then
+            win_user=$(cmd.exe /c 'echo %USERNAME%' 2>/dev/null | tr -d '\r')
+            win_dir="/mnt/c/Users/$win_user"
+            [[ -d $win_dir ]] && roots+=("$win_dir")
+            [[ -d $win_dir/Projects ]] && roots+=("$win_dir/Projects")
+        fi
+        selected=$(
+            {
+                local root
+                for root in "$HOME" "$HOME/projects" "${roots[@]}"; do
+                    [[ -d $root ]] && find "$root" -mindepth 1 -maxdepth 1 -type d
+                done
+                for root in "$HOME/organizations" "${win_dir:+$win_dir/Organizations}"; do
+                    [[ -d $root ]] && find "$root" -mindepth 1 -maxdepth 2 -type d
+                done
+            } | sort -u | fzf --prompt='Herdr project> '
+        ) || return 0
+    fi
+    [[ -n $selected ]] || return 0
+    if (( ! $+commands[herdr] || ! $+commands[python3] )); then
+        print -u2 'herdrthing requires herdr and python3.'
+        return 1
+    fi
+    python3 "$HOME/.config/herdr/helpers/herdr.py" project "$selected"
+}
+
+# Ctrl+F uses Herdr inside Herdr, tmux inside tmux, and prefers Herdr outside both.
+function projectthing() {
+    if [[ $HERDR_ENV == 1 ]]; then
+        herdrthing "$@"
+    elif [[ -n $TMUX ]]; then
+        tmuxthing "$@"
+    elif (( $+commands[herdr] )); then
+        herdrthing "$@"
+    else
+        tmuxthing "$@"
+    fi
+}
+
+
 ########### NeoVim Script ###########
 # This script launches a nvim instance with the selected file
 function vimthing() {

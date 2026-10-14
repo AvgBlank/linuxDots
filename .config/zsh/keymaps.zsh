@@ -14,8 +14,8 @@ bindkey '^R' fzfHistory
 # Ctrl + R to just open history search.
 zle -N fzfAcceptHistory
 bindkey '^U' fzfAcceptHistory
-# Ctrl + F to open tmux script
-bindkey -s '^F' 'tmuxthing\n'
+# Ctrl + F to open the project picker for the current multiplexer
+bindkey -s '^F' 'projectthing\n'
 # Ctrl + T to open vim script
 bindkey -s '^T' 'vimthing\n'
 # Ctrl + Y to open yazi script

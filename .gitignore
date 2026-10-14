@@ -15,3 +15,9 @@ kitty.conf.bak
 __pycache__
 .config/github-copilot
 .config/GitHub Desktop/
+.config/zsh/secrets.zsh
+
+# Herdr
+.config/herdr/*
+!.config/herdr/config.toml
+!.config/herdr/helpers/

@@ -1,3 +1,6 @@
+-- Navigate between Neovim splits and multiplexer panes
+require('core.multiplexer').setup()
+
 -- Telescope
 require('telescope').setup {
   defaults = {
