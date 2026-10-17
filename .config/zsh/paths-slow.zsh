@@ -5,8 +5,8 @@ if [ -d "$HOME/.local/share/fnm" ]; then
 fi
 
 ### The Fuck ###
-if command -v fuck &> /dev/null; then
-    eval $(thefuck --alias)
+if command -v thefuck &> /dev/null; then
+    eval "$(thefuck --alias)"
 fi
 
 ### Bun ###

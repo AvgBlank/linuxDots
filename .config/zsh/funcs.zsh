@@ -40,21 +40,35 @@ function pv() {
 
 ########### Toggle Disable Sleep for MacOS ###########
 # `st` for "Sleep Toggle"
-# To run, `st {user password}`
+# To run, `st`
 function st() {
-    current_status=$(pmset -g | grep SleepDisabled | awk '{print $2}')
-    stty -echo
+    if (( $# != 0 )); then
+        print -u2 'Usage: st'
+        return 2
+    fi
 
-    if [ "$current_status" -eq 1 ]; then
-        # Enable Sleep if Disabled
-        echo -e "$1" | sudo -S pmset -a disablesleep 0 > /dev/null 2>&1
-        stty echo
-        echo "Sleep Enabled."
+    local pmset_status current_status setting
+    pmset_status=$(pmset -g) || return 1
+    current_status=$(print -r -- "$pmset_status" | awk '$1 == "SleepDisabled" { print $2; found=1 } END { if (!found) exit 1 }') || return 1
+    if [[ $current_status != 0 && $current_status != 1 ]]; then
+        return 1
+    fi
+
+    if [[ $current_status == 1 ]]; then
+        setting=0
     else
-        # Disable Sleep if Enabled
-        echo -e "$1" | sudo -S pmset -a disablesleep 1 > /dev/null 2>&1
-        stty echo
-        echo "Sleep Disabled."
+        setting=1
+    fi
+
+    if sudo pmset -a disablesleep "$setting" > /dev/null; then
+        if [[ $setting == 0 ]]; then
+            print 'Sleep Enabled.'
+        else
+            print 'Sleep Disabled.'
+        fi
+    else
+        print -u2 'Failed to update sleep setting.'
+        return 1
     fi
 }
 
@@ -62,6 +76,11 @@ function st() {
 ########### Tmux Script ###########
 # This script launches a tmux session based on selection
 function tmuxthing() {
+    local selected selected_name WIN_HOME WIN_DIR
+    if (( $# > 1 )); then
+        print -u2 'Usage: tmuxthing [directory]'
+        return 2
+    fi
     if [[ $# -eq 1 ]]; then
         selected=$1
     else
@@ -78,21 +97,28 @@ function tmuxthing() {
         fi
     fi
 
-    if [[ $selected ]]; then
-        selected_name=$(basename "$selected" | tr . _)
-
-        if ! tmux has-session -t=$selected_name 2> /dev/null; then
-            tmux new-session -ds $selected_name -c $selected
-        fi
-
-        if [ -n "$TMUX" ]; then
-            tmux switch-client -t $selected_name > /dev/null 2>&1
-        else
-            tmux attach-session -t "$selected_name"
-        fi
-
+    [[ -n $selected ]] || return 0
+    if [[ ! -d $selected ]]; then
+        print -u2 -- "Not a directory: $selected"
+        return 1
     fi
+    if (( ! $+commands[python3] || ! $+commands[tmux] )); then
+        print -u2 'tmuxthing requires tmux and python3.'
+        return 1
+    fi
+    selected=${selected:A}
+    selected_name=$(python3 -c 'import hashlib, os, re, sys; p = sys.argv[1]; name = re.sub(r"[^A-Za-z0-9_-]", "_", os.path.basename(p))[:32] or "root"; print(name + "-" + hashlib.sha256(os.fsencode(p)).hexdigest())' "$selected") || return 1
 
+    if ! tmux has-session -t "=$selected_name" 2>/dev/null; then
+        # A simultaneous picker may have created the same project session.
+        tmux new-session -d -s "$selected_name" -c "$selected" ||
+            tmux has-session -t "=$selected_name" 2>/dev/null || return 1
+    fi
+    if [[ -n $TMUX ]]; then
+        tmux switch-client -t "=$selected_name"
+    else
+        tmux attach-session -t "=$selected_name"
+    fi
 }
 
 

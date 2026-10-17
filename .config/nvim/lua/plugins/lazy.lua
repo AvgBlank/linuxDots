@@ -183,12 +183,10 @@ require('lazy').setup {
         },
       },
       {
-        {
-          'https://forge.barrettruth.com/barrettruth/live-server.nvim',
-          build = 'npm install -g live-server',
-          cmd = { 'LiveServerStart', 'LiveServerStop' },
-          config = true,
-        },
+        'https://forge.barrettruth.com/barrettruth/live-server.nvim',
+        build = 'npm install -g live-server',
+        cmd = { 'LiveServerStart', 'LiveServerStop' },
+        config = true,
       },
       {
         'akinsho/bufferline.nvim',
