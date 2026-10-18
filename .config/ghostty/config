@@ -3,7 +3,8 @@ font-family = "JetBrainsMono Nerd Font"
 # Rose Pine
 # theme = "Rose Pine"
 # Catppuccin Mocha
-theme = "Catppuccin Mocha"
+# theme = "Catppuccin Mocha"
+theme = "TokyoNight Night"
 
 # Cursor style
 cursor-style = "bar"

@@ -1,3 +1,5 @@
 [flavor]
-use = "rose-pine"
+# use = "rose-pine"
 # use = "catppuccin-mocha"
+dark = "tokyonight_night"
+light = "tokyonight_night"

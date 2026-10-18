@@ -35,11 +35,14 @@ require('telescope').load_extension 'harpoon'
 -- Rose Pine
 -- vim.cmd.colorscheme 'rose-pine'
 -- Catppuccin Mocha
-vim.cmd.colorscheme 'catppuccin-mocha'
--- vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
--- vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'none' })
+-- vim.cmd.colorscheme 'catppuccin-mocha'
+-- Tokyo Night Night
+vim.cmd.colorscheme 'tokyonight-night'
 -- Andromeda
 -- require("andromeda").setup()
+
+vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
+vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'none' })
 
 -- Setting Transparency
 vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
@@ -213,7 +216,9 @@ require('lualine').setup {
   -- Rose Pine
   -- options = { theme = 'rose-pine' },
   -- Catppuccin Mocha
-  options = { theme = 'catppuccin-mocha' },
+  -- options = { theme = 'catppuccin-mocha' },
+  -- Tokyo Night Night
+  options = { theme = 'tokyonight-night' },
 }
 
 -- Indent Blankline

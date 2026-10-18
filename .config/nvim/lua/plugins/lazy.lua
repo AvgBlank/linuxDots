@@ -232,6 +232,6 @@ require('lazy').setup {
       },
     },
   },
-  install = { colorscheme = { 'rose-pine' } },
+  install = { colorscheme = { 'tokyonight' } },
   checker = { enabled = true, notify = false },
 }

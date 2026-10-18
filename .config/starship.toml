@@ -17,35 +17,20 @@ $character
 
 right_format = """$all"""
 
-palette = "catppuccin_mocha"
+palette = "tokyonight_night"
 
-[palettes.catppuccin_mocha]
-rosewater = "#f5e0dc"
-flamingo = "#f2cdcd"
-pink = "#f5c2e7"
-mauve = "#cba6f7"
-red = "#f38ba8"
-maroon = "#eba0ac"
-peach = "#fab387"
-yellow = "#f9e2af"
-green = "#a6e3a1"
-teal = "#94e2d5"
-sky = "#89dceb"
-sapphire = "#74c7ec"
-blue = "#89b4fa"
-lavender = "#b4befe"
-text = "#cdd6f4"
-subtext1 = "#bac2de"
-subtext0 = "#a6adc8"
-overlay2 = "#9399b2"
-overlay1 = "#7f849c"
-overlay0 = "#6c7086"
-surface2 = "#585b70"
-surface1 = "#45475a"
-surface0 = "#313244"
-base = "#1e1e2e"
-mantle = "#181825"
-crust = "#11111b"
+[palettes.tokyonight_night]
+black = "#15161e"
+red = "#f7768e"
+green = "#9ece6a"
+yellow = "#e0af68"
+blue = "#7aa2f7"
+magenta = "#bb9af7"
+cyan = "#7dcfff"
+white = "#c0caf5"
+teal = "#1abc9c"
+orange = "#ff9e64"
+purple = "#9d7cd8"
 
 [os.symbols]
 Windows = "󰍲"
@@ -113,7 +98,7 @@ format = "at $output"
 
 [git_branch]
 symbol = "[](black) "
-style = "fg:lavender bg:black"
+style = "fg:magenta bg:black"
 format =  '  on [$symbol$branch]($style)[](black) '
 
 [aws]
@@ -150,7 +135,7 @@ am_or_rebase = "am/rebase"
 [time]
 disabled = false
 time_format = "%R"
-format = '[[ $time](fg:peach)]($style)'
+format = '[[ $time](fg:orange)]($style)'
 
 [line_break]
 disabled = false
@@ -162,4 +147,4 @@ error_symbol = " [✗](italic red)"
 vimcmd_symbol = ' [](bold fg:green)'
 vimcmd_replace_one_symbol = ' [](bold fg:purple)'
 vimcmd_replace_symbol = ' [](bold fg:purple)'
-vimcmd_visual_symbol = ' [](bold fg:lavender)'
+vimcmd_visual_symbol = ' [](bold fg:magenta)'

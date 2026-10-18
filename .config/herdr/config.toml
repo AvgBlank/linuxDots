@@ -39,17 +39,17 @@ name = "terminal"
 auto_switch = false
 
 [theme.custom]
-# Use Mocha Mantle for the bar and Surface 0 for inactive tabs
+# Use Tokyo Night backgrounds for the bar and inactive tabs
 # These shared colours also apply to other Herdr controls
-panel_bg = "#181825"
-surface0 = "#313244"
+panel_bg = "#16161e"
+surface0 = "#292e42"
 
-# Use Overlay 2 for separators and Lavender for status text
-overlay0 = "#9399b2"
-overlay1 = "#b4befe"
+# Use muted blue for separators and foreground colour for status text
+overlay0 = "#737aa2"
+overlay1 = "#c0caf5"
 
-# Highlight the active tab in Mauve with dark text
-accent = "#cba6f7"
+# Highlight the active tab in magenta with dark text
+accent = "#bb9af7"
 
 [ui.toast]
 # Send notifications through the operating system
@@ -83,7 +83,7 @@ resize_mode = "prefix+shift+r"
 
 # Bind Prefix + s to native Go To instead of sidebar navigation
 workspace_picker = ""
-goto = "prefix+s"
+goto = "prefix+space"
 
 # Bind Prefix + ( and ) to cycle through open workspaces
 previous_workspace = "prefix+("
