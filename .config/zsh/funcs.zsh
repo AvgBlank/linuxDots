@@ -73,6 +73,10 @@ function st() {
 }
 
 
+########### FZF Default Opts ###########
+export FZF_DEFAULT_OPTS='--layout=reverse --border'
+
+
 ########### Tmux Script ###########
 # This script launches a tmux session based on selection
 function tmuxthing() {

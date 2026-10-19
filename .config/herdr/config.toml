@@ -34,22 +34,16 @@ tab_bar_right_separator = " | "
 enabled = true
 
 [theme]
-# Use the terminal's colours without automatic theme switching
-name = "terminal"
+name = "tokyo-night"
 auto_switch = false
 
 [theme.custom]
-# Use Tokyo Night backgrounds for the bar and inactive tabs
-# These shared colours also apply to other Herdr controls
-panel_bg = "#16161e"
-surface0 = "#292e42"
+# For the bottom bar
+surface0 = "#1a1b26"
 
-# Use muted blue for separators and foreground colour for status text
-overlay0 = "#737aa2"
-overlay1 = "#c0caf5"
-
-# Highlight the active tab in magenta with dark text
-accent = "#bb9af7"
+# For the sidebar
+active_row_bg = "#3b4258"
+selection_bg = "#4c5570"
 
 [ui.toast]
 # Send notifications through the operating system
@@ -93,8 +87,7 @@ next_workspace = "prefix+)"
 previous_agent = "prefix+-"
 next_agent = "prefix+="
 
-# Bind Prefix + Alt + Shift + 1–9 to focus agents in their current panel order
-focus_agent = "prefix+alt+shift+1..9"
+focus_agent = "alt+shift+1..9"
 
 # Bind Prefix + g to open an existing Git worktree
 open_worktree = "prefix+g"

@@ -26,6 +26,20 @@ if command -v bat &> /dev/null; then
 fi
 
 
+#### AI Coding Tools ####
+if command -v claude &> /dev/null; then
+    alias c='claude'
+fi
+
+if command -v claude-codex &> /dev/null; then
+    alias cc='claude-codex'
+fi
+
+if command -v codex &> /dev/null; then
+    alias cdx='codex'
+fi
+
+
 #### Setting Vim as NeoVim if exists ####
 if command -v nvim &> /dev/null; then
     alias vvim='vi'
