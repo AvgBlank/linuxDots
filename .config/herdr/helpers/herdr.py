@@ -356,6 +356,28 @@ def number_workspaces(*, deadline):
     return labels
 
 
+def equalize_layout(node, path=()):
+    """Return each split path and ratio needed to give all leaves equal area."""
+    if node["type"] == "pane":
+        return 1, []
+    first_count, first_splits = equalize_layout(node["first"], path + (False,))
+    second_count, second_splits = equalize_layout(node["second"], path + (True,))
+    ratio = first_count / (first_count + second_count)
+    splits = [(path, min(0.9, max(0.1, ratio)))]
+    splits.extend(first_splits)
+    splits.extend(second_splits)
+    return first_count + second_count, splits
+
+
+def equalize():
+    pane = context()
+    layout = request("layout.export", pane_id=pane["pane_id"])["layout"]
+    _, splits = equalize_layout(layout["root"])
+    for path, ratio in splits:
+        request("layout.set_split_ratio", tab_id=layout["tab_id"],
+                path=list(path), ratio=ratio)
+
+
 def shortcut(action, argument, key=None):
     pane = context()
     if key and forward_to_editor(pane, key):
@@ -508,6 +530,8 @@ def main():
         tab(move={"left": -1, "right": 1}[args[0]])
     elif action == "workspace":
         workspace(int(args[0]))
+    elif action == "equalize":
+        equalize()
     elif action in ("navigate", "pane"):
         shortcut(action, *args)
     elif action == "status":

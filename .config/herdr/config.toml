@@ -138,6 +138,13 @@ zoom = "prefix+z"
 # Bind Prefix + ^ and semicolon to return to the previous pane
 last_pane = ["prefix+^", "prefix+semicolon"]
 
+# Bind Prefix + Shift + e to equalize pane sizes
+[[keys.command]]
+key = "prefix+shift+e"
+type = "shell"
+command = 'python3 "$HOME/.config/herdr/helpers/herdr.py" equalize'
+description = "equalize pane sizes"
+
 # Bind Ctrl + f to open herdrthing (project picker)
 # The temporary pane closes after selection or cancellation
 [[keys.command]]
