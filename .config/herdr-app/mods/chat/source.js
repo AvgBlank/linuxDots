@@ -157,5 +157,6 @@ export class Tail {
 export async function lineAt(file, at, on) {
   if (file.startsWith("hermes:")) return (await hermesRows(file, at - 1, 1)).find((l) => !l.startsWith('{"session"')) ?? null;
   const r = await sh('tail -c +"$1" "$2" | head -n 1', [String(at + 1), file], on);
-  return r.code === 0 ? r.stdout : null;
+  if (r.code !== 0) throw new Error(r.stderr.trim() || `exit ${r.code}`);
+  return r.stdout || null;
 }

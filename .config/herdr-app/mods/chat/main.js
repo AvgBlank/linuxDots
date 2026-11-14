@@ -2114,7 +2114,7 @@ export default class Chat extends View {
   // A split's swap shows either side in the one tab, so there's nothing to send on.
   keepSide() {
     const f = focused(), on = !this.term ? null : f?.pane === this.pane && this.pane ? "chat" : f?.terminal === this.term ? "terminal" : null;
-    if (on !== this.on) { this.on = on; this.landed = Date.now(); this.sent = false; }
+    if (on !== this.sideOn) { this.sideOn = on; this.landed = Date.now(); this.sent = false; }
     if (!on || this.sent || Date.now() - this.landed < 300) return;
     this.sent = true;
     const want = (shared("chat.side") ?? {})[this.term];
@@ -2392,9 +2392,12 @@ export default class Chat extends View {
             const file = this.file;
             this.results[i.id] = { loading: true };
             cx.spawn(async (cx) => {
-              const line = await lineAt(file, i.line, this.on).catch(() => null);
+              let why = null;
+              const line = await lineAt(file, i.line, this.on).catch((e) => { why = String(e?.message ?? e); return null; });
               if (file !== this.file) return;
-              this.results[i.id] = (line && resultFrom(line, i.id)) ?? { missing: true };
+              // Why it couldn't, on the card: the read failed, found nothing, or found another line.
+              this.results[i.id] = (line && resultFrom(line, i.id))
+                ?? { missing: true, why: why ?? (line ? `byte ${i.line} holds another line: ${line.slice(0, 80)}` : `nothing at byte ${i.line}`) };
               this.open.add(id);
               this.closing.delete(id);
               this.entering.add(`tb-${id}`);
@@ -2422,7 +2425,7 @@ export default class Chat extends View {
             .border_color(i.error ? t.blocked : edge).text_size(12).text_color(t.muted).font_family(CODE_FONT)
             .when(i.images.length > 0, (b) => b.child(thumbs(280, 200)))
             .child(div().child(i.result === null ? (working ? "Running" : "…") : i.empty ? "No output"
-              : res?.missing ? "Couldn't read this from the log" : res?.text?.trimEnd() || "No output"))
+              : res?.missing ? `Couldn't read this from the log (${res.why})` : res?.text?.trimEnd() || "No output"))
             .when(Boolean(res?.clipped), (b) => b.child(div().text_color(t.dim).child("Clipped at 24,000 characters")))))));
   }
 
