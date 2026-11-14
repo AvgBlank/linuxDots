@@ -16,3 +16,6 @@ background-blur = "true"
 
 # Macos option as alt
 macos-option-as-alt = "true"
+
+# Disable the confirmation to quit ghostty
+confirm-close-surface = false

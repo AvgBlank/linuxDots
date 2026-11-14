@@ -1,0 +1,85 @@
+{
+  "version": 4,
+  "lines": [
+    [
+      {
+        "id": "6",
+        "type": "custom-command",
+        "preserveColors": true,
+        "commandPath": "/bin/bash ~/.config/ccstatusline/segments.sh model"
+      },
+      {
+        "id": "201",
+        "type": "separator",
+        "color": "hex:565F89"
+      },
+      {
+        "id": "8",
+        "type": "custom-command",
+        "preserveColors": true,
+        "commandPath": "/bin/bash ~/.config/ccstatusline/segments.sh ctx"
+      },
+      {
+        "id": "202",
+        "type": "separator",
+        "color": "hex:565F89"
+      },
+      {
+        "id": "1",
+        "type": "custom-command",
+        "preserveColors": true,
+        "commandPath": "/bin/bash ~/.config/ccstatusline/segments.sh project"
+      },
+      {
+        "id": "300",
+        "type": "separator",
+        "color": "hex:565F89"
+      },
+      {
+        "id": "3",
+        "type": "custom-command",
+        "preserveColors": true,
+        "commandPath": "/bin/bash ~/.config/ccstatusline/segments.sh title"
+      }
+    ],
+    [
+      {
+        "id": "11",
+        "type": "custom-command",
+        "preserveColors": true,
+        "commandPath": "/bin/bash ~/.config/ccstatusline/segments.sh limits"
+      }
+    ]
+  ],
+  "flexMode": "full",
+  "compactThreshold": 60,
+  "colorLevel": 3,
+  "defaultPaddingSide": "both",
+  "inheritSeparatorColors": false,
+  "globalBold": false,
+  "gitCacheTtlSeconds": 5,
+  "terminalWidthCacheTtlSeconds": 5,
+  "customCommandCacheTtlSeconds": 0,
+  "minimalistMode": false,
+  "powerline": {
+    "enabled": false,
+    "separators": [
+      "\ue0b0"
+    ],
+    "separatorInvertBackground": [
+      false
+    ],
+    "startCaps": [],
+    "endCaps": [],
+    "autoAlign": false,
+    "continueThemeAcrossLines": false
+  },
+  "numberFormat": {
+    "speed": {
+      "style": "whole"
+    },
+    "percent": {
+      "style": "whole"
+    }
+  }
+}

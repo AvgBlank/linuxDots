@@ -66,7 +66,7 @@ require('lazy').setup {
     {
       "christoomey/vim-tmux-navigator",
       -- Herdr navigation is configured in core.multiplexer.
-      cond = vim.env.HERDR_ENV ~= '1',
+      cond = not require('core.multiplexer').active(),
       cmd = {
         "TmuxNavigateLeft",
         "TmuxNavigateDown",

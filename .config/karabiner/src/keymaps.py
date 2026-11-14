@@ -12,6 +12,7 @@ TERMINALS = [
     r"^net\.kovidgoyal\.kitty$",
     r"^com\.mitchellh\.ghostty$",
     r"^com\.github\.wez\.wezterm$",
+    r"^dev\.herdr\.app$",
 ]
 BROWSERS = [
     r"^company\.thebrowser\.Browser$",

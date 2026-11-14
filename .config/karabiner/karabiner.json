@@ -237,7 +237,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -276,7 +277,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -315,7 +317,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -354,7 +357,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -393,7 +397,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -432,7 +437,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -471,7 +477,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -515,7 +522,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -554,7 +562,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -593,7 +602,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -632,7 +642,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -671,7 +682,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -710,7 +722,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -749,7 +762,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -788,7 +802,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -827,7 +842,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -866,7 +882,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -905,7 +922,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -944,7 +962,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -983,7 +1002,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -1022,7 +1042,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -1061,7 +1082,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -1103,7 +1125,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -1145,7 +1168,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -1187,7 +1211,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -1229,7 +1254,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -1271,7 +1297,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -1313,7 +1340,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -1355,7 +1383,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -1397,7 +1426,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -1439,7 +1469,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }
@@ -4526,7 +4557,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -4565,7 +4597,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -4604,7 +4637,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -4643,7 +4677,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -4682,7 +4717,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -4721,7 +4757,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }
@@ -4760,7 +4797,8 @@
                                         "bundle_identifiers": [
                                             "^net\\.kovidgoyal\\.kitty$",
                                             "^com\\.mitchellh\\.ghostty$",
-                                            "^com\\.github\\.wez\\.wezterm$"
+                                            "^com\\.github\\.wez\\.wezterm$",
+                                            "^dev\\.herdr\\.app$"
                                         ],
                                         "type": "frontmost_application_unless"
                                     }

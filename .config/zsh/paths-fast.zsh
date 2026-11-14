@@ -33,3 +33,15 @@ if [ -d "$HOME/.cargo/bin" ]; then
     export PATH="$HOME/.cargo/bin:$PATH"
 fi
 
+
+#### Java 17 (Android builds) ####
+if [ -d "/opt/homebrew/opt/openjdk@17" ]; then
+    export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
+    export PATH="$JAVA_HOME/bin:$PATH"
+fi
+
+#### Android SDK ####
+if [ -d "/opt/homebrew/share/android-commandlinetools" ]; then
+    export ANDROID_HOME="/opt/homebrew/share/android-commandlinetools"
+    export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
+fi
