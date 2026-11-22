@@ -1,0 +1,222 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
+  "model": "opus",
+  "skillOverrides": {
+    "hyperframes": "user-invocable-only",
+    "hyperframes-animation": "user-invocable-only",
+    "hyperframes-audio": "user-invocable-only",
+    "hyperframes-cli": "user-invocable-only",
+    "hyperframes-core": "user-invocable-only",
+    "hyperframes-creative": "user-invocable-only",
+    "hyperframes-keyframes": "user-invocable-only",
+    "hyperframes-registry": "user-invocable-only",
+    "hyperframes-studio": "user-invocable-only",
+    "media-use": "user-invocable-only",
+    "general-video": "user-invocable-only",
+    "figma-code-connect": "user-invocable-only",
+    "figma-code-workflows": "user-invocable-only",
+    "figma-create-new-file": "user-invocable-only",
+    "figma-design-to-code": "user-invocable-only",
+    "figma-generate-design": "user-invocable-only",
+    "figma-generate-diagram": "user-invocable-only",
+    "figma-generate-library": "user-invocable-only",
+    "figma-generative-plugins": "user-invocable-only",
+    "figma-implement-motion": "user-invocable-only",
+    "figma-shaders": "user-invocable-only",
+    "figma-spec": "user-invocable-only",
+    "figma-swiftui": "user-invocable-only",
+    "figma-use": "user-invocable-only",
+    "figma-use-figjam": "user-invocable-only",
+    "figma-use-motion": "user-invocable-only",
+    "figma-use-slides": "user-invocable-only"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "^(startup|resume|clear|compact|fork)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '__HOME__/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.config/herdr-app/mods/bettr-reporter/report.py claude",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.config/herdr-app/mods/bettr-usage/report_usage.py claude",
+            "timeout": 20,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.config/herdr-app/mods/bettr-reporter/report.py claude",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.config/herdr-app/mods/bettr-usage/report_usage.py claude",
+            "timeout": 20,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.config/herdr-app/mods/bettr-reporter/report.py claude",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.config/herdr-app/mods/bettr-reporter/report.py claude",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.config/herdr-app/mods/bettr-reporter/report.py claude",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.config/herdr-app/mods/bettr-reporter/report.py claude",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.config/herdr-app/mods/bettr-reporter/report.py claude",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.config/herdr-app/mods/bettr-usage/report_usage.py claude",
+            "timeout": 20,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.config/herdr-app/mods/bettr-reporter/report.py claude",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.config/herdr-app/mods/bettr-reporter/report.py claude",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.config/herdr-app/mods/bettr-reporter/report.py claude",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "__HOME__/.bun/bin/bun __HOME__/.bun/bin/ccstatusline",
+    "padding": 0,
+    "refreshInterval": 10
+  },
+  "enabledPlugins": {
+    "ponytail@ponytail": true
+  },
+  "extraKnownMarketplaces": {
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
+      }
+    }
+  },
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "high",
+      "autoCompactWindow": 400000
+    },
+    "claude-sonnet-5": {
+      "effortLevel": "medium"
+    }
+  },
+  "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
+  "theme": "custom:tokyonight"
+}

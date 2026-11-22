@@ -1,0 +1,105 @@
+{
+  "skillRepos": [
+    {
+      "repo": "figma/mcp-server-guide",
+      "skills": [
+        "figma-code-connect",
+        "figma-code-workflows",
+        "figma-create-new-file",
+        "figma-design-to-code",
+        "figma-generate-design",
+        "figma-generate-diagram",
+        "figma-generate-library",
+        "figma-generative-plugins",
+        "figma-implement-motion",
+        "figma-shaders",
+        "figma-spec",
+        "figma-swiftui",
+        "figma-use",
+        "figma-use-figjam",
+        "figma-use-motion",
+        "figma-use-slides"
+      ],
+      "targets": ["claude", "gemini"]
+    },
+    {
+      "repo": "heygen-com/hyperframes",
+      "skills": [
+        "general-video",
+        "hyperframes",
+        "hyperframes-animation",
+        "hyperframes-audio",
+        "hyperframes-cli",
+        "hyperframes-core",
+        "hyperframes-creative",
+        "hyperframes-keyframes",
+        "hyperframes-registry",
+        "hyperframes-studio",
+        "media-use"
+      ],
+      "targets": ["claude", "geminiCli", "geminiLegacy"]
+    },
+    {
+      "repo": "mattpocock/skills",
+      "skills": [
+        "domain-modeling",
+        "grill-me",
+        "grill-with-docs",
+        "grilling",
+        "setup-matt-pocock-skills",
+        "to-spec",
+        "to-tickets"
+      ],
+      "targets": ["claude", "gemini"]
+    },
+    {
+      "repo": "theclaymethod/unslop",
+      "skills": [
+        "unslop"
+      ],
+      "targets": ["claude", "gemini"]
+    },
+    {
+      "repo": "vercel-labs/skills",
+      "skills": [
+        "find-skills"
+      ],
+      "targets": []
+    }
+  ],
+  "mcps": [
+    {
+      "name": "figma",
+      "transport": "http",
+      "url": "https://mcp.figma.com/mcp"
+    },
+    {
+      "name": "context7",
+      "transport": "http",
+      "url": "https://mcp.context7.com/mcp"
+    }
+  ],
+  "plugins": {
+    "claudeMarketplaces": [
+      {
+        "name": "ponytail",
+        "repo": "DietrichGebert/ponytail"
+      }
+    ],
+    "claudePlugins": [
+      "ponytail@ponytail"
+    ],
+    "antigravityImportFromClaude": true,
+    "notes": "superpowers and engineering sync via Claude account and import into Antigravity via `agy plugin import claude`."
+  },
+  "globalTools": [
+    {
+      "name": "ccstatusline",
+      "manager": "bun",
+      "package": "ccstatusline",
+      "binary": "~/.bun/bin/ccstatusline",
+      "configSource": "../.config/ccstatusline",
+      "configTarget": "~/.config/ccstatusline"
+    }
+  ]
+}

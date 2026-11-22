@@ -1,0 +1,27 @@
+{
+  "altScreenMode": "always",
+  "model": "Claude Opus 4.6 (Thinking)",
+  "permissions": {
+    "allow": [
+      "command(git status)",
+      "command(bun run build)",
+      "command(bun run lint)",
+      "command(git diff)",
+      "command(git add)",
+      "command(find src -type f)",
+      "command(cat)",
+      "command(bun run test)",
+      "command(wc -l src/**/*.{ts,tsx,css} src/**/**/*.{ts,tsx} src/**/**/**/*.{ts,tsx} 2>/dev/null | tail -5)",
+      "command(echo)",
+      "command(grep)",
+      "command(cd)"
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "__HOME__/.gemini/antigravity-cli/statusline.sh",
+    "padding": 0,
+    "enabled": true,
+    "stack_with_default": false
+  }
+}
