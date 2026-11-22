@@ -25,7 +25,7 @@ __pycache__
 # Herdr app: keep only personal config; shipped and app-written files are regenerated on start
 .config/herdr-app/*
 !.config/herdr-app/settings.json
-!.config/herdr-app/keys.json
+!.config/herdr-app/keys.custom.json
 !.config/herdr-app/programs.json
 !.config/herdr-app/program-icons/
 !.config/herdr-app/layouts/
