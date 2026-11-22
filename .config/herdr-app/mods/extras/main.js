@@ -3,6 +3,7 @@ import { spaces, panes, agents, focused, theme, run, hc, exec, home, appHome, wi
 import * as fs from "fs/promises";
 import { Buffer } from "buffer";
 import { initProjectPicker, renderProjectPicker, openFzfProjectPicker, renderFzfTabBar } from "./project.js";
+import { openMachinePicker, initMachinePicker, renderMachinePicker } from "./machine.js";
 import { openWorktreeSlot, initWtPicker, renderWtPicker } from "./worktree-slot.js";
 import { initCopyMode, renderCopyMode } from "./copy-mode.js";
 
@@ -122,6 +123,10 @@ export default class Extras extends View {
     if (props()?.fzfTabs) {
       return;
     }
+    if (props()?.machinePicker) {
+      initMachinePicker(this, cx);
+      return;
+    }
     if (props()?.wtPicker) {
       initWtPicker(this, cx);
       return;
@@ -231,10 +236,20 @@ export default class Extras extends View {
       this.save();
       this.place(space.id, cx);
     } else if (name === "space") {
-      // focus: the Nth space its sidebar numbers (t3-spaces.order: the hidden Home left out). Elsewhere Herdr's Nth.
-      const id = shared("layout") === "focus" ? shared("t3-spaces.order")?.[n - 1] : null;
-      if (id) run("space.select", { id });
-      else if (shared("layout") !== "focus") run("space.select", { index: n });
+      // focus: the Nth space on the active machine (t3-spaces.by-machine, falling back to first non-empty machine / t3-spaces.order).
+      if (shared("layout") === "focus") {
+        const byMachine = shared("t3-spaces.by-machine");
+        const key = space?.machine ?? "";
+        const list = byMachine?.[key]?.length ? byMachine[key]
+          : Object.values(byMachine ?? {}).find((a) => a.length) ?? shared("t3-spaces.order");
+        const id = list?.[n - 1];
+        if (id) run("space.select", { id });
+      } else {
+        const mine = spaces().filter((s) => (s.machine ?? null) === (space?.machine ?? null));
+        const target = mine[n - 1];
+        if (target) run("space.select", { id: target.id });
+        else run("space.select", { index: n });
+      }
     } else if (name === "move") {
       // As the TUI: the tab takes the next number down or up, swapping with the tab that had it, or moving into a gap.
       await this.ready;
@@ -272,6 +287,8 @@ export default class Extras extends View {
       const req = shared("project-switch");
       setShared("project-switch", null);
       if (req) await openFzfProjectPicker(req.machine, cx, req.machine, req.query ?? "");
+    } else if (name === "machine") {
+      openMachinePicker();
     } else if (name === "wt" && ["new", "open", "remove"].includes(arg)) {
       // worktrees: the shipped dialog, with remove/new drawn as T3's alert box.
       const size = arg === "open" ? { width: 560, height: 480 } : { width: 512, height: 240, frame: "none" };
@@ -399,6 +416,7 @@ export default class Extras extends View {
   render(cx) {
     if (props()?.projectPicker) return renderProjectPicker(this);
     if (props()?.fzfTabs) return renderFzfTabBar();
+    if (props()?.machinePicker) return renderMachinePicker(this);
     if (props()?.wtPicker) return renderWtPicker(this);
     if (props()?.copyMode) return renderCopyMode(this);
     const t = theme();
@@ -407,6 +425,16 @@ export default class Extras extends View {
     if (!this.reconciling) { this.reconciling = true; cx.spawn((cx) => { this.reconciling = false; this.reconcile(cx); }); }
     const pane = focused()?.pane ?? null;
     if (pane && pane !== this.cur) { this.prev = this.cur; this.cur = pane; }
+    // Remember each machine's last active non-Home space so ctrl-a m returns where you left off.
+    const activeSpace = spaces().find((s) => s.active);
+    if (activeSpace && activeSpace.id !== shared("t3-home.space")) {
+      const mKey = activeSpace.machine ?? "";
+      this.lastByMachine = this.lastByMachine ?? {};
+      if (this.lastByMachine[mKey] !== activeSpace.id) {
+        this.lastByMachine = { ...this.lastByMachine, [mKey]: activeSpace.id };
+        setShared("extras.last-space-by-machine", this.lastByMachine);
+      }
+    }
     // No visible bar: the block stays (1px) so extras.<command> keys still reach it.
     return div().size_full().bg(t.chrome);
   }

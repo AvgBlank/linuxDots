@@ -2,9 +2,8 @@
 // Works locally on macOS/Linux/Windows via fs/promises and on remote machines (WSL, SSH) via exec(..., { on }).
 import { div } from "gpui-kit";
 import { h_flex, v_flex, InputState, Input } from "gpui-base";
-import { theme, spaces, panes, machines, terminals, home, appHome, run, hc, exec, openOverlay, closeOverlay, readTextFile, props, shared, setShared, window, settings } from "herdr";
+import { theme, spaces, panes, machines, terminals, home, appHome, run, hc, exec, openOverlay, closeOverlay, readTextFile, notify, props, shared, setShared, window, settings } from "herdr";
 import * as fs from "fs/promises";
-import { Buffer } from "buffer";
 
 const ROW = 24;
 
@@ -86,7 +85,7 @@ async function listRemote(machine) {
 
 // Real fzf project picker matching funcs.zsh (`herdrthing`): scans ~, ~/projects (depth 1),
 // ~/organizations (depth 1..2), and on WSL also the Windows host (/mnt/c/Users/<user>, Projects, Organizations).
-// Args: $1 = output file, $2 = newline-separated open dirs, $3 = fzf prompt, $4 = "1" for Tab/Shift-Tab switch, $5 = initial query.
+// Args: $1 = output file, $2 = newline-separated open dirs, $3 = fzf prompt, $4 = "1" for Tab/Shift-Tab switch, $5 = initial query, $6 = error file.
 export const FZF_PROJECT_SCRIPT = `
 PATH="$HOME/.fzf/bin:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 out="$1"
@@ -94,6 +93,7 @@ open_dirs="$2"
 prompt="$3"
 multi_m="$4"
 init_q="$5"
+err="$6"
 if ! command -v fzf >/dev/null 2>&1; then
   printf '__NO_FZF__\\n' > "$out"
   exit 0
@@ -132,13 +132,20 @@ formatted=$(
   ' | LC_ALL=C sort -t "$tab" -k1,1 -k2,2 | cut -f2-
 )
 if [ "$multi_m" = "1" ]; then
-  res=$(printf '%s\\n' "$formatted" | FZF_DEFAULT_OPTS="" FZF_DEFAULT_OPTS_FILE="" fzf --ansi --no-height --layout=reverse --border=none --no-multi --delimiter="$tab" --with-nth=1 --print-query --expect=tab,btab --query="$init_q" --prompt="$prompt")
+  res=$(printf '%s\\n' "$formatted" | FZF_DEFAULT_OPTS="" FZF_DEFAULT_OPTS_FILE="" fzf --ansi --layout=reverse --border=none --no-multi --delimiter='\\t' --with-nth=1 --print-query --expect=tab,btab --query="$init_q" --prompt="$prompt" 2>"$err")
   rc=$?
 else
-  res=$(printf '%s\\n' "$formatted" | FZF_DEFAULT_OPTS="" FZF_DEFAULT_OPTS_FILE="" fzf --ansi --no-height --layout=reverse --border=none --no-multi --delimiter="$tab" --with-nth=1 --query="$init_q" --prompt="$prompt")
+  res=$(printf '%s\\n' "$formatted" | FZF_DEFAULT_OPTS="" FZF_DEFAULT_OPTS_FILE="" fzf --ansi --layout=reverse --border=none --no-multi --delimiter='\\t' --with-nth=1 --query="$init_q" --prompt="$prompt" 2>"$err")
   rc=$?
 fi
-{ [ "$rc" -eq 0 ] || [ "$rc" -eq 1 ]; } && [ -n "$res" ] && printf '%s\\n' "$res" > "$out"
+if [ "$rc" -eq 0 ] || [ "$rc" -eq 1 ]; then
+  rm -f "$err"
+  [ -n "$res" ] && printf '%s\\n' "$res" > "$out"
+elif [ "$rc" -eq 130 ]; then
+  rm -f "$err"
+elif [ ! -s "$err" ]; then
+  printf 'fzf exited with code %s\\n' "$rc" > "$err"
+fi
 `;
 
 export function projectTargets() {
@@ -174,51 +181,70 @@ export function parseFzfOutput(raw, multiMachine) {
 }
 
 const psStr = (s) => `'${String(s ?? "").replace(/'/g, "''")}'`;
+// PowerShell 5.1 drops unescaped double quotes in native executable args; escape them for fzf.exe.
+const psNativeStr = (s) => psStr(String(s ?? "").replace(/"/g, '\\"'));
+const winPath = (p) => String(p ?? "").replace(/\//g, "\\");
 
 // Native Windows PowerShell + fzf script (used on the Windows `local` tab when `fzf` is installed on Windows PATH).
-export function buildWinFzfScript({ outFile, openDirs, prompt, multiMachine, initialQuery }) {
+export function buildWinFzfScript({ outFile, errFile, fzfBin, openDirs, prompt, multiMachine, initialQuery }) {
   const openList = openDirs.map(psStr).join(", ");
   return [
-    "$ErrorActionPreference = 'SilentlyContinue'",
-    `$out = ${psStr(outFile)}`,
-    "$fzf = Get-Command fzf -ErrorAction SilentlyContinue",
-    "if (-not $fzf) { [System.IO.File]::WriteAllText($out, \"__NO_FZF__`n\", [System.Text.UTF8Encoding]::new($false)); exit 0 }",
-    "$homeDir = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }",
-    "$openSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)",
-    `foreach ($o in @(${openList})) { if ($o) { [void]$openSet.Add(($o -replace '\\\\','/').TrimEnd('/')) } }`,
-    "$seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)",
-    "$rows = [System.Collections.Generic.List[string]]::new()",
-    "$esc = [char]27; $tab = [char]9",
-    "$hNorm = ($homeDir -replace '\\\\','/').TrimEnd('/')",
-    "function Add-Dir([string]$full) {",
-    "  if (-not $full) { return }",
-    "  $n = ($full -replace '\\\\','/').TrimEnd('/')",
-    "  if (-not $seen.Add($n)) { return }",
-    "  $disp = if ($hNorm -and $n.StartsWith(\"$hNorm/\", [System.StringComparison]::OrdinalIgnoreCase)) { '~' + $n.Substring($hNorm.Length) } else { $n }",
-    "  if ($openSet.Contains($n)) { $rows.Add(\"0$tab$disp  ${esc}[32m●${esc}[0m$tab$full\") }",
-    "  else { $rows.Add(\"1$tab$disp$tab$full\") }",
-    "}",
-    "foreach ($r in @($homeDir, (Join-Path $homeDir 'projects'), (Join-Path $homeDir 'Projects'))) {",
-    "  if ($r -and (Test-Path -LiteralPath $r -PathType Container)) { Get-ChildItem -LiteralPath $r -Directory -Force | ForEach-Object { Add-Dir $_.FullName } }",
-    "}",
-    "foreach ($r in @((Join-Path $homeDir 'organizations'), (Join-Path $homeDir 'Organizations'))) {",
-    "  if ($r -and (Test-Path -LiteralPath $r -PathType Container)) {",
-    "    Get-ChildItem -LiteralPath $r -Directory -Force | ForEach-Object {",
-    "      Add-Dir $_.FullName",
-    "      Get-ChildItem -LiteralPath $_.FullName -Directory -Force | ForEach-Object { Add-Dir $_.FullName }",
+    "$utf8 = [System.Text.UTF8Encoding]::new($false)",
+    "$OutputEncoding = $utf8",
+    "[Console]::InputEncoding = $utf8",
+    "[Console]::OutputEncoding = $utf8",
+    `$out = ${psStr(winPath(outFile))}`,
+    `$err = ${psStr(winPath(errFile || `${outFile}.err`))}`,
+    `$fzfHint = ${psStr(fzfBin ? winPath(fzfBin) : "")}`,
+    "try {",
+    "  $fzf = if ($fzfHint -and (Test-Path -LiteralPath $fzfHint -PathType Leaf)) { $fzfHint } else { (Get-Command fzf -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1).Source }",
+    "  if (-not $fzf) { [System.IO.File]::WriteAllText($out, \"__NO_FZF__`n\", $utf8); exit 0 }",
+    "  $homeDir = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }",
+    "  $openSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)",
+    `  foreach ($o in @(${openList})) { if ($o) { [void]$openSet.Add(($o -replace '\\\\','/').TrimEnd('/')) } }`,
+    "  $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)",
+    "  $rows = [System.Collections.Generic.List[string]]::new()",
+    "  $esc = [char]27; $tab = [char]9",
+    "  $hNorm = ($homeDir -replace '\\\\','/').TrimEnd('/')",
+    "  function Add-Dir([string]$full) {",
+    "    if (-not $full) { return }",
+    "    $n = ($full -replace '\\\\','/').TrimEnd('/')",
+    "    if (-not $seen.Add($n)) { return }",
+    "    $disp = if ($hNorm -and $n.StartsWith(\"$hNorm/\", [System.StringComparison]::OrdinalIgnoreCase)) { '~' + $n.Substring($hNorm.Length) } else { $n }",
+    "    if ($openSet.Contains($n)) { $rows.Add(\"0$tab$disp  ${esc}[32m●${esc}[0m$tab$full\") }",
+    "    else { $rows.Add(\"1$tab$disp$tab$full\") }",
+    "  }",
+    "  foreach ($r in @($homeDir, (Join-Path $homeDir 'projects'), (Join-Path $homeDir 'Projects'))) {",
+    "    if ($r -and (Test-Path -LiteralPath $r -PathType Container)) { Get-ChildItem -LiteralPath $r -Directory -Force -ErrorAction SilentlyContinue | ForEach-Object { Add-Dir $_.FullName } }",
+    "  }",
+    "  foreach ($r in @((Join-Path $homeDir 'organizations'), (Join-Path $homeDir 'Organizations'))) {",
+    "    if ($r -and (Test-Path -LiteralPath $r -PathType Container)) {",
+    "      Get-ChildItem -LiteralPath $r -Directory -Force -ErrorAction SilentlyContinue | ForEach-Object {",
+    "        Add-Dir $_.FullName",
+    "        Get-ChildItem -LiteralPath $_.FullName -Directory -Force -ErrorAction SilentlyContinue | ForEach-Object { Add-Dir $_.FullName }",
+    "      }",
     "    }",
     "  }",
-    "}",
-    "$sorted = $rows | Sort-Object | ForEach-Object { ($_ -split $tab, 2)[1] }",
-    "$env:FZF_DEFAULT_OPTS = ''; $env:FZF_DEFAULT_OPTS_FILE = ''",
-    `$fargs = @('--ansi','--no-height','--layout=reverse','--border=none','--no-multi',"--delimiter=$tab",'--with-nth=1',("--query=" + ${psStr(initialQuery)}),("--prompt=" + ${psStr(prompt)}))`,
-    multiMachine ? "$fargs += @('--print-query','--expect=tab,btab')" : "",
-    "$res = $sorted | & $fzf.Source @fargs",
-    "$rc = $LASTEXITCODE",
-    "if (($rc -eq 0 -or $rc -eq 1) -and $res) {",
-    "  [System.IO.File]::WriteAllText($out, (($res -join \"`n\") + \"`n\"), [System.Text.UTF8Encoding]::new($false))",
+    "  $sorted = @($rows | Sort-Object | ForEach-Object { $_.Substring(2) })",
+    "  $env:FZF_DEFAULT_OPTS = ''; $env:FZF_DEFAULT_OPTS_FILE = ''",
+    `  $fargs = @('--ansi','--layout=reverse','--border=none','--no-multi','--delimiter=\\t','--with-nth=1','--prompt',${psNativeStr(prompt)})`,
+    initialQuery ? `  $fargs += @('--query',${psNativeStr(initialQuery)})` : "",
+    multiMachine ? "  $fargs += @('--print-query','--expect=tab,btab')" : "",
+    "  $res = $sorted | & $fzf @fargs",
+    "  $rc = $LASTEXITCODE",
+    "  if (($rc -eq 0 -or $rc -eq 1) -and $res) {",
+    "    [System.IO.File]::WriteAllText($out, (($res -join \"`n\") + \"`n\"), $utf8)",
+    "  } elseif ($rc -ne 0 -and $rc -ne 1 -and $rc -ne 130) {",
+    "    [System.IO.File]::WriteAllText($err, \"fzf exited with code $rc ($fzf)\", $utf8)",
+    "  }",
+    "} catch {",
+    "  [System.IO.File]::WriteAllText($err, $_.Exception.Message, $utf8)",
     "}",
   ].filter(Boolean).join("\n");
+}
+
+function openGpuiFallback(target, query) {
+  openOverlay({ mod: "extras", kind: "dialog", frame: "none", width: 0.7, height: 0.7, props: { projectPicker: true, machine: target, forceLocal: !target, initialQuery: query } });
 }
 
 export async function openFzfProjectPicker(activeMachine, cx, explicitTarget, initialQuery = "") {
@@ -229,10 +255,12 @@ export async function openFzfProjectPicker(activeMachine, cx, explicitTarget, in
   const isWinLocal = window()?.platform === "windows" && !target;
 
   // On Windows local, probe `where fzf` first so missing fzf falls back to GPUI immediately without a terminal flash.
+  let winFzfBin = "";
   if (isWinLocal) {
-    const probe = await exec("where", ["fzf"]).catch(() => ({ code: 1 }));
-    if (probe.code !== 0) {
-      openOverlay({ mod: "extras", kind: "dialog", frame: "none", width: 0.7, height: 0.7, props: { projectPicker: true, machine: null, forceLocal: true, initialQuery: query } });
+    const probe = await exec("where", ["fzf"]).catch(() => ({ code: 1, stdout: "" }));
+    winFzfBin = probe.code === 0 ? (probe.stdout || "").split(/\r?\n/).map((l) => l.trim()).find(Boolean) || "" : "";
+    if (!winFzfBin) {
+      openGpuiFallback(null, query);
       return;
     }
   }
@@ -240,29 +268,38 @@ export async function openFzfProjectPicker(activeMachine, cx, explicitTarget, in
   const token = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const openDirs = [...existingFolders(target)];
   const prompt = target ? `Herdr project (${target})> ` : "Herdr project> ";
-  let outFile;
+  let outFile, errFile, scriptFile = null;
   const args = ["run", "--bg", "--json", "--rm", "--no-parent"];
-  if (isWinLocal) {
-    const dir = `${appHome()}/data/extras`;
-    await fs.mkdir(dir, { recursive: true }).catch(() => {});
-    outFile = `${dir}/proj-${token}.out`;
-    const ps = buildWinFzfScript({ outFile, openDirs, prompt, multiMachine: hasRemotes, initialQuery: query });
-    const enc = Buffer.from(ps, "utf16le").toString("base64");
-    args.push("--cwd", home(), "--", "powershell", "-NoProfile", "-EncodedCommand", enc);
-  } else {
-    outFile = `/tmp/herdr-proj-${token}.out`;
-    if (target) args.push("--on", target);
-    else args.push("--cwd", home());
-    args.push("--", "sh", "-c", FZF_PROJECT_SCRIPT, "sh", outFile, openDirs.join("\n"), prompt, hasRemotes ? "1" : "0", query);
-  }
-
   let address;
   try {
+    if (isWinLocal) {
+      const dir = `${appHome()}/data/extras`;
+      await fs.mkdir(dir, { recursive: true });
+      outFile = `${dir}/proj-${token}.out`;
+      errFile = `${dir}/proj-${token}.err`;
+      scriptFile = `${dir}/proj-${token}.ps1`;
+      const ps = buildWinFzfScript({ outFile, errFile, fzfBin: winFzfBin, openDirs, prompt, multiMachine: hasRemotes, initialQuery: query });
+      // UTF-8 BOM ensures Windows PowerShell 5.1 parses the green dot (●) as UTF-8, not CP1252.
+      await fs.writeFile(scriptFile, `\uFEFF${ps}`);
+      args.push("--cwd", home(), "--", "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", winPath(scriptFile));
+    } else {
+      outFile = `/tmp/herdr-proj-${token}.out`;
+      errFile = `/tmp/herdr-proj-${token}.err`;
+      if (target) args.push("--on", target);
+      else args.push("--cwd", home());
+      args.push("--", "sh", "-c", FZF_PROJECT_SCRIPT, "sh", outFile, openDirs.join("\n"), prompt, hasRemotes ? "1" : "0", query, errFile);
+    }
+
     const r = await hc(args);
     if (r.code !== 0) throw new Error(r.stderr?.trim() || "hc run failed");
     address = JSON.parse(r.stdout).address;
-  } catch {
-    openOverlay({ mod: "extras", kind: "dialog", frame: "none", width: 0.7, height: 0.7, props: { projectPicker: true, machine: target, forceLocal: !target, initialQuery: query } });
+    if (target && address && !address.includes("/")) address = `${target}/${address}`;
+  } catch (e) {
+    if (scriptFile) fs.unlink(scriptFile).catch(() => {});
+    const msg = e instanceof Error ? e.message : String(e);
+    console.log(`extras project launch failed: ${msg}`);
+    notify({ title: "Project picker fallback", body: msg, level: "warning", timeout: 6000 });
+    openGpuiFallback(target, query);
     return;
   }
 
@@ -290,9 +327,18 @@ export async function openFzfProjectPicker(activeMachine, cx, explicitTarget, in
       await cx.sleep(80);
     }
 
-    const raw = await readTextFile(outFile, { on: target }).catch(() => null);
-    if (isWinLocal) fs.unlink(outFile).catch(() => {});
-    else exec("rm", ["-f", outFile], { on: target }).catch(() => {});
+    const [raw, errRaw] = await Promise.all([
+      readTextFile(outFile, { on: target }).catch(() => null),
+      readTextFile(errFile, { on: target }).catch(() => null),
+    ]);
+    if (isWinLocal) {
+      fs.unlink(outFile).catch(() => {});
+      fs.unlink(errFile).catch(() => {});
+      if (scriptFile) fs.unlink(scriptFile).catch(() => {});
+    } else {
+      exec("rm", ["-f", outFile, errFile], { on: target }).catch(() => {});
+    }
+    const errText = errRaw?.trim();
     const res = parseFzfOutput(raw, hasRemotes);
     const nextQuery = res.query || "";
 
@@ -305,13 +351,17 @@ export async function openFzfProjectPicker(activeMachine, cx, explicitTarget, in
     }
 
     if (res.action === "no_fzf") {
-      openOverlay({ mod: "extras", kind: "dialog", frame: "none", width: 0.7, height: 0.7, props: { projectPicker: true, machine: target, forceLocal: !target, initialQuery: query } });
+      openGpuiFallback(target, query);
     } else if (res.action === "tab" && hasRemotes) {
       const idx = targets.indexOf(target);
       const next = targets[(idx + res.delta + targets.length) % targets.length];
       openFzfProjectPicker(next, cx, next, nextQuery);
     } else if (res.action === "pick") {
       openProjectDir(res.path, target);
+    } else if (errText) {
+      console.log(`extras project error: ${errText}`);
+      notify({ title: "Project picker error", body: errText, level: "error", timeout: 10000 });
+      openGpuiFallback(target, query);
     }
   });
 }

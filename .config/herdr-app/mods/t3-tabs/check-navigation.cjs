@@ -179,14 +179,19 @@ async function check() {
       list[0].active = false; list.splice(1, 0, home); home.active = true;
     }
 
-    // The spaces the keys count and walk leave Home out, wherever it sits, and wrap.
-    for (const [command, id] of [["space:1", "s0"], ["space:2", "s1"], ["space:3", "s2"], ["space-next", "s0"], ["space-prev", "s2"]]) {
+    // Space numbers are per-device (leaving Home out), while space-next/prev still walk across all spaces and wrap.
+    for (const [command, id] of [["space:1", "s0"], ["space:2", "s1"], ["space-next", "s0"], ["space-prev", "s2"]]) {
       await say(command);
       assert.deepEqual(made(), [["space.select", { id }]], `${command} from Home`);
     }
-    await say("space:4");
-    assert.deepEqual(made(), [], "past the last, nothing");
-    home.active = false; list.find(s => s.id === "s1").active = true;
+    await say("space:3");
+    assert.deepEqual(made(), [], "past the last local space, nothing (s2 is on vps)");
+    home.active = false; list.find(s => s.id === "s2").active = true;
+    await say("space:1");
+    assert.deepEqual(made(), [["space.select", { id: "s2" }]], "space:1 on vps selects vps's first space");
+    await say("space:2");
+    assert.deepEqual(made(), [], "past the last vps space, nothing");
+    list.find(s => s.id === "s2").active = false; list.find(s => s.id === "s1").active = true;
     await say("space-next");
     assert.deepEqual(made(), [["space.select", { id: "s2" }]]);
     await say("space-prev");

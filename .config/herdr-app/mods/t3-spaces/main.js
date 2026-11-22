@@ -228,11 +228,19 @@ export default class Spaces extends View {
   // without the ids, handlers and labels the list uses.
   grouped(t) {
     const rows = this.ordered(), ps = panes(), lifting = Boolean(this.drag?.moved);
-    // Each space's number, as the list shows them (this computer first, then each machine), for ctrl-N (extras.space-N).
+    // Each space's number within its own machine (1..9 per device), for ctrl-a alt-N and ctrl-alt-shift-N.
     const machineOrder = [null, ...[...new Set(rows.map(r => r.w.machine).filter(Boolean))].sort()];
-    const numbered = machineOrder.flatMap(m => rows.filter(r => !r.head && (r.w.machine ?? null) === m).map(r => r.w.id));
-    this.spaceNum = new Map(numbered.map((id, i) => [id, i + 1]));
+    const byMachine = {};
+    const spaceNum = new Map();
+    for (const m of machineOrder) {
+      const ids = rows.filter(r => !r.head && (r.w.machine ?? null) === m).map(r => r.w.id);
+      byMachine[m ?? ""] = ids;
+      ids.forEach((id, i) => spaceNum.set(id, i + 1));
+    }
+    this.spaceNum = spaceNum;
+    const numbered = machineOrder.flatMap(m => byMachine[m ?? ""]);
     if (JSON.stringify(numbered) !== JSON.stringify(shared("t3-spaces.order") ?? null)) setShared("t3-spaces.order", numbered);
+    if (JSON.stringify(byMachine) !== JSON.stringify(shared("t3-spaces.by-machine") ?? null)) setShared("t3-spaces.by-machine", byMachine);
     const draw = (r, ghost) => r.head ? this.repoHead(r, t, ps, ghost) : this.row(r, t, ps, ghost);
     const entry = (r) => ({ key: r.head ? r.w.id : `space-${r.w.id}`, h: PITCH, m: r.w.machine ?? null, r, el: draw(r), ghost: () => draw(r, true) });
     const plain = (key, m, draw) => ({ key, h: PITCH, m, el: draw(false), ghost: () => draw(true) });

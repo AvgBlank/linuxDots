@@ -116,6 +116,7 @@ assert.equal(parsedKeys.global["alt-q"], "extras.tab-1");
 assert.equal(parsedKeys.global["ctrl-f"], "extras.project");
 assert.equal(parsedKeys.global["ctrl-a p"], "layout.toggle:sidebar");
 assert.equal(parsedKeys.global["ctrl-a ["], "extras.copymode");
+assert.equal(parsedKeys.global["ctrl-a m"], "extras.machine");
 assert.equal("ctrl-f" in parsedKeys.terminal, false, "removes shadowed terminal binding");
 assert.equal(parsedKeys.terminal["ctrl-shift-c"], "terminal.copy");
 assert.equal(parsedKeys.terminal["ctrl-a ctrl-a"], "send:\u0001");
@@ -284,13 +285,74 @@ assert.deepEqual(parseFzfOutput("~/linuxDots  ●\t/home/h/linuxDots\n", false),
 
 const winPs = buildWinFzfScript({
   outFile: "C:/Users/husain/.config/herdr-app/data/extras/proj-1.out",
+  errFile: "C:/Users/husain/.config/herdr-app/data/extras/proj-1.err",
+  fzfBin: "C:/Users/husain/scoop/shims/fzf.exe",
   openDirs: ["C:/Users/husain/projects/foo"],
   prompt: "Herdr project> ",
   multiMachine: true,
-  initialQuery: "foo'bar",
+  initialQuery: 'foo\'b"ar',
 });
-assert.ok(winPs.includes("Get-Command fzf"), "checks for fzf on Windows");
+assert.ok(winPs.includes("Get-Command fzf -CommandType Application"), "resolves fzf executable on Windows");
+assert.ok(winPs.includes("--delimiter=\\t"), "uses escaped tab delimiter instead of raw TAB in PowerShell argv");
+assert.ok(!winPs.includes("--delimiter=$tab"), "avoids raw TAB char that PowerShell 5.1 fails to quote");
+assert.ok(!winPs.includes("--no-height"), "omits --no-height for compatibility with older fzf builds");
+assert.ok(winPs.includes("$OutputEncoding = $utf8"), "configures UTF-8 pipeline encoding in PowerShell 5.1");
 assert.ok(winPs.includes("--print-query"), "Windows fzf preserves query across Tab");
-assert.ok(winPs.includes("'foo''bar'"), "safely escapes single quotes in PowerShell");
+assert.ok(winPs.includes('\'foo\'\'b\\"ar\''), "safely escapes single and double quotes for PowerShell 5.1 native args");
+assert.ok(winPs.includes("C:\\Users\\husain\\.config\\herdr-app\\data\\extras\\proj-1.out"), "uses native Windows backslashes");
+assert.ok(!FZF_PROJECT_SCRIPT.includes("--no-height"), "POSIX fzf omits --no-height for older WSL fzf");
+assert.ok(FZF_PROJECT_SCRIPT.includes("--delimiter='\\t'"), "POSIX fzf uses escaped tab delimiter");
 
-console.log("ok: extras fzf project picker + worktree slots + auto keys.custom.json merge + vim copy mode");
+// 6. Keyboard machine switcher (ctrl-a m) with live fzf-style filtering
+const machSrc = fs.readFileSync(path.join(__dirname, "machine.js"), "utf8");
+const machBody = machSrc.replace(/^import .*;\r?\n/gm, "").replace(/^export /gm, "");
+const machCalls = [];
+const { buildMachineItems, filterMachineItems, selectMachine } = new Function(
+  "run",
+  `${machBody}\nreturn { buildMachineItems, filterMachineItems, selectMachine };`,
+)((cmd, args) => machCalls.push([cmd, args]));
+
+const mItems = buildMachineItems({
+  allMachines: [
+    { name: null, layout: "ready" },
+    { name: "wsl", layout: "ready" },
+    { name: "vps", layout: "unavailable" },
+    { name: "dev", layout: "loading" },
+  ],
+  allSpaces: [
+    { id: "home", machine: null, name: "Home", active: false },
+    { id: "sp-l1", machine: null, name: "notes", active: false },
+    { id: "sp-l2", machine: null, name: "dots", active: true },
+    { id: "wsl/sp-1", machine: "wsl", name: "app", active: false },
+    { id: "wsl/sp-2", machine: "wsl", name: "api", active: false },
+  ],
+  byMachine: { "": ["sp-l1", "sp-l2"], wsl: ["wsl/sp-1", "wsl/sp-2"], vps: [] },
+  lastByMachine: { wsl: "wsl/sp-2" },
+  homeId: "home",
+});
+assert.deepEqual(mItems.map((x) => x.label), ["local", "dev", "vps", "wsl"], "lists local + remotes");
+assert.equal(mItems[0].active, true);
+assert.equal(mItems[0].connected, true);
+assert.equal(mItems[0].targetSpaceId, "sp-l1");
+assert.equal(mItems[1].connected, false, "loading machine is not yet ready");
+assert.equal(mItems[1].state, "loading");
+assert.equal(mItems[2].connected, false, "unavailable machine is marked disconnected");
+assert.equal(mItems[2].state, "unavailable");
+assert.equal(mItems[2].targetSpaceId, null, "empty remote has no target space");
+assert.equal(mItems[3].connected, true, "ready machine shows connected");
+assert.equal(mItems[3].targetSpaceId, "wsl/sp-2", "returns to last active space on wsl");
+assert.equal(mItems[3].count, 2);
+
+assert.deepEqual(filterMachineItems(mItems, "").map((x) => x.label), ["local", "dev", "vps", "wsl"]);
+assert.deepEqual(filterMachineItems(mItems, "wl").map((x) => x.label), ["wsl"], "fuzzy-matches machine name");
+assert.deepEqual(filterMachineItems(mItems, "api").map((x) => x.label), ["wsl"], "matches open space names on machine");
+assert.deepEqual(filterMachineItems(mItems, "loc").map((x) => x.label), ["local"], "matches local machine");
+
+selectMachine(mItems[3]);
+assert.deepEqual(machCalls.pop(), ["space.select", { id: "wsl/sp-2" }]);
+selectMachine(mItems[2]);
+assert.deepEqual(machCalls.pop(), ["space.new", { machine: "vps" }]);
+selectMachine({ ...mItems[0], targetSpaceId: null });
+assert.deepEqual(machCalls.pop(), ["space.new", { machine: "" }]);
+
+console.log("ok: extras fzf project picker + machine switcher + worktree slots + auto keys.custom.json merge + vim copy mode");

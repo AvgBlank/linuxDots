@@ -71,9 +71,22 @@ export function navigation(beforeAsk = (_cx) => {}, core = { spaces, panes, agen
     const back = trail[s.id]?.find(id => s.tabs.some(c => c.id === id));
     run(back ? "tab.select" : "space.select", { id: back ?? s.id });
   }
-  // The spaces the keys count and walk: all but Home, wrapping as space.next does.
+  // The spaces the keys count: per-machine (matching the sidebar's per-device 1..9 numbers), falling back if on Home with no local spaces.
   function selectSpace(index) {
-    const s = spaces().filter(s => s.id !== homeId())[index - 1];
+    const all = spaces().filter(s => s.id !== homeId());
+    const cur = spaces().find(s => s.active);
+    const curMachine = cur?.machine ?? null;
+    const byMachine = shared("t3-spaces.by-machine");
+    const ids = byMachine?.[curMachine ?? ""]?.length ? byMachine[curMachine ?? ""]
+      : Object.values(byMachine ?? {}).find(a => a.length) ?? null;
+    if (ids) {
+      const id = ids[index - 1];
+      const s = id ? all.find(x => x.id === id) : null;
+      if (s) showSpace(s);
+      return;
+    }
+    const mine = all.filter(s => (s.machine ?? null) === curMachine);
+    const s = (mine.length ? mine : all)[index - 1];
     if (s) showSpace(s);
   }
   function walkSpaces(by) {
