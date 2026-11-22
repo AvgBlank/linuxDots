@@ -115,8 +115,12 @@
   },
   "layout:focus": {
     "cmd-shift-b": "t3-tabs.sidebar",
+    "ctrl-alt-b": "t3-tabs.sidebar",
     "cmd-shift-s": "t3-tabs.settle",
+    "ctrl-alt-s": "t3-tabs.settle",
     "cmd-p": "mod.open:t3-picker",
+    "ctrl-alt-p": "mod.open:t3-picker",
+    "ctrl-a space": "mod.open:t3-picker",
     "cmd-]": "t3-tabs.next",
     "cmd-[": "t3-tabs.prev",
     "cmd-w": "t3-tabs.close-tab",
@@ -124,6 +128,7 @@
     "cmd-shift-w": "t3-tabs.close-pane",
     "ctrl-alt-x": "t3-tabs.close-pane",
     "cmd-shift-h": "t3-tabs.home",
+    "ctrl-alt-h": "t3-tabs.home",
     "cmd-t": "t3-tabs.new",
     "ctrl-alt-c": "t3-tabs.new",
     "ctrl-alt-shift-1": "t3-tabs.space:1",
@@ -268,6 +273,12 @@
     "ctrl-alt-shift-x": "overlay.close"
   },
   "mod:t3-pane": {
+    "cmd-w": "overlay.close",
+    "cmd-shift-w": "overlay.close",
+    "ctrl-alt-x": "overlay.close",
+    "ctrl-alt-shift-x": "overlay.close"
+  },
+  "mod:extras": {
     "cmd-w": "overlay.close",
     "cmd-shift-w": "overlay.close",
     "ctrl-alt-x": "overlay.close",

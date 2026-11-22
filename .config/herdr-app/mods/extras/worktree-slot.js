@@ -3,6 +3,7 @@
 import { div } from "gpui-kit";
 import { h_flex, v_flex, InputState, Input } from "gpui-base";
 import { theme, home, appHome, exec, notify, openOverlay, closeOverlay, props, readTextFile, writeTextFile, settings } from "herdr";
+import * as fs from "fs/promises";
 import { norm, tilde, baseOf, openProjectDir } from "./project.js";
 
 const ROW = 24;
@@ -42,6 +43,7 @@ async function readSlots() {
 }
 
 async function saveSlot(repoKey, slots, slot, path) {
+  await fs.mkdir(`${appHome()}/data/extras`, { recursive: true }).catch(() => {});
   for (let attempt = 0; attempt < 2; attempt++) {
     const { state, disk } = await readSlots();
     state[repoKey] = { ...slots, [slot]: path };

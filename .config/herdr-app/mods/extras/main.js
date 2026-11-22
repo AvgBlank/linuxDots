@@ -1,5 +1,5 @@
 import { View, div } from "gpui-kit";
-import { spaces, panes, agents, focused, theme, run, hc, exec, home, appHome, window, openOverlay, nextCommand, shared, setShared, notify, readTextFile, writeTextFile, props } from "herdr";
+import { spaces, panes, agents, focused, theme, run, hc, exec, home, appHome, window, openOverlay, nextCommand, shared, setShared, notify, readTextFile, writeTextFile, props, checking } from "herdr";
 import * as fs from "fs/promises";
 import { Buffer } from "buffer";
 import { initProjectPicker, renderProjectPicker } from "./project.js";
@@ -33,15 +33,6 @@ function sendOsNotification(title, body) {
     exec("notify-send", [title, body]).catch(() => {});
   }
 }
-// App commands one after another (run() calls from a mod aren't ordered).
-// Runs herdr-app directly (works on Windows/macOS/Linux without `sh`), falling back to ~/.local/bin/herdr-app on POSIX.
-const herdrDo = (command, args) => {
-  const argv = ["do", command, JSON.stringify(args)];
-  return exec("herdr-app", argv).catch((err) => {
-    if (window()?.platform === "windows") throw err;
-    return exec(`${home()}/.local/bin/herdr-app`, argv);
-  });
-};
 // Inline equalize for remote machines (runs python3 on the remote machine against its local hc, zero host Python needed).
 const REMOTE_EQUALIZE = `
 import json, subprocess, sys
@@ -83,6 +74,43 @@ const SLOTS = () => `${appHome()}/data/tab-slots.json`;
 const shownTabs = (space) => space.tabs;
 const lowestFree = (slots) => { let n = 1; while (Object.values(slots).includes(n)) n++; return n; };
 
+// Merges keys.custom.json into base keys.json (returns new JSON string only when a change is needed, else null).
+// Clears any platform-default `terminal` entry that would shadow a custom `global` key (`terminal` beats `global` in Herdr).
+export function mergeCustomKeys(baseText, customText) {
+  if (!baseText || !customText) return null;
+  let base, custom;
+  try { base = JSON.parse(baseText); custom = JSON.parse(customText); } catch { return null; }
+  if (!base || typeof base !== "object" || !custom || typeof custom !== "object") return null;
+  let changed = false;
+  for (const [section, bindings] of Object.entries(custom)) {
+    if (!bindings || typeof bindings !== "object") continue;
+    const dest = (base[section] && typeof base[section] === "object") ? base[section] : (base[section] = {}, changed = true, base[section]);
+    for (const [k, v] of Object.entries(bindings)) {
+      if (JSON.stringify(dest[k]) !== JSON.stringify(v)) { dest[k] = v; changed = true; }
+    }
+  }
+  if (base.terminal && typeof base.terminal === "object" && custom.global && typeof custom.global === "object") {
+    for (const k of Object.keys(custom.global)) {
+      if (k in base.terminal && !(custom.terminal && k in custom.terminal)) {
+        delete base.terminal[k];
+        changed = true;
+      }
+    }
+  }
+  return changed ? JSON.stringify(base, null, 2) + "\n" : null;
+}
+
+// Automatically applies keys.custom.json onto this machine's keys.json on startup — zero manual scripts needed.
+async function syncCustomKeys() {
+  const customPath = `${appHome()}/keys.custom.json`, keysPath = `${appHome()}/keys.json`;
+  const [customText, baseText] = await Promise.all([
+    readTextFile(customPath).catch(() => null),
+    readTextFile(keysPath).catch(() => null),
+  ]);
+  const next = mergeCustomKeys(baseText, customText);
+  if (next) await writeTextFile(keysPath, next, baseText).catch((e) => console.log(`extras syncCustomKeys: ${e}`));
+}
+
 // Handles extras.<command> keys from keys.json, and renders the project picker when opened as a dialog.
 export default class Extras extends View {
   init(_props, cx) {
@@ -94,6 +122,7 @@ export default class Extras extends View {
       initWtPicker(this, cx);
       return;
     }
+    if (!checking()) cx.spawn(() => syncCustomKeys());
     this.cur = this.prev = null;
     // slots: this copy's numbers. disk: the file's text as last read or written here (writes only replace that).
     // pending: tabs tab-N just made, not yet in spaces(). sharedText: the "tab-slots" this copy last published.
@@ -172,16 +201,23 @@ export default class Extras extends View {
     } else if (name === "tab" || name === "slot") {
       // tab-N: the tab numbered N, made if there's none. slot-N: only an existing one.
       await this.ready;
-      if (!space) return;
+      if (!space || space.id === shared("t3-home.space")) return;
       this.reconcile(cx);
       const slots = this.slots[space.id] ?? {};
       const id = Object.keys(slots).find((k) => slots[k] === n);
       if (id) return run("tab.select", { id });
       if (name === "slot") return;
-      const r = await herdrDo("tab.new", { space: space.id });
+      // Use native run("tab.new") and wait for the new tab id in spaces() (no herdr-app CLI / PATH required).
+      const before = new Set(space.tabs.map((t) => t.id));
+      run("tab.new", { space: space.id });
       let made = null;
-      try { made = JSON.parse(r.stdout).tab; } catch {}
-      if (!made) return notify({ title: `Couldn't open tab ${n}`, body: r.stderr?.trim() || r.stdout?.trim() || "herdr-app tab.new failed", level: "warning", timeout: 5000 });
+      for (let k = 0; k < 60; k++) {
+        await cx.sleep(50);
+        const now = spaces().find((s) => s.id === space.id);
+        const added = now?.tabs.find((t) => !before.has(t.id));
+        if (added) { made = added.id; break; }
+      }
+      if (!made) return notify({ title: `Couldn't open tab ${n}`, body: "New tab did not appear", level: "warning", timeout: 5000 });
       this.pending.set(made, Date.now());
       this.slots[space.id] = { ...this.slots[space.id], [made]: n };
       this.save();
@@ -284,10 +320,12 @@ export default class Extras extends View {
     setShared("tab-slots", JSON.parse(text));
     // Atomic, and only over the text this copy last saw: if another copy wrote in between, read what's there and write again
     // (its numbers came in through "tab-slots" already).
-    const write = (retry) => writeTextFile(SLOTS(), text, this.disk).then(() => { this.disk = text; }, async (e) => {
-      this.disk = await readTextFile(SLOTS()).catch(() => null);
-      if (retry) write(false); else console.log(`extras: couldn't save tab numbers: ${e}`);
-    });
+    const write = (retry) => fs.mkdir(`${appHome()}/data`, { recursive: true }).catch(() => {}).then(() =>
+      writeTextFile(SLOTS(), text, this.disk).then(() => { this.disk = text; }, async (e) => {
+        this.disk = await readTextFile(SLOTS()).catch(() => null);
+        if (retry) write(false); else console.log(`extras: couldn't save tab numbers: ${e}`);
+      })
+    );
     write(true);
   }
 
@@ -304,8 +342,7 @@ export default class Extras extends View {
         const at = want.findIndex((t, j) => t.id !== tabs[j].id);
         if (at < 0) break;
         // Into the place of the tab that's there now, counted among all the space's tabs.
-        const r = await herdrDo("tab.move", { id: want[at].id, index: space.tabs.findIndex((x) => x.id === tabs[at].id) + 1 });
-        if (r.code !== 0) { console.log(`extras: tab.move failed: ${r.stderr?.trim()}`); break; }
+        run("tab.move", { id: want[at].id, index: space.tabs.findIndex((x) => x.id === tabs[at].id) + 1 });
         // spaces() shows the move a frame or more later: wait for it, so the same move isn't sent again.
         for (let k = 0; k < 20; k++) {
           const now = spaces().find((s) => s.id === spaceId);

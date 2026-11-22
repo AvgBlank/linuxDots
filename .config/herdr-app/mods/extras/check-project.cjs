@@ -97,4 +97,30 @@ assert.equal(slotKey("/Users/husain/linuxDots", null), "/Users/husain/linuxDots/
 assert.equal(slotKey("/home/hussain/linuxDots", "wsl"), "wsl:/home/hussain/linuxDots/.git");
 assert.equal(branchSlug("feat/win test!"), "feat-win-test");
 
-console.log("ok: extras project picker + worktree slots (local/remote, subdir guard, Windows paths, porcelain, REMOTE_LIST)");
+// 4. Auto-merge of keys.custom.json into platform keys.json (Windows/macOS/Linux)
+const mainSrc = fs.readFileSync(path.join(__dirname, "main.js"), "utf8");
+const fnMatch = /export function mergeCustomKeys\([\s\S]*?\n\}/.exec(mainSrc);
+assert.ok(fnMatch, "mergeCustomKeys exported from main.js");
+const mergeCustomKeys = new Function(`${fnMatch[0].replace(/^export /, "")}\nreturn mergeCustomKeys;`)();
+
+const winBase = JSON.stringify({
+  global: { "ctrl-shift-t": "tab.new", "alt-1": "space.select:1" },
+  terminal: { "ctrl-shift-c": "terminal.copy", "ctrl-f": "terminal.search" },
+});
+const customText = fs.readFileSync(path.join(__dirname, "..", "..", "keys.custom.json"), "utf8");
+const merged = mergeCustomKeys(winBase, customText);
+assert.ok(merged, "produces merged JSON when custom keys are missing");
+const parsedKeys = JSON.parse(merged);
+assert.equal(parsedKeys.global["ctrl-shift-t"], "tab.new", "preserves Windows base keys");
+assert.equal(parsedKeys.global["alt-q"], "extras.tab-1");
+assert.equal(parsedKeys.global["ctrl-f"], "extras.project");
+assert.equal(parsedKeys.global["ctrl-a p"], "layout.toggle:sidebar");
+assert.equal("ctrl-f" in parsedKeys.terminal, false, "removes shadowed terminal binding");
+assert.equal(parsedKeys.terminal["ctrl-shift-c"], "terminal.copy");
+assert.equal(parsedKeys.terminal["ctrl-a ctrl-a"], "send:\u0001");
+assert.equal(parsedKeys["layout:focus"]["ctrl-alt-b"], "t3-tabs.sidebar");
+assert.ok(parsedKeys["mod:extras"]);
+assert.equal(mergeCustomKeys(merged, customText), null, "idempotent: no write when already synced");
+assert.equal(mergeCustomKeys(null, customText), null, "skips if base keys.json not created yet");
+
+console.log("ok: extras project picker + worktree slots + auto keys.custom.json merge");

@@ -21,6 +21,8 @@ const lightsStrip = () => {
   const w = window(), root = layout();
   return barAtBottom() && w?.platform === "macos" && w.titlebar === "none" && !w.fullscreen && Boolean(root?.traffic_lights) && Boolean(sidebarParts(root).rail?.hidden);
 };
+// Windows/Linux with the tab bar at the bottom: put window buttons (min/max/close) in the top strip (`work-top`), not at the bottom.
+const topWinButtons = () => barAtBottom() && Boolean(window()?.buttons);
 
 const inboxShown = () => sidebarParts(layout()).stack?.active === "inbox";
 
@@ -282,12 +284,12 @@ export default class Tabs extends View {
     });
   }
 
-  // The bar at the bottom leaves macOS's window buttons over the panes' top-left. With the sidebar (whose brand row holds
-  // them) hidden, the gap above the panes grows to the old top bar's 40, so they sit where they always did; else 8.
+  // The bar at the bottom leaves macOS's window buttons over the panes' top-left (40px when sidebar hidden),
+  // and on Windows/Linux holds the top-right min/max/close strip (40px, matching the sidebar brand row); else 8.
   // A resize, saved as a drag is: the layout file stays as it is.
   syncTopGap() {
     if (props()?.part || shared("layout") !== "focus") return;
-    const px = lightsStrip() ? 40 : 8;
+    const px = lightsStrip() || topWinButtons() ? 40 : 8;
     if (px === this.topGap) return;
     this.topGap = px;
     run("layout.resize", { id: "work-top", px });
@@ -296,30 +298,42 @@ export default class Tabs extends View {
   render(cx) {
     this.syncHeader(cx);
     this.syncTopGap();
-    // The work column's width, in a strip the bar's controls can't change: measured in the bar, their collapsing would undo itself.
-    // on_size_change reports zoomed pixels. Past T3's 768 for the same controls: here they share the row with the tabs.
-    if (props()?.part === "measure") {
-      const strip = lightsStrip(), root = layout();
-      const every = strip ? agents() : [], all = strip ? terminals() : [], under = subAgents(every, all);
-      const st = (a) => treeStatus(ownStatus(a.status, a.address, all), under(a.address));
-      return h_flex().id("bar-measure").size_full().items_center()
-        .on_size_change((size) => setShared("bar.compact", size.width / (Number(settings()?.zoom) || 1) < 1024))
-        .when(strip, el => el.pl((root.traffic_lights[0] + 64) / settings().zoom)
-          .child(this.sidebarToggle(theme(), (_e, cx) => cx.stop_propagation(), awake(st, under), st, true)));
-    }
     const t = theme(), w = window();
     const stopPress = (_e, cx) => cx.stop_propagation();
     // 24 as T3's tab bar +; the window's own buttons 28, as its titlebar controls.
-    const button = (id, glyph, label, action, key, size = 24) => tip(this, t, id, label, stop(this, t, id, div().id(id).size(size).flex_none().flex().items_center().justify_center().rounded(8).text_color(lit(this, id)).hover(s => s.bg(t.hover)).on_hover(glow(this, id))
+    const button = (id, glyph, label, action, key, size = 24, below = !barAtBottom()) => tip(this, t, id, label, stop(this, t, id, div().id(id).size(size).flex_none().flex().items_center().justify_center().rounded(8).text_color(lit(this, id)).hover(s => s.bg(t.hover)).on_hover(glow(this, id))
       .role("button").accessibility_label(label)
-      .on_mouse_down("left", stopPress).on_click(action).child(glyph), 8), { action: key, below: !barAtBottom() });
-    // The bar's end, a block of its own after the controls other mods put in the bar (Actions, Review): + keeps its spot
-    // however wide they are, and the window's own buttons stay last.
-    if (props()?.part === "end") return focusRoot(this, h_flex().size_full().items_center().justify_end().bg(t.chrome)
-      .child(h_flex().id("tabs-end").flex_none().pr(12).gap(4).items_center().on_size_change((size) => this.fit(size))
-        .when(w?.buttons, el => el.child(button("minimize", w.platform === "windows" ? svg("mods/t3-tabs/icons/win-min.svg").size(16) : "−", "Minimize", () => run("window.minimize"), undefined, 28))
-          .child(button("maximize", w.platform === "windows" ? svg(`mods/t3-tabs/icons/${w.maximized ? "win-restore" : "win-max"}.svg`).size(16) : "□", w.maximized ? "Restore" : "Maximize", () => run("window.maximize"), undefined, 28))
-          .child(button("close-window", w.platform === "windows" ? svg("mods/t3-tabs/icons/win-close.svg").size(16) : svg("mods/t3-tabs/icons/x.svg").size(16), "Close window", () => run("window.close"), undefined, 28)))));
+      .on_mouse_down("left", stopPress).on_click(action).child(glyph), 8), { action: key, below });
+    const winButtons = (below) => [
+      button("minimize", w.platform === "windows" ? svg("mods/t3-tabs/icons/win-min.svg").size(16) : "−", "Minimize", () => run("window.minimize"), undefined, 28, below),
+      button("maximize", w.platform === "windows" ? svg(`mods/t3-tabs/icons/${w.maximized ? "win-restore" : "win-max"}.svg`).size(16) : "□", w.maximized ? "Restore" : "Maximize", () => run("window.maximize"), undefined, 28, below),
+      button("close-window", w.platform === "windows" ? svg("mods/t3-tabs/icons/win-close.svg").size(16) : svg("mods/t3-tabs/icons/x.svg").size(16), "Close window", () => run("window.close"), undefined, 28, below),
+    ];
+    // The work column's width, in a strip the bar's controls can't change: measured in the bar, their collapsing would undo itself.
+    // On macOS (sidebar hidden) holds the sidebar toggle past traffic lights; on Windows/Linux (bottom bar) holds top-right window buttons.
+    if (props()?.part === "measure") {
+      const strip = lightsStrip(), winTop = topWinButtons(), root = layout();
+      const sidebarHidden = Boolean(sidebarParts(root).rail?.hidden);
+      const showToggle = strip || (winTop && sidebarHidden);
+      const every = showToggle ? agents() : [], all = showToggle ? terminals() : [], under = subAgents(every, all);
+      const st = (a) => treeStatus(ownStatus(a.status, a.address, all), under(a.address));
+      return focusRoot(this, h_flex().id("bar-measure").size_full().items_center()
+        .when(winTop, el => el.bg(t.chrome).pr(12))
+        .on_size_change((size) => setShared("bar.compact", size.width / (Number(settings()?.zoom) || 1) < 1024))
+        .when(strip, el => el.pl((root.traffic_lights[0] + 64) / settings().zoom)
+          .child(this.sidebarToggle(t, stopPress, awake(st, under), st, true)))
+        .when(!strip && winTop && sidebarHidden, el => el.pl(8)
+          .child(this.sidebarToggle(t, stopPress, awake(st, under), st, true)))
+        .when(winTop, el => el.child(div().flex_1()).child(h_flex().flex_none().gap(4).items_center().children(winButtons(true)))));
+    }
+    // The bar's end, a block of its own after the controls other mods put in the bar (Actions, Review):
+    // window buttons stay here only when the tab bar is at the top (when at the bottom, `bar-measure` draws them at top-right).
+    if (props()?.part === "end") {
+      const endWin = Boolean(w?.buttons) && !barAtBottom();
+      return focusRoot(this, h_flex().size_full().items_center().justify_end().bg(t.chrome)
+        .child(h_flex().id("tabs-end").flex_none().pr(endWin ? 12 : 0).gap(4).items_center().on_size_change((size) => this.fit(size))
+          .when(endWin, el => el.children(winButtons(true)))));
+    }
     const space = spaces().find(p => p.active);
     // At Home, none: the brand bar's lit mark tells where this is.
     const { tabs: shown } = this.navigation.frame(!props()?.part), inbox = inboxShown();
@@ -458,7 +472,7 @@ export default class Tabs extends View {
         .child(projectMark(space, 16, t, ps))
         .child(div().min_w(0).truncate().text_size(13).text_color(t.foreground).child(space.name))
         .child(div().flex_none().w(1).h(16).ml(4).mr(4).bg(t.border))))
-      .when(Boolean(sidebar?.hidden) && !lightsStrip(), el => el.child(this.sidebarToggle(t, stopPress, awake(st, under), st)))
+      .when(Boolean(sidebar?.hidden) && !lightsStrip() && !topWinButtons(), el => el.child(this.sidebarToggle(t, stopPress, awake(st, under), st)))
       .when(Boolean(notice), el => el.child(notice))
       // The + sits right after the last tab (T3 has it after the bar's controls). The tabs' room is measured on
       // the whole area less the +, as before; the strip itself takes only its tabs' width, so + follows them.
