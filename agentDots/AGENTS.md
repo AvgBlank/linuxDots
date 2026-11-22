@@ -2,18 +2,44 @@
 
 Reproducible setup for **Claude Code** (`~/.claude`) and **Antigravity** (`~/.gemini`), tracked inside the public `AvgBlank/linuxDots` repo.
 
-Only personal configs, customizations, and custom skills live here. Upstream skills, plugins, `ccstatusline`, and Claude MCP registrations are declared in `manifest.json` and installed by `install.sh`.
+Only personal configs, customizations, and custom skills live here. Upstream skills, plugins (`ponytail`, `superpowers`), `ccstatusline`, and Claude MCP registrations are declared in `manifest.json` and installed directly from upstream by `install.sh` — neither tool depends on the other being installed.
 
 ## Bootstrap on a fresh machine
 
 ```bash
 cd ~/linuxDots/agentDots
-./install.sh              # full setup: links, templates, ccstatusline, upstream skills, plugins, Claude MCPs
-./install.sh --link-only  # offline: symlinks and rendered templates only
-./install.sh --dry-run    # preview without changing anything
+./install.sh                # full setup for both Claude Code and Antigravity
+./install.sh --agy-only     # Antigravity (~/.gemini) only
+./install.sh --claude-only  # Claude Code (~/.claude + ccstatusline) only
+./install.sh --link-only    # offline: symlinks and rendered templates only
+./install.sh --dry-run      # preview without changing anything
 ```
 
+### Flags
+
+| Flag | Effect |
+| --- | --- |
+| `--agy-only` | Only link and install Antigravity (`~/.gemini`) configs, skills, and plugins |
+| `--claude-only` | Only link and install Claude Code (`~/.claude`, `ccstatusline`) configs, skills, plugins, and MCPs |
+| `--link-only` | Offline mode — symlink configs/custom skills and render templates only (skips `bun`, `npx`, plugin, and MCP installs) |
+| `--skip-plugins` | Skip installing upstream plugins (`ponytail`, `superpowers`) |
+| `--skip-mcps` | Skip `claude mcp add` registration |
+| `--dry-run` | Print planned actions without touching disk or running installs |
+| `-h`, `--help` | Show CLI usage |
+
+`--agy-only` and `--claude-only` are mutually exclusive; any other flags can be combined (for example `./install.sh --agy-only --dry-run`).
+
 `install.sh` is idempotent and moves any existing non-symlink target to `~/.local/state/agentDots-backups/<timestamp>/` (outside scanned skill/theme dirs) before replacing it. When re-rendering `~/.claude/settings.json` or `~/.gemini/antigravity-cli/settings.json` on an existing machine, it preserves machine-local `autoMode` and `trustedWorkspaces` keys.
+
+## Installing via an agent
+
+If the user opens Claude Code or Antigravity inside `agentDots/` and asks to install this setup:
+
+1. Check which target they want (`both`, `--agy-only`, or `--claude-only`).
+2. Verify prerequisites are on `PATH`: `git`, `python3`, `jq`, `sqlite3`, `npx` (for upstream skills), `agy` (for Antigravity plugins), `claude` and `bun` (for Claude plugins, MCPs, and `ccstatusline`). Report anything missing before proceeding.
+3. Preview first with `./install.sh --dry-run` (plus `--agy-only` / `--claude-only` if requested).
+4. Run `./install.sh` with the chosen flags. Note: writing into `~/.gemini/` / `~/.claude/` and fetching upstream skills/plugins over the network requires unsandboxed shell access — ask the user to approve that command rather than skipping steps silently.
+5. Verify symlinks resolve and remind the user of the manual post-install steps printed at the end (`~/.unslop/voice/husain/`, Herdr hooks, Figma OAuth).
 
 ## Layout
 
@@ -54,6 +80,7 @@ agentDots/
   - Put harness-agnostic custom skills in `agentDots/skills/<name>/`.
   - Put skills that reference tool names, model tiers, or harness paths (`delegate`, `figma`, `video`) in both `agentDots/claude/skills/<name>/` and `agentDots/gemini/skills/<name>/`, keeping both in sync.
 - **Adding an upstream skill repo:** Add the repo and active skill list to `manifest.json` under `skillRepos`, then run `./install.sh`.
+- **Adding a plugin:** Add `{name, repo, url, subdir, claudePlugin}` to `manifest.json` under `plugins`, then run `./install.sh`.
 - **Adding an MCP server:** Add it to `gemini/mcp_config.json` AND `manifest.json` (`mcps`), then re-run `./install.sh`. Never put API keys or bearer tokens in either file.
 - **Adding a hook:** Edit `claude/settings.json.tmpl` and/or `gemini/hooks.json.tmpl` using `__HOME__` instead of hardcoded home paths, then run `./install.sh --link-only`.
 

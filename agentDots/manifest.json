@@ -79,19 +79,22 @@
       "url": "https://mcp.context7.com/mcp"
     }
   ],
-  "plugins": {
-    "claudeMarketplaces": [
-      {
-        "name": "ponytail",
-        "repo": "DietrichGebert/ponytail"
-      }
-    ],
-    "claudePlugins": [
-      "ponytail@ponytail"
-    ],
-    "antigravityImportFromClaude": true,
-    "notes": "superpowers and engineering sync via Claude account and import into Antigravity via `agy plugin import claude`."
-  },
+  "plugins": [
+    {
+      "name": "ponytail",
+      "repo": "DietrichGebert/ponytail",
+      "url": "https://github.com/DietrichGebert/ponytail.git",
+      "subdir": ".",
+      "claudePlugin": "ponytail@ponytail"
+    },
+    {
+      "name": "superpowers",
+      "repo": "obra/superpowers",
+      "url": "https://github.com/obra/superpowers.git",
+      "subdir": ".",
+      "claudePlugin": "superpowers@superpowers"
+    }
+  ],
   "globalTools": [
     {
       "name": "ccstatusline",
