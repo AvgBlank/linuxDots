@@ -117,6 +117,7 @@ assert.equal(parsedKeys.global["ctrl-f"], "extras.project");
 assert.equal(parsedKeys.global["ctrl-a p"], "layout.toggle:sidebar");
 assert.equal(parsedKeys.global["ctrl-a ["], "extras.copymode");
 assert.equal(parsedKeys.global["ctrl-a m"], "extras.machine");
+assert.equal(parsedKeys.global["alt-f4"], "window.close");
 assert.equal("alt-!" in parsedKeys.global, false, "prunes alt-! that hijacks plain Shift+1 on Windows");
 assert.equal("alt-@" in parsedKeys.global, false, "prunes alt-@ that hijacks plain Shift+2 on Windows");
 assert.equal(parsedKeys.global["alt-shift-1"], "extras.agent-1", "keeps alt-shift-1 agent binding");

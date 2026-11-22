@@ -1,5 +1,6 @@
 {
   "global": {
+    "alt-f4": "window.close",
     "ctrl-a d": "window.close",
     "ctrl-a p": "layout.toggle:sidebar",
     "ctrl-a space": "mod.open:picker",
