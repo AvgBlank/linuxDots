@@ -115,6 +115,7 @@ assert.equal(parsedKeys.global["ctrl-shift-t"], "tab.new", "preserves Windows ba
 assert.equal(parsedKeys.global["alt-q"], "extras.tab-1");
 assert.equal(parsedKeys.global["ctrl-f"], "extras.project");
 assert.equal(parsedKeys.global["ctrl-a p"], "layout.toggle:sidebar");
+assert.equal(parsedKeys.global["ctrl-a ["], "extras.copymode");
 assert.equal("ctrl-f" in parsedKeys.terminal, false, "removes shadowed terminal binding");
 assert.equal(parsedKeys.terminal["ctrl-shift-c"], "terminal.copy");
 assert.equal(parsedKeys.terminal["ctrl-a ctrl-a"], "send:\u0001");
@@ -123,4 +124,139 @@ assert.ok(parsedKeys["mod:extras"]);
 assert.equal(mergeCustomKeys(merged, customText), null, "idempotent: no write when already synced");
 assert.equal(mergeCustomKeys(null, customText), null, "skips if base keys.json not created yet");
 
-console.log("ok: extras project picker + worktree slots + auto keys.custom.json merge");
+// 5. Native Vim copy mode (full motions, visual / V-LINE, relative-line navigation, search, yank)
+const cmSrc = fs.readFileSync(path.join(__dirname, "copy-mode.js"), "utf8");
+const cmCleaned = cmSrc
+  .replace(/^import .*$/gm, "")
+  .replace(/\bexport function /g, "function ");
+const { createCopyState, handleCopyKey } = new Function(`${cmCleaned}\nreturn { createCopyState, handleCopyKey };`)();
+
+const runCm = (lines) => {
+  const copied = [];
+  let closed = false;
+  const state = createCopyState(lines);
+  const ops = { copy: (t) => copied.push(t), close: () => { closed = true; } };
+  return { state, ops, copied, isClosed: () => closed };
+};
+const ev = (key, extra = {}) => ({ key, modifiers: {}, ...extra });
+const press = (state, ops, seq) => {
+  for (const ch of seq) {
+    const shift = ch >= "A" && ch <= "Z";
+    handleCopyKey(state, ev(ch.toLowerCase(), { key_char: ch, modifiers: shift ? { shift: true } : {} }), 10, ops);
+  }
+};
+
+const sample = [
+  "alpha beta_two gamma-three",
+  "  indented foo.bar/baz end",
+  "",
+  "fourth line here",
+  "fifth line target",
+];
+
+{
+  // Starts at last non-empty line; j/k with counts and sticky desiredCol
+  const { state, ops } = runCm(sample);
+  assert.equal(state.row, 4);
+  press(state, ops, "2k");
+  assert.equal(state.row, 2);
+  press(state, ops, "k");
+  assert.equal(state.row, 1);
+  press(state, ops, "$");
+  assert.equal(state.col, sample[1].length - 1);
+  press(state, ops, "j"); // empty line clamps col to 0
+  assert.equal(state.row, 2);
+  assert.equal(state.col, 0);
+  press(state, ops, "j"); // sticky desiredCol jumps back to end of line 3
+  assert.equal(state.row, 3);
+  assert.equal(state.col, sample[3].length - 1);
+}
+{
+  // w, b, e, W, B, E, ge, ^, 0, f/t/;
+  const { state, ops } = runCm(sample);
+  press(state, ops, "gg");
+  assert.equal(state.row, 0);
+  assert.equal(state.col, 0);
+  press(state, ops, "w");
+  assert.equal(state.col, 6); // beta_two
+  press(state, ops, "e");
+  assert.equal(state.col, 13); // end of beta_two
+  press(state, ops, "w");
+  assert.equal(state.col, 15); // gamma
+  press(state, ops, "w");
+  assert.equal(state.col, 20); // '-'
+  press(state, ops, "b");
+  assert.equal(state.col, 15); // gamma
+  press(state, ops, "W"); // skips gamma-three as one WORD -> wraps to line 1 'indented'
+  assert.equal(state.row, 1);
+  assert.equal(state.col, 2);
+  press(state, ops, "E");
+  assert.equal(state.col, 9); // end of 'indented'
+  press(state, ops, "W");
+  assert.equal(state.col, 11); // foo.bar/baz
+  press(state, ops, "B");
+  assert.equal(state.col, 2);
+  press(state, ops, "0");
+  assert.equal(state.col, 0);
+  press(state, ops, "^");
+  assert.equal(state.col, 2);
+  press(state, ops, "fb");
+  assert.equal(state.col, 15); // 'b' in foo.bar
+  press(state, ops, ";");
+  assert.equal(state.col, 19); // 'b' in /baz
+}
+{
+  // V (visual line) moving UP and DOWN selects complete lines cleanly
+  const { state, ops, copied, isClosed } = runCm(sample);
+  assert.equal(state.row, 4);
+  press(state, ops, "Vkky"); // lines 2, 3, 4
+  assert.equal(isClosed(), true);
+  assert.equal(copied[0], ["", "fourth line here", "fifth line target"].join("\n"));
+}
+{
+  // v (char visual) + viw + o + y
+  const { state, ops, copied } = runCm(sample);
+  press(state, ops, "ggwviwy");
+  assert.equal(copied[0], "beta_two");
+}
+{
+  // Operator-pending yank: yw, yiw, yy, 2yy
+  const a = runCm(sample);
+  press(a.state, a.ops, "ggyiw");
+  assert.equal(a.copied[0], "alpha");
+
+  const b = runCm(sample);
+  press(b.state, b.ops, "gg2yy");
+  assert.equal(b.copied[0], `${sample[0]}\n${sample[1]}`);
+}
+{
+  // Search /target<Enter> + n + N + { } paragraph jumps + Esc two-step
+  const { state, ops, isClosed } = runCm(sample);
+  press(state, ops, "gg/line");
+  handleCopyKey(state, ev("enter"), 10, ops);
+  assert.equal(state.row, 3);
+  press(state, ops, "n");
+  assert.equal(state.row, 4);
+  press(state, ops, "{");
+  assert.equal(state.row, 2);
+  press(state, ops, "v");
+  assert.equal(state.mode, "visual");
+  handleCopyKey(state, ev("escape"), 10, ops);
+  assert.equal(state.mode, "normal");
+  assert.equal(isClosed(), false);
+  // Second Esc in normal mode closes copy mode
+  handleCopyKey(state, ev("escape"), 10, ops);
+  assert.equal(isClosed(), true);
+}
+{
+  const { state, ops, isClosed } = runCm(sample);
+  press(state, ops, "q");
+  assert.equal(isClosed(), true);
+}
+{
+  const { state, ops, isClosed } = runCm(sample);
+  handleCopyKey(state, ev("c", { modifiers: { control: true } }), 10, ops);
+  assert.equal(isClosed(), true);
+}
+
+console.log("ok: extras project picker + worktree slots + auto keys.custom.json merge + vim copy mode");

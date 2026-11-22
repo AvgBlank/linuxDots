@@ -4,6 +4,7 @@ import * as fs from "fs/promises";
 import { Buffer } from "buffer";
 import { initProjectPicker, renderProjectPicker } from "./project.js";
 import { openWorktreeSlot, initWtPicker, renderWtPicker } from "./worktree-slot.js";
+import { initCopyMode, renderCopyMode } from "./copy-mode.js";
 
 // Vim, Neovim and fzf get the key instead of Herdr (same match as the old herdr.py).
 const EDITOR = /^g?\.?(?:view|l?n?vim?x?|fzf)(?:diff)?(?:-wrapped)?$/;
@@ -120,6 +121,10 @@ export default class Extras extends View {
     }
     if (props()?.wtPicker) {
       initWtPicker(this, cx);
+      return;
+    }
+    if (props()?.copyMode) {
+      initCopyMode(this, cx);
       return;
     }
     if (!checking()) cx.spawn(() => syncCustomKeys());
@@ -268,6 +273,19 @@ export default class Extras extends View {
       await openWorktreeSlot(arg, this.focusedCwd(), machine);
     } else if (name === "lazygit") {
       await this.popup(["lazygit"], 0.95, machine);
+    } else if (name === "copymode") {
+      const f = focused();
+      const t = f?.terminal ?? null;
+      if (t) {
+        openOverlay({
+          mod: "extras",
+          kind: "window",
+          frame: "none",
+          width: 0.92,
+          height: 0.9,
+          props: { copyMode: true, terminal: t, pane: f?.pane ?? null, machine },
+        });
+      }
     } else if (name === "scrollback") {
       const t = this.focusedTerminal();
       if (t) {
@@ -374,6 +392,7 @@ export default class Extras extends View {
   render(cx) {
     if (props()?.projectPicker) return renderProjectPicker(this);
     if (props()?.wtPicker) return renderWtPicker(this);
+    if (props()?.copyMode) return renderCopyMode(this);
     const t = theme();
     this.notifyChanges();
     // Numbering can save and move tabs, so it runs just after the frame, not in it.

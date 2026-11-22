@@ -93,6 +93,7 @@
     "ctrl-a s": "app.settings",
     "ctrl-a shift-n": "space.new",
     "ctrl-a o": "extras.target",
+    "ctrl-a [": "extras.copymode",
     "ctrl-a e": "extras.scrollback",
     "ctrl-a g": "extras.wt-open",
     "ctrl-a shift-g": "extras.wt-new",
