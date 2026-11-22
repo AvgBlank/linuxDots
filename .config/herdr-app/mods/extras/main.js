@@ -91,6 +91,15 @@ export function mergeCustomKeys(baseText, customText) {
       if (JSON.stringify(dest[k]) !== JSON.stringify(v)) { dest[k] = v; changed = true; }
     }
   }
+  if (base.global && typeof base.global === "object") {
+    // Prune legacy `alt-!`..`alt-(` bindings: on Windows GPUI matches alt+<shifted-symbol> even on plain Shift+1..9.
+    for (const k of Object.keys(base.global)) {
+      if (/^alt-[!@#$%^&*(]$/.test(k) && String(base.global[k]).startsWith("extras.agent-") && !(custom.global && k in custom.global)) {
+        delete base.global[k];
+        changed = true;
+      }
+    }
+  }
   if (base.terminal && typeof base.terminal === "object" && custom.global && typeof custom.global === "object") {
     for (const k of Object.keys(custom.global)) {
       if (k in base.terminal && !(custom.terminal && k in custom.terminal)) {
