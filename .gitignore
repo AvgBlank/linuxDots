@@ -32,6 +32,7 @@ __pycache__
 !.config/herdr-app/mods/
 !.config/herdr-app/themes/
 !.config/herdr-app/backgrounds/
+!.config/herdr-app/fonts/
 .config/herdr-app/**/jsconfig.json
 .config/herdr-app/**/*.d.ts
 .config/herdr-app/**/*.error
