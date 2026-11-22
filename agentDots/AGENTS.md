@@ -36,7 +36,7 @@ cd ~/linuxDots/agentDots
 If the user opens Claude Code or Antigravity inside `agentDots/` and asks to install this setup:
 
 1. Check which target they want (`both`, `--agy-only`, or `--claude-only`).
-2. Verify prerequisites are on `PATH`: `git`, `python3`, `jq`, `sqlite3`, `npx` (for upstream skills), `agy` (for Antigravity plugins), `claude` and `bun` (for Claude plugins, MCPs, and `ccstatusline`). Report anything missing before proceeding.
+2. Verify prerequisites are on `PATH`: `git`, `python3`, `jq`, `npx` (for upstream skills), `agy` (for Antigravity plugins), `claude` and `bun` (for Claude plugins, MCPs, and `ccstatusline`), plus optional `sqlite3` (used only as a fallback in `statusline.sh` for conversation titles). Report anything missing before proceeding.
 3. Preview first with `./install.sh --dry-run` (plus `--agy-only` / `--claude-only` if requested).
 4. Run `./install.sh` with the chosen flags. Note: writing into `~/.gemini/` / `~/.claude/` and fetching upstream skills/plugins over the network requires unsandboxed shell access — ask the user to approve that command rather than skipping steps silently.
 5. Verify symlinks resolve and remind the user of the manual post-install steps printed at the end (`~/.unslop/voice/husain/`, Herdr hooks, Figma OAuth).

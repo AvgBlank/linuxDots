@@ -181,11 +181,11 @@ install_agy_plugin() {
 
   local tmpdir
   tmpdir="$(mktemp -d)"
-  if git clone --depth 1 --quiet "$url" "$tmpdir" 2>/dev/null; then
+  if git clone --depth 1 --quiet "$url" "$tmpdir" </dev/null 2>/dev/null; then
     local target="$tmpdir"
     [[ "$subdir" != "." && -n "$subdir" ]] && target="$tmpdir/$subdir"
     log "Installing Antigravity plugin: $name ($url)"
-    if ! agy plugin install "$target"; then
+    if ! agy plugin install "$target" </dev/null; then
       SKIPPED+=("agy plugin $name (agy plugin install failed)")
     fi
   else
@@ -262,14 +262,14 @@ if [[ "$LINK_ONLY" -eq 0 ]]; then
 
   # 3b. Upstream skills from manifest.json
   if command -v npx >/dev/null 2>&1; then
-    while IFS= read -r repo; do
+    while IFS= read -r -u 3 repo; do
       [[ -n "$repo" ]] || continue
       log "Installing upstream skill repo: $repo"
-      run_cmd npx -y skills add "$repo" -g -y || SKIPPED+=("skills repo $repo (install failed)")
-    done < <(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print("\n".join(r["repo"] for r in d["skillRepos"]))' "$MANIFEST")
+      run_cmd npx -y skills add "$repo" -g -y </dev/null || SKIPPED+=("skills repo $repo (install failed)")
+    done 3< <(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print("\n".join(r["repo"] for r in d["skillRepos"]))' "$MANIFEST")
 
     # Link installed upstream skills from ~/.agents/skills into target dirs
-    while IFS=$'\t' read -r skill_name target_key; do
+    while IFS=$'\t' read -r -u 3 skill_name target_key; do
       [[ -n "$skill_name" ]] || continue
       src="$HOME/.agents/skills/$skill_name"
       case "$target_key" in
@@ -278,7 +278,7 @@ if [[ "$LINK_ONLY" -eq 0 ]]; then
         geminiCli)    [[ "$DO_AGY" -eq 1 ]]    && link_path "$src" "$HOME/.gemini/antigravity-cli/skills/$skill_name" ;;
         geminiLegacy) [[ "$DO_AGY" -eq 1 ]]    && link_path "$src" "$HOME/.gemini/skills/$skill_name" ;;
       esac
-    done < <(python3 -c '
+    done 3< <(python3 -c '
 import json, sys
 d = json.load(open(sys.argv[1]))
 for r in d["skillRepos"]:
@@ -294,12 +294,12 @@ for r in d["skillRepos"]:
   if [[ "$SKIP_PLUGINS" -eq 0 ]]; then
     if [[ "$DO_CLAUDE" -eq 1 ]]; then
       if command -v claude >/dev/null 2>&1; then
-        while IFS=$'\t' read -r repo plugin_id; do
+        while IFS=$'\t' read -r -u 3 repo plugin_id; do
           [[ -n "$repo" ]] || continue
           log "Installing Claude plugin: $plugin_id ($repo)"
-          run_cmd claude plugin marketplace add "$repo" || true
-          run_cmd claude plugin install "$plugin_id" || SKIPPED+=("Claude plugin $plugin_id (install failed)")
-        done < <(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print("\n".join("\t".join((p["repo"], p["claudePlugin"])) for p in d["plugins"]))' "$MANIFEST")
+          run_cmd claude plugin marketplace add "$repo" </dev/null || true
+          run_cmd claude plugin install "$plugin_id" </dev/null || SKIPPED+=("Claude plugin $plugin_id (install failed)")
+        done 3< <(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print("\n".join("\t".join((p["repo"], p["claudePlugin"])) for p in d["plugins"]))' "$MANIFEST")
       else
         SKIPPED+=("Claude plugins (claude CLI not found)")
       fi
@@ -307,10 +307,10 @@ for r in d["skillRepos"]:
 
     if [[ "$DO_AGY" -eq 1 ]]; then
       if command -v agy >/dev/null 2>&1; then
-        while IFS=$'\t' read -r name url subdir; do
+        while IFS=$'\t' read -r -u 3 name url subdir; do
           [[ -n "$name" ]] || continue
           install_agy_plugin "$name" "$url" "$subdir"
-        done < <(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print("\n".join("\t".join((p["name"], p["url"], p["subdir"])) for p in d["plugins"]))' "$MANIFEST")
+        done 3< <(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print("\n".join("\t".join((p["name"], p["url"], p["subdir"])) for p in d["plugins"]))' "$MANIFEST")
       else
         SKIPPED+=("Antigravity plugins (agy CLI not found)")
       fi
@@ -320,11 +320,11 @@ for r in d["skillRepos"]:
   # 3d. Claude global MCPs (Antigravity MCPs are already linked via gemini/mcp_config.json)
   if [[ "$DO_CLAUDE" -eq 1 && "$SKIP_MCPS" -eq 0 ]]; then
     if command -v claude >/dev/null 2>&1; then
-      while IFS=$'\t' read -r name transport url; do
+      while IFS=$'\t' read -r -u 3 name transport url; do
         [[ -n "$name" ]] || continue
         log "Registering Claude MCP: $name ($url)"
-        run_cmd claude mcp add -s user -t "$transport" "$name" "$url" || true
-      done < <(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print("\n".join("\t".join((m["name"], m["transport"], m["url"])) for m in d["mcps"]))' "$MANIFEST")
+        run_cmd claude mcp add -s user -t "$transport" "$name" "$url" </dev/null || true
+      done 3< <(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print("\n".join("\t".join((m["name"], m["transport"], m["url"])) for m in d["mcps"]))' "$MANIFEST")
     else
       SKIPPED+=("Claude MCP registration (claude CLI not found)")
     fi
