@@ -2,7 +2,7 @@ import { View, div } from "gpui-kit";
 import { spaces, panes, agents, focused, theme, run, hc, exec, home, appHome, window, openOverlay, nextCommand, shared, setShared, notify, readTextFile, writeTextFile, props, checking } from "herdr";
 import * as fs from "fs/promises";
 import { Buffer } from "buffer";
-import { initProjectPicker, renderProjectPicker } from "./project.js";
+import { initProjectPicker, renderProjectPicker, openFzfProjectPicker, renderFzfTabBar } from "./project.js";
 import { openWorktreeSlot, initWtPicker, renderWtPicker } from "./worktree-slot.js";
 import { initCopyMode, renderCopyMode } from "./copy-mode.js";
 
@@ -117,6 +117,9 @@ export default class Extras extends View {
   init(_props, cx) {
     if (props()?.projectPicker) {
       initProjectPicker(this, cx);
+      return;
+    }
+    if (props()?.fzfTabs) {
       return;
     }
     if (props()?.wtPicker) {
@@ -264,7 +267,7 @@ export default class Extras extends View {
         : await exec("python3", [HELPER(), "equalize", tab.id]);
       if (r.code !== 0) notify({ title: "Couldn't equalize the panes", body: (r.stderr || r.stdout).trim(), level: "error" });
     } else if (name === "project") {
-      openOverlay({ mod: "extras", kind: "dialog", frame: "none", width: 0.7, height: 0.7, props: { projectPicker: true, machine } });
+      await openFzfProjectPicker(machine, cx);
     } else if (name === "wt" && ["new", "open", "remove"].includes(arg)) {
       // worktrees: the shipped dialog, with remove/new drawn as T3's alert box.
       const size = arg === "open" ? { width: 560, height: 480 } : { width: 512, height: 240, frame: "none" };
@@ -391,6 +394,7 @@ export default class Extras extends View {
 
   render(cx) {
     if (props()?.projectPicker) return renderProjectPicker(this);
+    if (props()?.fzfTabs) return renderFzfTabBar();
     if (props()?.wtPicker) return renderWtPicker(this);
     if (props()?.copyMode) return renderCopyMode(this);
     const t = theme();

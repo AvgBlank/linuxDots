@@ -2,7 +2,7 @@
 // Works locally on macOS/Linux/Windows via fs/promises and on remote machines (WSL, SSH) via exec(..., { on }).
 import { div } from "gpui-kit";
 import { h_flex, v_flex, InputState, Input } from "gpui-base";
-import { theme, spaces, panes, machines, home, run, exec, closeOverlay, props, window, settings } from "herdr";
+import { theme, spaces, panes, machines, terminals, home, run, hc, exec, openOverlay, closeOverlay, readTextFile, props, shared, setShared, window, settings } from "herdr";
 import * as fs from "fs/promises";
 
 const ROW = 24;
@@ -83,6 +83,224 @@ async function listRemote(machine) {
   return { userHome, dirs };
 }
 
+// Real fzf project picker matching funcs.zsh (`herdrthing`): scans ~, ~/projects (depth 1),
+// ~/organizations (depth 1..2), and on WSL also the Windows host (/mnt/c/Users/<user>, Projects, Organizations).
+// Args: $1 = output file, $2 = newline-separated open dirs, $3 = fzf prompt, $4 = "1" for Tab/Shift-Tab switch, $5 = initial query.
+export const FZF_PROJECT_SCRIPT = `
+PATH="$HOME/.fzf/bin:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+out="$1"
+open_dirs="$2"
+prompt="$3"
+multi_m="$4"
+init_q="$5"
+if ! command -v fzf >/dev/null 2>&1; then
+  printf '__NO_FZF__\\n' > "$out"
+  exit 0
+fi
+win_dir=""
+if [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
+  cmd_bin=$(command -v cmd.exe 2>/dev/null || echo /mnt/c/Windows/System32/cmd.exe)
+  if [ -x "$cmd_bin" ]; then
+    win_user=$(cd /mnt/c 2>/dev/null && "$cmd_bin" /c 'echo %USERNAME%' 2>/dev/null | tr -d '\\r' | tail -n 1)
+    [ -n "$win_user" ] && [ -d "/mnt/c/Users/$win_user" ] && win_dir="/mnt/c/Users/$win_user"
+  fi
+fi
+list_dirs() {
+  for root in "$HOME" "$HOME/projects" "$win_dir" "\${win_dir:+$win_dir/Projects}"; do
+    [ -n "$root" ] && [ -d "$root" ] && find "$root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null
+  done
+  for root in "$HOME/organizations" "\${win_dir:+$win_dir/Organizations}"; do
+    [ -n "$root" ] && [ -d "$root" ] && find "$root" -mindepth 1 -maxdepth 2 -type d 2>/dev/null
+  done
+}
+tab=$(printf '\\t')
+formatted=$(
+  list_dirs | HERDR_OPEN_DIRS="$open_dirs" awk -v home="$HOME" '
+    BEGIN {
+      n = split(ENVIRON["HERDR_OPEN_DIRS"], a, "\\n");
+      for (i = 1; i <= n; i++) if (a[i] != "") is_open[a[i]] = 1;
+    }
+    {
+      p = $0; sub(/\\/+$/, "", p);
+      if (p == "" || seen[p]++) next;
+      disp = p;
+      if (home != "" && index(p, home "/") == 1) disp = "~" substr(p, length(home) + 1);
+      if (is_open[p]) printf "0\\t%s  \\033[32m●\\033[0m\\t%s\\n", disp, p;
+      else printf "1\\t%s\\t%s\\n", disp, p;
+    }
+  ' | LC_ALL=C sort -t "$tab" -k1,1 -k2,2 | cut -f2-
+)
+if [ "$multi_m" = "1" ]; then
+  res=$(printf '%s\\n' "$formatted" | FZF_DEFAULT_OPTS="" FZF_DEFAULT_OPTS_FILE="" fzf --ansi --no-height --layout=reverse --border=none --no-multi --delimiter="$tab" --with-nth=1 --print-query --expect=tab,btab --query="$init_q" --prompt="$prompt")
+  rc=$?
+else
+  res=$(printf '%s\\n' "$formatted" | FZF_DEFAULT_OPTS="" FZF_DEFAULT_OPTS_FILE="" fzf --ansi --no-height --layout=reverse --border=none --no-multi --delimiter="$tab" --with-nth=1 --query="$init_q" --prompt="$prompt")
+  rc=$?
+fi
+{ [ "$rc" -eq 0 ] || [ "$rc" -eq 1 ]; } && [ -n "$res" ] && printf '%s\\n' "$res" > "$out"
+`;
+
+export function projectTargets() {
+  const remotes = machines().filter((m) => m.name && !m.temporary).map((m) => m.name);
+  return [null, ...remotes];
+}
+
+export function defaultProjectMachine(activeMachine) {
+  const targets = projectTargets();
+  if (activeMachine && targets.includes(activeMachine)) return activeMachine;
+  if (window()?.platform === "windows" && targets.length > 1) return targets[1];
+  return null;
+}
+
+export function parseFzfOutput(raw, multiMachine) {
+  if (!raw) return { action: "cancel", query: "" };
+  const text = raw.replace(/\r\n/g, "\n").replace(/\n+$/, "");
+  if (!text) return { action: "cancel", query: "" };
+  if (text === "__NO_FZF__") return { action: "no_fzf", query: "" };
+  if (multiMachine) {
+    // With `--print-query --expect=tab,btab`: line 0 = typed query, line 1 = expect key ("" | "tab" | "btab"), line 2 = selected item.
+    const lines = text.split("\n");
+    const query = lines[0] ?? "";
+    const key = lines[1] ?? "";
+    const line = lines[2] ?? "";
+    if (key === "tab") return { action: "tab", delta: 1, query };
+    if (key === "btab") return { action: "tab", delta: -1, query };
+    const picked = line.includes("\t") ? line.split("\t")[1] : line;
+    return picked ? { action: "pick", path: picked, query } : { action: "cancel", query };
+  }
+  const picked = text.includes("\t") ? text.split("\t")[1] : text;
+  return picked ? { action: "pick", path: picked, query: "" } : { action: "cancel", query: "" };
+}
+
+export async function openFzfProjectPicker(activeMachine, cx, explicitTarget, initialQuery = "") {
+  const targets = projectTargets();
+  const hasRemotes = targets.length > 1;
+  const target = explicitTarget !== undefined ? explicitTarget : defaultProjectMachine(activeMachine);
+  const query = typeof initialQuery === "string" ? initialQuery : "";
+
+  // Bare Windows local tab has no POSIX sh/fzf: use the GPUI picker (carrying query back and forth on Tab).
+  if (window()?.platform === "windows" && !target) {
+    openOverlay({ mod: "extras", kind: "dialog", frame: "none", width: 0.7, height: 0.7, props: { projectPicker: true, machine: null, forceLocal: true, initialQuery: query } });
+    return;
+  }
+
+  const token = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const outFile = `/tmp/herdr-proj-${token}.out`;
+  const openDirs = [...existingFolders(target)].join("\n");
+  const prompt = target ? `Herdr project (${target})> ` : "Herdr project> ";
+  const args = ["run", "--bg", "--json", "--rm", "--no-parent"];
+  if (target) args.push("--on", target);
+  else args.push("--cwd", home());
+  args.push("--", "sh", "-c", FZF_PROJECT_SCRIPT, "sh", outFile, openDirs, prompt, hasRemotes ? "1" : "0", query);
+
+  let address;
+  try {
+    const r = await hc(args);
+    if (r.code !== 0) throw new Error(r.stderr?.trim() || "hc run failed");
+    address = JSON.parse(r.stdout).address;
+  } catch {
+    openOverlay({ mod: "extras", kind: "dialog", frame: "none", width: 0.7, height: 0.7, props: { projectPicker: true, machine: target, initialQuery: query } });
+    return;
+  }
+
+  const layout = hasRemotes
+    ? {
+        type: "column",
+        children: [
+          { id: "fzf-tabs", type: "block", size: { px: 34 }, content: { mod: "extras", props: { fzfTabs: true, token, machine: target, targets, terminal: address } } },
+          { id: "fzf-term", type: "block", size: { weight: 1 }, content: { terminal: address } },
+        ],
+      }
+    : { type: "block", content: { terminal: address } };
+
+  openOverlay({ kind: "dialog", width: 0.7, height: 0.7, layout });
+
+  // Watch for the fzf popup terminal to exit off the main command loop so other extras keys stay responsive.
+  cx.spawn(async (cx) => {
+    let seen = false;
+    for (let i = 0; i < 40; i++) {
+      if (terminals().some((t) => t.address === address)) { seen = true; break; }
+      await cx.sleep(50);
+    }
+    const deadline = Date.now() + 600_000;
+    while (seen && Date.now() < deadline && terminals().some((t) => t.address === address)) {
+      await cx.sleep(80);
+    }
+
+    const raw = await readTextFile(outFile, { on: target }).catch(() => null);
+    exec("rm", ["-f", outFile], { on: target }).catch(() => {});
+    const res = parseFzfOutput(raw, hasRemotes);
+    const nextQuery = res.query || "";
+
+    // Check if the user clicked a machine tab pill in the top bar (which sent Tab to preserve the typed query).
+    const clicked = shared("fzf-tab-switch");
+    if (clicked && clicked.token === token) {
+      setShared("fzf-tab-switch", null);
+      openFzfProjectPicker(clicked.machine, cx, clicked.machine, nextQuery);
+      return;
+    }
+
+    if (res.action === "no_fzf") {
+      openOverlay({ mod: "extras", kind: "dialog", frame: "none", width: 0.7, height: 0.7, props: { projectPicker: true, machine: target, initialQuery: query } });
+    } else if (res.action === "tab" && hasRemotes) {
+      const idx = targets.indexOf(target);
+      const next = targets[(idx + res.delta + targets.length) % targets.length];
+      openFzfProjectPicker(next, cx, next, nextQuery);
+    } else if (res.action === "pick") {
+      openProjectDir(res.path, target);
+    }
+  });
+}
+
+// Clickable machine tab bar rendered above the real fzf terminal when multiple machines exist.
+export function renderFzfTabBar() {
+  const p = props() || {};
+  const t = theme();
+  const s = settings();
+  const font = s?.font_family || "JetBrains Mono";
+  const fontSize = Number(s?.font_size) || 13;
+  const targets = Array.isArray(p.targets) ? p.targets : projectTargets();
+  const current = p.machine ?? null;
+
+  return h_flex()
+    .id("fzf-tab-bar")
+    .size_full()
+    .px(12)
+    .gap(6)
+    .items_center()
+    .bg(t.chrome || t.surface)
+    .border_b(1)
+    .border_color(t.border)
+    .font_family(font)
+    .text_size(fontSize - 1)
+    .children(
+      targets.map((m) => {
+        const on = m === current;
+        return div()
+          .id(`ft-${m ?? "local"}`)
+          .h(22)
+          .px(8)
+          .flex()
+          .items_center()
+          .rounded(5)
+          .cursor_pointer()
+          .bg(on ? t.raised : "#00000000")
+          .text_color(on ? (t.ansi4 || t.foreground) : t.dim)
+          .when(on, (el) => el.font_medium())
+          .hover((st) => st.text_color(t.foreground))
+          .on_click(() => {
+            if (m === current) return;
+            setShared("fzf-tab-switch", { token: p.token, machine: m });
+            // Send Tab so fzf exits via --expect=tab and prints the current query to outFile.
+            if (p.terminal) hc(["keys", p.terminal, "tab"]).catch(() => hc(["kill", p.terminal]).catch(() => {}));
+          })
+          .child(m ?? "local");
+      }),
+    )
+    .child(div().flex_1())
+    .child(div().text_size(fontSize - 2).text_color(t.dim).child("Tab: machine"));
+}
+
 // Match an existing space on `machine` working in `folder`, else create one there.
 export function openProjectDir(folder, machine) {
   const target = norm(folder), ps = panes();
@@ -118,18 +336,20 @@ export function initProjectPicker(view, cx) {
   const p = props();
   const remotes = machines().filter((m) => m.name && !m.temporary).map((m) => m.name);
   view.targets = [null, ...remotes];
-  // Default to the active space's machine; on Windows with a remote (e.g. wsl) and no active remote space, prefer the first remote.
+  // Default to the active space's machine; on Windows with a remote (e.g. wsl) and no active remote space, prefer the first remote (unless forceLocal).
   const activeMachine = p?.machine || null;
-  view.machine = activeMachine && view.targets.includes(activeMachine) ? activeMachine
+  view.machine = p?.forceLocal ? null
+    : activeMachine && view.targets.includes(activeMachine) ? activeMachine
     : (window()?.platform === "windows" && remotes.length ? remotes[0] : null);
   view.at = 0;
-  view.filter = "";
+  view.filter = typeof p?.initialQuery === "string" ? p.initialQuery : "";
   view.scrollTop = 0;
   view.listH = undefined;
   view.pointerY = undefined;
   view.loading = false;
   view.error = null;
   view.input = InputState.new({ placeholder: "" });
+  if (view.filter) view.input.set_value(view.filter);
   view.input.on("change", (_e, cx) => { view.filter = view.input.value(); view.at = 0; view.scrollTop = 0; cx.notify(); });
   view.input.on("submit", () => choose(view, itemsOf(view).items[view.at]));
   view.input.focus();
@@ -189,6 +409,12 @@ function choose(view, item) {
 
 function switchMachine(view, next, cx) {
   if (next === view.machine) return;
+  // When switching from bare-Windows GPUI fallback onto a POSIX/WSL remote, hand back to real fzf with the typed query.
+  if (next || window()?.platform !== "windows") {
+    closeOverlay(props().overlay);
+    openFzfProjectPicker(next, cx, next, view.filter);
+    return;
+  }
   view.machine = next;
   view.at = 0;
   view.scrollTop = 0;

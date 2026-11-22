@@ -17,9 +17,9 @@ const projBody = projSrc
   .replace(/^import .*;\r?\n/gm, "")
   .replace(/^export /gm, "");
 
-const { norm, inside, tilde, baseOf, openProjectDir, REMOTE_LIST } = new Function(
+const { norm, inside, tilde, baseOf, openProjectDir, REMOTE_LIST, FZF_PROJECT_SCRIPT, parseFzfOutput } = new Function(
   "spaces", "panes", "run",
-  `${projBody}\nreturn { norm, inside, tilde, baseOf, openProjectDir, REMOTE_LIST };`
+  `${projBody}\nreturn { norm, inside, tilde, baseOf, openProjectDir, REMOTE_LIST, FZF_PROJECT_SCRIPT, parseFzfOutput };`
 )(() => mockSpaces, () => mockPanes, (cmd, args) => calls.push([cmd, args]));
 
 // Path normalization (POSIX + Windows backslashes)
@@ -259,4 +259,27 @@ const sample = [
   assert.equal(isClosed(), true);
 }
 
-console.log("ok: extras project picker + worktree slots + auto keys.custom.json merge + vim copy mode");
+// Check FZF_PROJECT_SCRIPT syntax, WSL host discovery paths, and Tab-switching output parsing
+assert.ok(FZF_PROJECT_SCRIPT.includes("WSLInterop"), "detects WSL for Windows host projects");
+assert.ok(FZF_PROJECT_SCRIPT.includes("/mnt/c/Users/$win_user"), "scans Windows host home on WSL");
+assert.ok(FZF_PROJECT_SCRIPT.includes("$win_dir/Projects"), "scans Windows host Projects on WSL");
+assert.ok(FZF_PROJECT_SCRIPT.includes("$win_dir/Organizations"), "scans Windows host Organizations on WSL");
+assert.ok(FZF_PROJECT_SCRIPT.includes("--expect=tab,btab"), "supports Tab/Shift-Tab machine switching in fzf");
+assert.ok(FZF_PROJECT_SCRIPT.includes("--print-query"), "preserves typed search query across tabs");
+assert.ok(FZF_PROJECT_SCRIPT.includes('--query="$init_q"'), "pre-fills carried search query");
+assert.ok(FZF_PROJECT_SCRIPT.includes('"$rc" -eq 1'), "allows rc=1 so Tab carries query even with 0 matches");
+execFileSync("sh", ["-n", "-c", FZF_PROJECT_SCRIPT]);
+const awkOnly = FZF_PROJECT_SCRIPT.replace(/if \[ "\$multi_m"[\s\S]*/, 'printf "%s\\n" "$formatted"');
+const awkOut = execFileSync("sh", ["-c", awkOnly, "sh", "/tmp/noop", `${os.homedir()}/linuxDots\n${os.homedir()}/projects`, "Herdr> ", "1", ""], { encoding: "utf8" });
+assert.ok(awkOut.includes("~/linuxDots  \x1b[32m●\x1b[0m\t"), "marks open spaces with green dot and tab-delimited real path");
+
+assert.deepEqual(parseFzfOutput("", true), { action: "cancel", query: "" });
+assert.deepEqual(parseFzfOutput("__NO_FZF__\n", true), { action: "no_fzf", query: "" });
+assert.deepEqual(parseFzfOutput("aura\ntab\n~/linuxDots\t/home/h/linuxDots\n", true), { action: "tab", delta: 1, query: "aura" });
+assert.deepEqual(parseFzfOutput("aura\ntab\n", true), { action: "tab", delta: 1, query: "aura" });
+assert.deepEqual(parseFzfOutput("\ntab\n~/linuxDots\t/home/h/linuxDots\n", true), { action: "tab", delta: 1, query: "" });
+assert.deepEqual(parseFzfOutput("foo\nbtab\n", true), { action: "tab", delta: -1, query: "foo" });
+assert.deepEqual(parseFzfOutput("lin\n\n~/linuxDots  ●\t/home/h/linuxDots\n", true), { action: "pick", path: "/home/h/linuxDots", query: "lin" });
+assert.deepEqual(parseFzfOutput("~/linuxDots  ●\t/home/h/linuxDots\n", false), { action: "pick", path: "/home/h/linuxDots", query: "" });
+
+console.log("ok: extras fzf project picker + worktree slots + auto keys.custom.json merge + vim copy mode");
