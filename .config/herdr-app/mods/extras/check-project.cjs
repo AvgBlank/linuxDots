@@ -17,9 +17,9 @@ const projBody = projSrc
   .replace(/^import .*;\r?\n/gm, "")
   .replace(/^export /gm, "");
 
-const { norm, inside, tilde, baseOf, openProjectDir, REMOTE_LIST, FZF_PROJECT_SCRIPT, parseFzfOutput } = new Function(
+const { norm, inside, tilde, baseOf, openProjectDir, REMOTE_LIST, FZF_PROJECT_SCRIPT, buildWinFzfScript, parseFzfOutput } = new Function(
   "spaces", "panes", "run",
-  `${projBody}\nreturn { norm, inside, tilde, baseOf, openProjectDir, REMOTE_LIST, FZF_PROJECT_SCRIPT, parseFzfOutput };`
+  `${projBody}\nreturn { norm, inside, tilde, baseOf, openProjectDir, REMOTE_LIST, FZF_PROJECT_SCRIPT, buildWinFzfScript, parseFzfOutput };`
 )(() => mockSpaces, () => mockPanes, (cmd, args) => calls.push([cmd, args]));
 
 // Path normalization (POSIX + Windows backslashes)
@@ -281,5 +281,16 @@ assert.deepEqual(parseFzfOutput("\ntab\n~/linuxDots\t/home/h/linuxDots\n", true)
 assert.deepEqual(parseFzfOutput("foo\nbtab\n", true), { action: "tab", delta: -1, query: "foo" });
 assert.deepEqual(parseFzfOutput("lin\n\n~/linuxDots  ●\t/home/h/linuxDots\n", true), { action: "pick", path: "/home/h/linuxDots", query: "lin" });
 assert.deepEqual(parseFzfOutput("~/linuxDots  ●\t/home/h/linuxDots\n", false), { action: "pick", path: "/home/h/linuxDots", query: "" });
+
+const winPs = buildWinFzfScript({
+  outFile: "C:/Users/husain/.config/herdr-app/data/extras/proj-1.out",
+  openDirs: ["C:/Users/husain/projects/foo"],
+  prompt: "Herdr project> ",
+  multiMachine: true,
+  initialQuery: "foo'bar",
+});
+assert.ok(winPs.includes("Get-Command fzf"), "checks for fzf on Windows");
+assert.ok(winPs.includes("--print-query"), "Windows fzf preserves query across Tab");
+assert.ok(winPs.includes("'foo''bar'"), "safely escapes single quotes in PowerShell");
 
 console.log("ok: extras fzf project picker + worktree slots + auto keys.custom.json merge + vim copy mode");

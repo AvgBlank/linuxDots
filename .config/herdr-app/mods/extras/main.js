@@ -268,6 +268,10 @@ export default class Extras extends View {
       if (r.code !== 0) notify({ title: "Couldn't equalize the panes", body: (r.stderr || r.stdout).trim(), level: "error" });
     } else if (name === "project") {
       await openFzfProjectPicker(machine, cx);
+    } else if (name === "projectswitch") {
+      const req = shared("project-switch");
+      setShared("project-switch", null);
+      if (req) await openFzfProjectPicker(req.machine, cx, req.machine, req.query ?? "");
     } else if (name === "wt" && ["new", "open", "remove"].includes(arg)) {
       // worktrees: the shipped dialog, with remove/new drawn as T3's alert box.
       const size = arg === "open" ? { width: 560, height: 480 } : { width: 512, height: 240, frame: "none" };

@@ -2,8 +2,9 @@
 // Works locally on macOS/Linux/Windows via fs/promises and on remote machines (WSL, SSH) via exec(..., { on }).
 import { div } from "gpui-kit";
 import { h_flex, v_flex, InputState, Input } from "gpui-base";
-import { theme, spaces, panes, machines, terminals, home, run, hc, exec, openOverlay, closeOverlay, readTextFile, props, shared, setShared, window, settings } from "herdr";
+import { theme, spaces, panes, machines, terminals, home, appHome, run, hc, exec, openOverlay, closeOverlay, readTextFile, props, shared, setShared, window, settings } from "herdr";
 import * as fs from "fs/promises";
+import { Buffer } from "buffer";
 
 const ROW = 24;
 
@@ -172,26 +173,88 @@ export function parseFzfOutput(raw, multiMachine) {
   return picked ? { action: "pick", path: picked, query: "" } : { action: "cancel", query: "" };
 }
 
+const psStr = (s) => `'${String(s ?? "").replace(/'/g, "''")}'`;
+
+// Native Windows PowerShell + fzf script (used on the Windows `local` tab when `fzf` is installed on Windows PATH).
+export function buildWinFzfScript({ outFile, openDirs, prompt, multiMachine, initialQuery }) {
+  const openList = openDirs.map(psStr).join(", ");
+  return [
+    "$ErrorActionPreference = 'SilentlyContinue'",
+    `$out = ${psStr(outFile)}`,
+    "$fzf = Get-Command fzf -ErrorAction SilentlyContinue",
+    "if (-not $fzf) { [System.IO.File]::WriteAllText($out, \"__NO_FZF__`n\", [System.Text.UTF8Encoding]::new($false)); exit 0 }",
+    "$homeDir = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }",
+    "$openSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)",
+    `foreach ($o in @(${openList})) { if ($o) { [void]$openSet.Add(($o -replace '\\\\','/').TrimEnd('/')) } }`,
+    "$seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)",
+    "$rows = [System.Collections.Generic.List[string]]::new()",
+    "$esc = [char]27; $tab = [char]9",
+    "$hNorm = ($homeDir -replace '\\\\','/').TrimEnd('/')",
+    "function Add-Dir([string]$full) {",
+    "  if (-not $full) { return }",
+    "  $n = ($full -replace '\\\\','/').TrimEnd('/')",
+    "  if (-not $seen.Add($n)) { return }",
+    "  $disp = if ($hNorm -and $n.StartsWith(\"$hNorm/\", [System.StringComparison]::OrdinalIgnoreCase)) { '~' + $n.Substring($hNorm.Length) } else { $n }",
+    "  if ($openSet.Contains($n)) { $rows.Add(\"0$tab$disp  ${esc}[32m●${esc}[0m$tab$full\") }",
+    "  else { $rows.Add(\"1$tab$disp$tab$full\") }",
+    "}",
+    "foreach ($r in @($homeDir, (Join-Path $homeDir 'projects'), (Join-Path $homeDir 'Projects'))) {",
+    "  if ($r -and (Test-Path -LiteralPath $r -PathType Container)) { Get-ChildItem -LiteralPath $r -Directory -Force | ForEach-Object { Add-Dir $_.FullName } }",
+    "}",
+    "foreach ($r in @((Join-Path $homeDir 'organizations'), (Join-Path $homeDir 'Organizations'))) {",
+    "  if ($r -and (Test-Path -LiteralPath $r -PathType Container)) {",
+    "    Get-ChildItem -LiteralPath $r -Directory -Force | ForEach-Object {",
+    "      Add-Dir $_.FullName",
+    "      Get-ChildItem -LiteralPath $_.FullName -Directory -Force | ForEach-Object { Add-Dir $_.FullName }",
+    "    }",
+    "  }",
+    "}",
+    "$sorted = $rows | Sort-Object | ForEach-Object { ($_ -split $tab, 2)[1] }",
+    "$env:FZF_DEFAULT_OPTS = ''; $env:FZF_DEFAULT_OPTS_FILE = ''",
+    `$fargs = @('--ansi','--no-height','--layout=reverse','--border=none','--no-multi',"--delimiter=$tab",'--with-nth=1',("--query=" + ${psStr(initialQuery)}),("--prompt=" + ${psStr(prompt)}))`,
+    multiMachine ? "$fargs += @('--print-query','--expect=tab,btab')" : "",
+    "$res = $sorted | & $fzf.Source @fargs",
+    "$rc = $LASTEXITCODE",
+    "if (($rc -eq 0 -or $rc -eq 1) -and $res) {",
+    "  [System.IO.File]::WriteAllText($out, (($res -join \"`n\") + \"`n\"), [System.Text.UTF8Encoding]::new($false))",
+    "}",
+  ].filter(Boolean).join("\n");
+}
+
 export async function openFzfProjectPicker(activeMachine, cx, explicitTarget, initialQuery = "") {
   const targets = projectTargets();
   const hasRemotes = targets.length > 1;
   const target = explicitTarget !== undefined ? explicitTarget : defaultProjectMachine(activeMachine);
   const query = typeof initialQuery === "string" ? initialQuery : "";
+  const isWinLocal = window()?.platform === "windows" && !target;
 
-  // Bare Windows local tab has no POSIX sh/fzf: use the GPUI picker (carrying query back and forth on Tab).
-  if (window()?.platform === "windows" && !target) {
-    openOverlay({ mod: "extras", kind: "dialog", frame: "none", width: 0.7, height: 0.7, props: { projectPicker: true, machine: null, forceLocal: true, initialQuery: query } });
-    return;
+  // On Windows local, probe `where fzf` first so missing fzf falls back to GPUI immediately without a terminal flash.
+  if (isWinLocal) {
+    const probe = await exec("where", ["fzf"]).catch(() => ({ code: 1 }));
+    if (probe.code !== 0) {
+      openOverlay({ mod: "extras", kind: "dialog", frame: "none", width: 0.7, height: 0.7, props: { projectPicker: true, machine: null, forceLocal: true, initialQuery: query } });
+      return;
+    }
   }
 
   const token = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  const outFile = `/tmp/herdr-proj-${token}.out`;
-  const openDirs = [...existingFolders(target)].join("\n");
+  const openDirs = [...existingFolders(target)];
   const prompt = target ? `Herdr project (${target})> ` : "Herdr project> ";
+  let outFile;
   const args = ["run", "--bg", "--json", "--rm", "--no-parent"];
-  if (target) args.push("--on", target);
-  else args.push("--cwd", home());
-  args.push("--", "sh", "-c", FZF_PROJECT_SCRIPT, "sh", outFile, openDirs, prompt, hasRemotes ? "1" : "0", query);
+  if (isWinLocal) {
+    const dir = `${appHome()}/data/extras`;
+    await fs.mkdir(dir, { recursive: true }).catch(() => {});
+    outFile = `${dir}/proj-${token}.out`;
+    const ps = buildWinFzfScript({ outFile, openDirs, prompt, multiMachine: hasRemotes, initialQuery: query });
+    const enc = Buffer.from(ps, "utf16le").toString("base64");
+    args.push("--cwd", home(), "--", "powershell", "-NoProfile", "-EncodedCommand", enc);
+  } else {
+    outFile = `/tmp/herdr-proj-${token}.out`;
+    if (target) args.push("--on", target);
+    else args.push("--cwd", home());
+    args.push("--", "sh", "-c", FZF_PROJECT_SCRIPT, "sh", outFile, openDirs.join("\n"), prompt, hasRemotes ? "1" : "0", query);
+  }
 
   let address;
   try {
@@ -199,7 +262,7 @@ export async function openFzfProjectPicker(activeMachine, cx, explicitTarget, in
     if (r.code !== 0) throw new Error(r.stderr?.trim() || "hc run failed");
     address = JSON.parse(r.stdout).address;
   } catch {
-    openOverlay({ mod: "extras", kind: "dialog", frame: "none", width: 0.7, height: 0.7, props: { projectPicker: true, machine: target, initialQuery: query } });
+    openOverlay({ mod: "extras", kind: "dialog", frame: "none", width: 0.7, height: 0.7, props: { projectPicker: true, machine: target, forceLocal: !target, initialQuery: query } });
     return;
   }
 
@@ -228,7 +291,8 @@ export async function openFzfProjectPicker(activeMachine, cx, explicitTarget, in
     }
 
     const raw = await readTextFile(outFile, { on: target }).catch(() => null);
-    exec("rm", ["-f", outFile], { on: target }).catch(() => {});
+    if (isWinLocal) fs.unlink(outFile).catch(() => {});
+    else exec("rm", ["-f", outFile], { on: target }).catch(() => {});
     const res = parseFzfOutput(raw, hasRemotes);
     const nextQuery = res.query || "";
 
@@ -241,7 +305,7 @@ export async function openFzfProjectPicker(activeMachine, cx, explicitTarget, in
     }
 
     if (res.action === "no_fzf") {
-      openOverlay({ mod: "extras", kind: "dialog", frame: "none", width: 0.7, height: 0.7, props: { projectPicker: true, machine: target, initialQuery: query } });
+      openOverlay({ mod: "extras", kind: "dialog", frame: "none", width: 0.7, height: 0.7, props: { projectPicker: true, machine: target, forceLocal: !target, initialQuery: query } });
     } else if (res.action === "tab" && hasRemotes) {
       const idx = targets.indexOf(target);
       const next = targets[(idx + res.delta + targets.length) % targets.length];
@@ -407,18 +471,12 @@ function choose(view, item) {
   openProjectDir(item.dir, view.machine);
 }
 
-function switchMachine(view, next, cx) {
+function switchMachine(view, next) {
   if (next === view.machine) return;
-  // When switching from bare-Windows GPUI fallback onto a POSIX/WSL remote, hand back to real fzf with the typed query.
-  if (next || window()?.platform !== "windows") {
-    closeOverlay(props().overlay);
-    openFzfProjectPicker(next, cx, next, view.filter);
-    return;
-  }
-  view.machine = next;
-  view.at = 0;
-  view.scrollTop = 0;
-  loadMachine(view, next, cx);
+  // Hand off to the persistent `extras` block before closing this overlay so async fzf launch isn't cancelled on overlay close.
+  setShared("project-switch", { machine: next, query: view.filter });
+  closeOverlay(props().overlay);
+  run("extras.projectswitch");
 }
 
 export function renderProjectPicker(view) {
