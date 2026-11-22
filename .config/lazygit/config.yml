@@ -1,3 +1,4 @@
 gui:
-  authorColors:
-    'Husain Khorakiwala': '#00FFFF'
+  theme:
+    authorColors:
+      'Husain Khorakiwala': '#00FFFF'

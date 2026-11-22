@@ -23,7 +23,7 @@ import { loadCommands, matchCommands } from "./commands.js";
 import { askSide, sessionOf, control, listSessions, askCodexSide, codexCalls } from "./sdk.js";
 import { copyText, pasteImage, openFile, pickFiles, imageSize } from "./platform.js";
 import { live } from "./stream.js";
-import { herdr, chatTab, away, hide, show } from "./backstage.js";
+import { herdr, chatTab, away, hide, show, bring } from "./backstage.js";
 
 const ASK_FIRST = "Answer the question above first.";
 const ASK_STALE = "The question changed before your click reached it. Pick again.";
@@ -76,6 +76,11 @@ const IMAGE_EXT = /\.(png|jpe?g|gif|webp|bmp|tiff?|heic)$/i;
 const AGENTS = { claude: "Claude Code", codex: "Codex", hermes: "Hermes" };
 
 const sleep = (cx, ms) => new Promise((r) => cx.timer.after(ms, () => r()));
+// One pending watch per folder, shared: a quiet folder's watch never returns, and starting another each 15 s (or each
+// chat switch) piled up host calls until the runtime's limit of 1024 failed every read.
+const watches = new Map();
+const watchOnce = (dir, cx) => watches.get(dir) ?? watches.set(dir,
+  watchFolder(dir).catch(() => sleep(cx, 3000)).finally(() => watches.delete(dir))).get(dir);
 const hash = (s) => createHash("sha1").update(s).digest("hex").slice(0, 16);
 const shellEscape = (p) => p.replace(/([ \\'"()&;$`!*?[\]{}<>|#~])/g, "\\$1");
 const localId = (id) => id?.split("/").pop();
@@ -137,8 +142,17 @@ function shellCommands(code) {
 }
 
 // A reply cut into markdown and fenced code blocks: [{ md } | { code, lang, fence }].
-// Fences may be indented (a block inside a list item); its lines lose that indent.
+// Every chat asks again for each shown reply every 500 ms (makeEditors) and on each draw, a regex per line each time:
+// the same texts, so the cuts are remembered. Callers only read them.
+const cuts = new Map();
 function splitCode(text) {
+  let out = cuts.get(text);
+  if (!out) { out = cutCode(text); if (cuts.size > 1000) cuts.clear(); cuts.set(text, out); }
+  return out;
+}
+
+// Fences may be indented (a block inside a list item); its lines lose that indent.
+function cutCode(text) {
   const lines = text.split("\n");
   const out = [];
   let md = [];
@@ -405,8 +419,11 @@ export default class Chat extends View {
     this.check(cx);
   }
 
+  // terminals() copies every terminal with its labels into JS, and this runs many times per check and render: one copy
+  // per 100 ms.
   terminal() {
-    return terminals().find((x) => x.address === this.term) ?? null;
+    if (!this.termsAt || Date.now() - this.termsAt > 100) { this.termsBy = new Map(terminals().map((x) => [x.address, x])); this.termsAt = Date.now(); }
+    return this.termsBy.get(this.term) ?? null;
   }
 
   // The agent's tab and space, from the labels Herdr gives its terminal.
@@ -1447,8 +1464,19 @@ export default class Chat extends View {
     if (this.ended(term)) { if (++this.endTicks >= 2) return this.closeChat(); } else this.endTicks = 0;
     // The agent's own tab, while it's away from the chat: showing it (from the
     // Agents list) or the agent needing you brings it back; put it away again after.
-    const own = away(term) && spaces().flatMap((s) => s.tabs).find((x) => x.id === this.label("tab"));
+    // label() reads terminals(): once, not once per tab (every tab × every chat, each 2 s, stalled typing).
+    const ownId = away(term) && this.label("tab");
+    const own = ownId && spaces().flatMap((s) => s.tabs).find((x) => x.id === ownId);
     if (own && !own.settled && !own.active && term.status !== "blocked") run("tab.settle", { id: own.id });
+    // The chat and its agent's terminal are one tab: a pane split off the terminal over there (an agent running pane.split
+    // on its own pane) joins the chat here. Not while that tab is shown, so nothing vanishes in front of you.
+    const extra = own && !own.active && mine && !this.bringing
+      && panes().find((p) => p.tab === own.id && p.terminal && p.terminal !== this.term);
+    if (extra) {
+      this.bringing = true;
+      bring(extra.terminal, term).catch((e) => { this.error = `Couldn't bring the split over: ${e?.message ?? e}`; cx.notify(); })
+        .finally(() => { this.bringing = false; });
+    }
     const kind = agentKind(term);
     this.loadCmds(term, kind, cx);
     // Hermes's screen isn't read for its reply as it writes; the chat shows each step once it's stored.
@@ -1477,7 +1505,13 @@ export default class Chat extends View {
     // already reports a status has started: until its log loads, its screen
     // is the conversation, and a numbered list there isn't a question.
     const started = ["working", "idle", "done"].includes(term?.status);
-    if (term?.status === "blocked" || (term && !this.t && term.state === "live" && !started)) {
+    // Reading the agent's screen while you type in its terminal froze that terminal's echo for about a second each time
+    // (every 2 s, per chat). What the screen shows matters here only while this chat is in view, so read it only then.
+    const tab = spaces().find((s) => s.active)?.tabs.find((x) => x.active);
+    const inView = Boolean(mine) && tab?.id === mine.tab && appWindow()?.active !== false;
+    if (!inView) {
+      // Out of view, nothing is read: the next look reads again.
+    } else if (term?.status === "blocked" || (term && !this.t && term.state === "live" && !started)) {
       this.idleAsk = null;
       cx.spawn(async (cx) => {
         if (this.reading) return;
@@ -1564,7 +1598,7 @@ export default class Chat extends View {
           cx.notify();
         }
         if (on) await sleep(cx, 1500);
-        else await Promise.race([watchFolder(dir).catch(() => sleep(cx, 3000)), sleep(cx, 15000)]);
+        else await Promise.race([watchOnce(dir, cx), sleep(cx, 15000)]);
       }
     });
   }

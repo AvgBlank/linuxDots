@@ -12,20 +12,28 @@ import { spaces, panes, terminals, run, exec, hc, notify, appHome, theme, shared
 import { PANELS, enabledPanels, chatSwitchOn, find, customizeView, CUSTOMIZE_SIZE } from "./settings.js";
 import { checkMachines } from "./machines.js";
 
+// terminals() copies every terminal into JS on each call, and the helpers below ran it per pane, on every redraw and every
+// second: enough to stall typing. One copy per 100 ms instead.
+let termsAt = 0, termsBy = new Map();
+const termOf = (address) => {
+  if (Date.now() - termsAt > 100) { termsBy = new Map(terminals().map((x) => [x.address, x])); termsAt = Date.now(); }
+  return address ? termsBy.get(address) : undefined;
+};
+
 // Claude Code, Codex or Hermes, the agents the chat mod can show.
 function isAgent(pane) {
-  const term = pane.terminal && terminals().find((x) => x.address === pane.terminal);
+  const term = termOf(pane.terminal);
   const argv0 = term?.argv?.[0]?.split("/").pop() ?? "";
   const what = `${term?.report?.app ?? ""} ${term?.foreground?.name ?? ""} ${term?.program?.key ?? ""} ${argv0}`.toLowerCase();
   return what.includes("claude") || what.includes("codex") || what.includes("hermes");
 }
 
 // An agent terminal its chat moved out of its tab.
-const hasChat = (pane) => Boolean(terminals().find((x) => x.address === pane.terminal)?.labels?.["chat.tab"]);
+const hasChat = (pane) => Boolean(termOf(pane.terminal)?.labels?.["chat.tab"]);
 
 // The tab of the chat that agent terminal stepped out of.
 function chatTabOf(pane) {
-  const term = pane.terminal && terminals().find((x) => x.address === pane.terminal);
+  const term = termOf(pane.terminal);
   const id = term?.labels?.["chat.tab"];
   if (!id) return null;
   return term.address.includes("/") ? `${term.address.split("/")[0]}/${id}` : id;
@@ -101,7 +109,7 @@ export default class TopBar extends View {
     const cp = inTab.find(p => p.mod === "chat" && p.focused);
     if (cp) {
       const t = Object.keys(of).find(a => of[a] === cp.pane);
-      const term = t && terminals().find(x => x.address === t);
+      const term = t && termOf(t);
       const own = term?.labels?.["herdr.tab"];
       const id = own && (term.address.includes("/") ? `${term.address.split("/")[0]}/${own}` : own);
       // In a split, the terminal takes the chat's place there (in: the pane that comes in), rather than its tab showing whole.

@@ -64,6 +64,9 @@ export async function hide(term, fromTab) {
   }
 }
 
+// Moves another terminal from the agent's own tab into the chat's: one the agent split off its own pane while away.
+export const bring = (address, term) => moveTo(address, term.labels["herdr.space"], term.labels["chat.tab"]);
+
 // Brings the terminal back into the chat's tab.
 export async function show(term) {
   const tab = term?.labels?.["chat.tab"];

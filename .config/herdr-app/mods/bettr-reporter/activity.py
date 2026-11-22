@@ -11,7 +11,8 @@ from providers.common import dump
 
 LABEL = "bettr.activity"
 VERSION = 4
-MAX_TURNS, MAX_ENTRIES, MAX_REPLY, MAX_ITEMS, MAX_FILES = 300, 60, 2000, 30, 20
+# Labels ride along in every mod's terminals() copy, so they stay small: 300 turns made each copy ~700 KB and Herdr lag.
+MAX_TURNS, MAX_ENTRIES, MAX_REPLY, MAX_ITEMS, MAX_FILES = 10, 60, 2000, 30, 20
 # A label is one command-line argument to `hc`; Linux allows 128 KiB for one.
 # The index and each turn are kept under this many UTF-8 bytes.
 MAX_BYTES = 100_000
