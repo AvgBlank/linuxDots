@@ -334,16 +334,7 @@ export default class Spaces extends View {
       .when(a.focused, el => el.bg(tint(t.raised, "55")))
       .text_color(a.focused ? t.foreground : t.muted)
       .hover((s) => s.text_color(t.foreground))
-      // Its chat when it has one, unless its terminal is the side showing.
-      .on_click(() => {
-        const ps = panes();
-        const cp = ps.find(p => p.mod === "chat" && p.pane === (shared("chat.of") ?? {})[a.address]);
-        const tp = ps.find(p => p.pane === a.pane);
-        // Its terminal swapped into the chat's place in a split (chat.tab names the chat's tab): that's the side showing.
-        const chatTab = terminals().find(k => k.address === a.address)?.labels?.["chat.tab"];
-        const inPlace = tp && chatTab && tp.tab.split("/").pop() === chatTab;
-        run("pane.focus", { pane: cp && !tp?.zoomed && !inPlace ? cp.pane : a.pane });
-      })
+      .on_click(() => run("pane.focus", { pane: a.pane }))
       // Its number (alt-shift-N), under the space's tab count.
       .when(this.agentNum.has(a.address), el => el.child(mono(div()).absolute().left(0).top(0).bottom(0).w(BADGE)
         .flex().items_center().justify_center().text_size(11).text_color(a.focused ? t.foreground : t.dim).child(String(this.agentNum.get(a.address)))))
@@ -360,11 +351,10 @@ export default class Spaces extends View {
   // Each space's agents, in agents() order, and their row names. agent.next and
   // agent.prev follow the order the list shows them in.
   prepareAgents(rows) {
-    // What has the keyboard decides which agent is selected: its pane, or its chat (chat.of, written by the chat mod).
+    // What has the keyboard decides which agent is selected.
     // Herdr's own focused stays on the last agent after you leave it (another space, a shell).
-    const f = focused(), cp = f?.pane && panes().find(p => p.pane === f.pane && p.mod === "chat");
-    const of = shared("chat.of") ?? {}, mine = cp ? Object.keys(of).filter(k => of[k] === cp.pane) : [];
-    const on = mine.length === 1 ? mine[0] : cp ? null : (f?.pane ? panes().find(p => p.pane === f.pane)?.terminal : f?.terminal) ?? null;
+    const f = focused();
+    const on = (f?.pane ? panes().find(p => p.pane === f.pane)?.terminal : f?.terminal) ?? null;
     let list = agents().map(a => ({ ...a, focused: a.address === on }));
     const now = Date.now();
     this.listed = new Map(list.map((a) => [a.address, a.status]));

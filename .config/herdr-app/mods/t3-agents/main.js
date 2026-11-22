@@ -20,12 +20,10 @@ const sortOf = () => SORTS.find((s) => s.id === shared("agents.sort")) ?? SORTS[
 const SORT_WIDTH = 200;
 
 
-// The chat mod: a focused chat pane stands for its agent (chat.of, one owner only), so that agent's row is the one in view.
-function withChatFocus(list) {
-  // Herdr's own focused stays on the last agent after you leave it (another space, a shell): what has the keyboard decides.
-  const f = focused(), cp = f?.pane && panes().find(p => p.pane === f.pane && p.mod === "chat");
-  const of = shared("chat.of") ?? {}, mine = cp ? Object.keys(of).filter(k => of[k] === cp.pane) : [];
-  const on = mine.length === 1 ? mine[0] : cp ? null : (f?.pane ? panes().find(p => p.pane === f.pane)?.terminal : f?.terminal) ?? null;
+// Herdr's own focused stays on the last agent after you leave it (another space, a shell): what has the keyboard decides.
+function withKeyboardFocus(list) {
+  const f = focused();
+  const on = (f?.pane ? panes().find(p => p.pane === f.pane)?.terminal : f?.terminal) ?? null;
   return list.map(a => ({ ...a, focused: a.address === on }));
 }
 
@@ -172,13 +170,13 @@ export default class Agents extends View {
 
   compute() {
     const sort = sortOf();
-    let list = withChatFocus(agents());
+    let list = withKeyboardFocus(agents());
     this.listed = new Map(list.map((a) => [a.address, a.status]));
     const all = terminals();
     // A mod pane has no agent of its own, and Herdr's is then the chosen one, else the first of all: it counts only in that tab, as in the inbox.
     const f = focused();
     // Herdr's chosen agent (f.agent) stays set while a shell has the keyboard, so what's focused counts: the agent
-    // withChatFocus found (its pane or its chat), else the focused terminal. f.agent still counts as one of that agent's own
+    // withKeyboardFocus found, else the focused terminal. f.agent still counts as one of that agent's own
     // sub-agents (a peek), lit with its parent; a stale one elsewhere doesn't.
     const mine = list.find((a) => a.focused)?.address;
     const peeked = mine && f?.agent && f.agent !== mine && descendants(all, mine).some((k) => k.address === f.agent);

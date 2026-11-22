@@ -1,33 +1,99 @@
 import { View, div } from "gpui-kit";
-import { spaces, panes, agents, terminals, focused, theme, run, hc, exec, home, appHome, window, openOverlay, nextCommand, shared, setShared, notify, readTextFile, writeTextFile } from "herdr";
+import { spaces, panes, agents, focused, theme, run, hc, exec, home, appHome, window, openOverlay, nextCommand, shared, setShared, notify, readTextFile, writeTextFile, props } from "herdr";
 import * as fs from "fs/promises";
+import { Buffer } from "buffer";
+import { initProjectPicker, renderProjectPicker } from "./project.js";
+import { openWorktreeSlot, initWtPicker, renderWtPicker } from "./worktree-slot.js";
 
 // Vim, Neovim and fzf get the key instead of Herdr (same match as the old herdr.py).
 const EDITOR = /^g?\.?(?:view|l?n?vim?x?|fzf)(?:diff)?(?:-wrapped)?$/;
 const HELPER = () => `${appHome()}/mods/extras/helper.py`;
 const SCROLLBACK = 'f=$(mktemp -t scrollback); hc read "$1" > "$f"; ${EDITOR:-nvim} + "$f"; rm -f "$f"';
 const quote = (s) => JSON.stringify(s); // AppleScript strings escape like JSON
-// Tabs that hold an agent's terminal for its chat (the chat's tab stands for them). The rule t3-tabs hides them by
-// (chatPairs in t3-tabs/navigation.js), kept the same so numbers go to exactly the tabs the bar shows.
-const chatOwnTabs = (list) => new Set(list.filter(x => x.labels?.["chat.tab"] && x.labels["herdr.tab"] && x.labels["herdr.tab"] !== x.labels["chat.tab"])
-  .map(x => x.labels["herdr.tab"]));
+const xmlEsc = (s) => String(s).replace(/\r?\n/g, " ").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+// Windows Toast via built-in PowerShell + WinRT; uses PowerShell's registered AUMID so Windows 10/11 never drops the toast.
+const WIN_AUMID = "{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\\WindowsPowerShell\\v1.0\\powershell.exe";
+function sendOsNotification(title, body) {
+  const plat = window()?.platform;
+  if (plat === "macos") {
+    exec("osascript", ["-e", `display notification ${quote(body)} with title ${quote(title)}`]).catch(() => {});
+  } else if (plat === "windows") {
+    const xml = `<toast><visual><binding template="ToastGeneric"><text>${xmlEsc(title)}</text><text>${xmlEsc(body)}</text></binding></visual></toast>`;
+    const ps = [
+      "[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null",
+      "[Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] > $null",
+      "$x = New-Object Windows.Data.Xml.Dom.XmlDocument",
+      `$x.LoadXml(@'\n${xml}\n'@)`,
+      "$t = [Windows.UI.Notifications.ToastNotification]::new($x)",
+      `[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('${WIN_AUMID}').Show($t)`,
+    ].join("\n");
+    const enc = Buffer.from(ps, "utf16le").toString("base64");
+    exec("powershell", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", enc]).catch(() => {});
+  } else if (plat === "linux") {
+    exec("notify-send", [title, body]).catch(() => {});
+  }
+}
 // App commands one after another (run() calls from a mod aren't ordered).
-const HERDR = 'H=$(command -v herdr-app || echo "$HOME/.local/bin/herdr-app"); exec "$H" do "$1" "$2"';
-const herdrDo = (command, args) => exec("sh", ["-c", HERDR, "sh", command, JSON.stringify(args)]);
+// Runs herdr-app directly (works on Windows/macOS/Linux without `sh`), falling back to ~/.local/bin/herdr-app on POSIX.
+const herdrDo = (command, args) => {
+  const argv = ["do", command, JSON.stringify(args)];
+  return exec("herdr-app", argv).catch((err) => {
+    if (window()?.platform === "windows") throw err;
+    return exec(`${home()}/.local/bin/herdr-app`, argv);
+  });
+};
+// Inline equalize for remote machines (runs python3 on the remote machine against its local hc, zero host Python needed).
+const REMOTE_EQUALIZE = `
+import json, subprocess, sys
+def core(*calls):
+    lines = [{"jsonrpc":"2.0","id":0,"method":"hello","params":{}}]
+    lines += [{"jsonrpc":"2.0","id":i+1,"method":m,"params":p} for i,(m,p) in enumerate(calls)]
+    r = subprocess.run(["hc","connect"], input="".join(json.dumps(x)+"\\n" for x in lines), capture_output=True, text=True, timeout=10)
+    rep = {x.get("id"): x for x in (json.loads(l) for l in r.stdout.splitlines() if l.strip())}
+    for i in range(1, len(calls)+1):
+        if "error" in rep.get(i, {"error":"no reply"}): raise RuntimeError(str(rep.get(i,{}).get("error","no reply")))
+    return [rep[i]["result"] for i in range(1, len(calls)+1)]
+def leaves(n):
+    k = n.get("children") if n.get("type") in ("row","column") else None
+    return sum(map(leaves, k)) if k else 1
+def even(n):
+    k = n.get("children") if n.get("type") in ("row","column") else None
+    if not k: return
+    if all("px" not in (c.get("size") or {}) for c in k):
+        tot = leaves(n)
+        for c in k: c["size"] = {"weight": round(leaves(c)/tot, 6)}
+    for c in k: even(c)
+tab = sys.argv[1]
+for _ in range(3):
+    (doc,) = core(("doc.get", {"name":"herdr-app"}))
+    val = doc["value"]
+    found = [c for s in val.get("spaces",[]) for c in s.get("tabs",[]) if c.get("id") == tab]
+    if not found: raise RuntimeError(f"no tab {tab}")
+    even(found[0]["root"])
+    try:
+        core(("doc.set", {"name":"herdr-app","value":val,"version":doc["version"]}))
+        raise SystemExit(0)
+    except RuntimeError as e:
+        if "conflict" not in str(e): raise
+raise RuntimeError("the layout kept changing; try again")
+`;
 // Fixed tab numbers, as the TUI's tab-slots.json: { [space]: { [tab]: number } }. Closing a tab leaves its number free.
 // Shared as "tab-slots", the same shape, for the tab bar (t3-tabs) and other windows' copies of this mod.
 const SLOTS = () => `${appHome()}/data/tab-slots.json`;
-// The tabs the bar shows, in its order: all but a chat's hidden terminal tab.
-const shownTabs = (space) => {
-  const owned = chatOwnTabs(terminals());
-  return space.tabs.filter((x) => !owned.has(x.id));
-};
-const sleep = (s) => exec("sleep", [String(s)]);
+const shownTabs = (space) => space.tabs;
 const lowestFree = (slots) => { let n = 1; while (Object.values(slots).includes(n)) n++; return n; };
 
-// Handles extras.<command> keys from keys.json.
+// Handles extras.<command> keys from keys.json, and renders the project picker when opened as a dialog.
 export default class Extras extends View {
   init(_props, cx) {
+    if (props()?.projectPicker) {
+      initProjectPicker(this, cx);
+      return;
+    }
+    if (props()?.wtPicker) {
+      initWtPicker(this, cx);
+      return;
+    }
     this.cur = this.prev = null;
     // slots: this copy's numbers. disk: the file's text as last read or written here (writes only replace that).
     // pending: tabs tab-N just made, not yet in spaces(). sharedText: the "tab-slots" this copy last published.
@@ -42,14 +108,14 @@ export default class Extras extends View {
         fs.writeFile(`${SLOTS()}.bad`, text).catch(() => {});
         notify({ title: "Tab numbers reset", body: "data/tab-slots.json couldn't be read; it's kept as tab-slots.json.bad.", level: "warning", timeout: 6000 });
       }
-      this.reconcile();
+      this.reconcile(cx);
     })();
     cx.spawn(() => this.ready);
     cx.timer.every(15000, (cx) => cx.notify()); // re-checks agents for notifyChanges
     cx.spawn(async (cx) => {
       for (;;) {
         const c = await nextCommand();
-        try { await this.handle(c); } catch (e) { console.log(`extras ${c}: ${e}`); }
+        try { await this.handle(c, cx); } catch (e) { console.log(`extras ${c}: ${e}`); }
       }
     });
   }
@@ -59,19 +125,12 @@ export default class Extras extends View {
     return f?.pane ? panes().find((p) => p.pane === f.pane) : null;
   }
 
-  // The focused terminal, or for a chat pane its agent's (chat.of, written by the chat mod).
   focusedTerminal() {
-    const f = focused();
-    if (f?.terminal) return f.terminal;
-    const p = this.focusedPane();
-    const of = shared("chat.of") ?? {};
-    return p?.mod === "chat" ? Object.keys(of).find((k) => of[k] === p.pane) ?? null : null;
+    return focused()?.terminal ?? null;
   }
 
-  // Where the focus is working: a mod pane has no folder, so a chat uses its agent's.
   focusedCwd() {
-    const t = this.focusedTerminal();
-    return focused()?.cwd || panes().find((p) => p.terminal === t)?.cwd || null;
+    return focused()?.cwd || null;
   }
 
   // True when an editor has the focus and got the key.
@@ -83,18 +142,25 @@ export default class Extras extends View {
     return true;
   }
 
-  // Runs argv in a terminal shown as a dialog; the dialog closes when it exits.
-  async popup(argv, size = 0.8) {
-    const r = await hc(["run", "--bg", "--json", "--rm", "--no-parent", "--cwd", this.focusedCwd() || home(), "--", ...argv]);
+  // Runs argv in a terminal shown as a dialog (on `machine` when remote); the dialog closes when it exits.
+  async popup(argv, size = 0.8, machine = null) {
+    const cwd = this.focusedCwd();
+    const args = ["run", "--bg", "--json", "--rm", "--no-parent"];
+    if (machine) args.push("--on", machine);
+    if (cwd) args.push("--cwd", cwd);
+    else if (!machine) args.push("--cwd", home());
+    args.push("--", ...argv);
+    const r = await hc(args);
     const { address } = JSON.parse(r.stdout);
     openOverlay({ kind: "dialog", width: size, height: size, layout: { type: "block", content: { terminal: address } } });
   }
 
-  async handle(c) {
+  async handle(c, cx) {
     const [name, arg] = c.split("-");
     const n = Number(arg);
     const space = spaces().find((s) => s.active);
     const tab = space?.tabs.find((t) => t.active);
+    const machine = space?.machine || null;
     if (name === "left" || name === "right") {
       if (!(await this.forward(`ctrl+${name === "left" ? "h" : "l"}`))) run("pane.go", { direction: name });
     } else if (name === "pane") {
@@ -107,7 +173,7 @@ export default class Extras extends View {
       // tab-N: the tab numbered N, made if there's none. slot-N: only an existing one.
       await this.ready;
       if (!space) return;
-      this.reconcile();
+      this.reconcile(cx);
       const slots = this.slots[space.id] ?? {};
       const id = Object.keys(slots).find((k) => slots[k] === n);
       if (id) return run("tab.select", { id });
@@ -119,7 +185,7 @@ export default class Extras extends View {
       this.pending.set(made, Date.now());
       this.slots[space.id] = { ...this.slots[space.id], [made]: n };
       this.save();
-      this.place(space.id);
+      this.place(space.id, cx);
     } else if (name === "space") {
       // focus: the Nth space its sidebar numbers (t3-spaces.order: the hidden Home left out). Elsewhere Herdr's Nth.
       const id = shared("layout") === "focus" ? shared("t3-spaces.order")?.[n - 1] : null;
@@ -129,21 +195,15 @@ export default class Extras extends View {
       // As the TUI: the tab takes the next number down or up, swapping with the tab that had it, or moving into a gap.
       await this.ready;
       if (!tab) return;
-      this.reconcile();
+      this.reconcile(cx);
       const slots = this.slots[space.id] ?? {};
       const old = slots[tab.id], to = old + (arg === "left" ? -1 : 1);
       if (!old || to < 1) return;
       for (const k of Object.keys(slots)) if (slots[k] === to) slots[k] = old;
       slots[tab.id] = to;
       this.save();
-      this.place(space.id);
+      this.place(space.id, cx);
     } else if (name === "close") {
-      // A chat and its agent are one: closing the chat ends the agent too.
-      const f = this.focusedPane();
-      const of = shared("chat.of") ?? {};
-      const t = f?.mod === "chat" ? Object.keys(of).find((k) => of[k] === f.pane) : null;
-      const dup = t && Object.keys(of).filter((k) => of[k] === f.pane).length > 1;
-      if (t && !dup) run("terminal.kill", { terminal: t });
       // A tab's only pane closes the tab (and a last tab its space) without "Close space?".
       if (tab?.panes === 1) run("tab.close", { id: tab.id, confirmed: true });
       else run("pane.close", {});
@@ -155,53 +215,43 @@ export default class Extras extends View {
       const a = agents().find((a) => a.status === "blocked") ?? agents().find((a) => a.status === "done");
       if (a) run("agent.focus", { terminal: a.address });
     } else if (name === "equalize") {
-      // Every pane of the tab the same area, as the TUI's prefix shift-e (helper.py equalize: the core's layout document).
+      // Every pane of the tab the same area, as the TUI's prefix shift-e (the core's layout document).
       if (!tab) return;
-      const r = await exec("python3", [HELPER(), "equalize", tab.id]);
+      const localTab = tab.id.includes("/") ? tab.id.split("/").pop() : tab.id;
+      const r = machine
+        ? await exec("python3", ["-c", REMOTE_EQUALIZE, localTab], { on: machine })
+        : await exec("python3", [HELPER(), "equalize", tab.id]);
       if (r.code !== 0) notify({ title: "Couldn't equalize the panes", body: (r.stderr || r.stdout).trim(), level: "error" });
     } else if (name === "project") {
-      await this.popup(["python3", HELPER(), "project"], 0.7);
+      openOverlay({ mod: "extras", kind: "dialog", frame: "none", width: 0.7, height: 0.7, props: { projectPicker: true, machine } });
     } else if (name === "wt" && ["new", "open", "remove"].includes(arg)) {
       // worktrees: the shipped dialog, with remove/new drawn as T3's alert box.
       const size = arg === "open" ? { width: 560, height: 480 } : { width: 512, height: 240, frame: "none" };
       openOverlay({ mod: "worktrees", kind: "dialog", ...size, props: { space: space?.id, folder: this.focusedCwd(), action: arg } });
     } else if (name === "wt") {
-      await this.popup(["python3", HELPER(), "wt", arg], 0.7);
+      await openWorktreeSlot(arg, this.focusedCwd(), machine);
     } else if (name === "lazygit") {
-      await this.popup(["lazygit"], 0.95);
+      await this.popup(["lazygit"], 0.95, machine);
     } else if (name === "scrollback") {
       const t = this.focusedTerminal();
-      if (t) await this.popup(["sh", "-c", SCROLLBACK, "sh", t], 0.95);
+      if (t) {
+        const localTerm = machine && t.startsWith(`${machine}/`) ? t.slice(machine.length + 1) : t;
+        await this.popup(["sh", "-c", SCROLLBACK, "sh", localTerm], 0.95, machine);
+      }
     } else if (name === "agent") {
       // The order the agents list shows: focus's Inbox or Lists rows, bettr's shared order, else Herdr's own.
       const live = new Set(agents().map((a) => a.address));
       const t3 = shared("layout") === "focus" ? shared(shared("t3-agent-order") === "lists" ? "t3-agents.rows" : "t3-inbox.rows")?.order : null;
       const order = (t3 ?? shared("agents.order") ?? []).filter((t) => live.has(t));
       const t = (order.length ? order : agents().map((a) => a.address))[n - 1];
-      if (t) await this.focusAgent(t);
+      if (t) run("agent.focus", { terminal: t });
     }
-  }
-
-  // An agent with a chat (chat.of, written by the chat mod): its chat, or its
-  // terminal when that's the side showing. Others: Herdr's agent.focus.
-  async focusAgent(t) {
-    const ps = panes();
-    const cp = ps.find((p) => p.mod === "chat" && p.pane === shared("chat.of")?.[t]);
-    // Its terminal swapped into the chat's place (a split's Chat | Terminal switch): that's what shows.
-    const chatTab = terminals().find((k) => k.address === t)?.labels?.["chat.tab"];
-    const tp0 = ps.find((p) => p.terminal === t);
-    if (!cp || (tp0 && chatTab && tp0.tab.split("/").pop() === chatTab)) return run("agent.focus", { terminal: t });
-    const tp = ps.find((p) => p.terminal === t && p.tab === cp.tab);
-    const sp = spaces().find((s) => s.tabs.some((x) => x.id === cp.tab));
-    if (sp && !sp.active) await herdrDo("space.select", { id: sp.id });
-    await herdrDo("tab.select", { id: cp.tab });
-    await herdrDo("pane.focus", { pane: (tp?.zoomed ? tp : cp).pane });
   }
 
   // Gives each shown tab a number: kept ones keep theirs, a new one takes the lowest free number. A tab dragged in the bar
   // keeps the numbers in the bar's new order, so a drag swaps numbers rather than undoing itself.
   // A space missing from spaces() keeps its numbers: it may be on a machine that's offline, or not loaded yet.
-  reconcile() {
+  reconcile(cx) {
     if (!this.slots) return;
     // Another window's copy published newer numbers: start from those, so this one doesn't write back older ones.
     const theirs = shared("tab-slots");
@@ -222,7 +272,7 @@ export default class Extras extends View {
       let fresh = false;
       for (const t of tabs) if (!slots[t.id]) { slots[t.id] = lowestFree(slots); fresh = true; }
       if (JSON.stringify(slots) !== JSON.stringify(old)) { this.slots[space.id] = slots; changed = true; }
-      if (fresh) this.place(space.id);
+      if (fresh) this.place(space.id, cx);
     }
     for (const [id, at] of this.pending) if (Date.now() - at > 5000 || spaces().some((s) => s.tabs.some((t) => t.id === id))) this.pending.delete(id);
     if (changed) this.save();
@@ -242,7 +292,7 @@ export default class Extras extends View {
   }
 
   // Moves a space's tabs into number order, one move at a time. While it runs, the order isn't read as a drag.
-  async place(spaceId) {
+  async place(spaceId, cx) {
     if (this.placing.has(spaceId)) return;
     this.placing.add(spaceId);
     try {
@@ -260,7 +310,7 @@ export default class Extras extends View {
         for (let k = 0; k < 20; k++) {
           const now = spaces().find((s) => s.id === spaceId);
           if (!now || shownTabs(now).filter((t) => slots[t.id]).findIndex((t) => t.id === want[at].id) === at) break;
-          await sleep(0.05);
+          await cx.sleep(50);
         }
       }
     } catch (e) {
@@ -278,17 +328,19 @@ export default class Extras extends View {
       const changed = this.seen && this.seen[a.address] !== a.status;
       if (changed && (a.status === "blocked" || a.status === "done") && !window()?.active) {
         const body = `${a.space_name} / ${a.tab_name}: ${a.status === "blocked" ? "needs you" : "done"}`;
-        exec("osascript", ["-e", `display notification ${quote(body)} with title ${quote(a.program.name)}`]).catch(() => {});
+        sendOsNotification(a.program.name, body);
       }
     }
     this.seen = now;
   }
 
   render(cx) {
+    if (props()?.projectPicker) return renderProjectPicker(this);
+    if (props()?.wtPicker) return renderWtPicker(this);
     const t = theme();
     this.notifyChanges();
     // Numbering can save and move tabs, so it runs just after the frame, not in it.
-    if (!this.reconciling) { this.reconciling = true; cx.spawn(() => { this.reconciling = false; this.reconcile(); }); }
+    if (!this.reconciling) { this.reconciling = true; cx.spawn((cx) => { this.reconciling = false; this.reconcile(cx); }); }
     const pane = focused()?.pane ?? null;
     if (pane && pane !== this.cur) { this.prev = this.cur; this.cur = pane; }
     // No visible bar: the block stays (1px) so extras.<command> keys still reach it.

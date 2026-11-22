@@ -16,7 +16,7 @@ import { run, props, closeOverlay, layout, shared, setShared, exec, appHome, mac
 const remotes = () => machines().map((m) => m.name).filter(Boolean);
 const modPanels = () => shared("bettr.modPanels") ?? [];
 // The dialog's size when it opens: room for one row per mod panel and per machine.
-export const layoutSize = () => ({ width: 340, height: 360 + 30 * modPanels().length + (remotes().length ? 54 + 30 * remotes().length : 0) });
+export const layoutSize = () => ({ width: 340, height: 300 + 30 * modPanels().length + (remotes().length ? 54 + 30 * remotes().length : 0) });
 
 // Per machine: { state, agents?, detail? }. state is checking, installing, current,
 // old, missing or error. Kept while the app runs; checked again each time the dialog opens.
@@ -96,14 +96,7 @@ function setModPanel(id, on) {
   // Turned off while open: bettr-tabs closes it, as for setPanel.
 }
 
-// How a new Claude or Codex agent opens: its terminal (default) or its chat.
-// bettr-tabs reads shared "bettr.agentView" before opening a chat by itself.
-const agentView = () => shared("bettr.agentView") ?? "terminal";
-
 const rows = () => [
-  { section: "Agents" },
-  { id: "agent-view", label: "Open agents in", choice: [["terminal", "Terminal"], ["chat", "Chat"]],
-    value: agentView, pick: (v) => setShared("bettr.agentView", v) },
   { section: "Sidebar" },
   { id: "usage", label: "Usage limits", on: () => !find(layout(), "usage-limits")?.hidden,
     set: (on) => run(on ? "layout.show" : "layout.hide", { id: "usage-limits" }) },
@@ -129,17 +122,6 @@ export function layoutConfig(t) {
         .on_click(() => closeOverlay(props().overlay)).child("Esc")))
     .children(rows().map((r) => r.section
       ? div().pt(10).pb(2).text_size(11).text_color(t.dim).child(r.section)
-      : r.choice ? h_flex().id(`layout-${r.id}`).h(30).gap(9).items_center()
-        .child(div().flex_1().text_color(t.foreground).child(r.label))
-        // A segmented control in the toggles' colours: the choice in accent on the input track.
-        .child(h_flex().flex_none().h(24).p(2).gap(2).items_center().rounded_full().bg(t.input)
-          .children(r.choice.map(([v, label]) => {
-            const on = r.value() === v;
-            return div().id(`layout-${r.id}-${v}`).h(20).px(10).flex().items_center().rounded_full().cursor_pointer().text_size(12)
-              .when(on, (el) => el.bg(t.accent).text_color(t.accent_foreground).font_medium())
-              .when(!on, (el) => el.text_color(t.muted).hover((s) => s.text_color(t.foreground)))
-              .on_click((_e, cx) => { r.pick(v); cx.notify(); }).child(label);
-          })))
       : h_flex().id(`layout-${r.id}`).h(30).px(8).mx(-8).gap(9).items_center().rounded(7).cursor_pointer()
         .hover((s) => s.bg(t.hover))
         .on_click((_e, cx) => { r.set(!r.on()); cx.notify(); })

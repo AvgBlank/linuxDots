@@ -1,5 +1,5 @@
-// Customize > Machines: whether the agent reporter (mods/bettr-reporter/setup.py: the data behind Activity, Context and
-// Subagents) is set up and current on this computer and each connected machine, with a button that installs or updates it.
+// Customize > Machines: whether the agent reporter (mods/bettr-reporter/setup.py: the data behind Activity and Context)
+// is set up and current on this computer and each connected machine, with a button that installs or updates it.
 // From bettr-chrome's Layout dialog (layout-config.js), drawn as Herdr's Settings rows.
 import { div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
@@ -61,7 +61,7 @@ export function machinesPage(t, { heading, row, button }) {
   return v_flex().w_full()
     .child(heading(t, "Agent reporter"))
     .child(div().pb(8).text_size(12.5).line_height("18px").text_color(t.dim)
-      .child("Activity, Context and the chat's subagents read what Claude Code and Codex report through hooks. Set them up on each machine you run agents on."))
+      .child("Activity and Context read what Claude Code and Codex report through hooks. Set them up on each machine you run agents on."))
     .children(all().map(rowFor))
     .when(remotes().length === 0, (el) => el.child(div().pt(12).text_size(12.5).text_color(t.dim).child("No other machines yet.")))
     .when(all().some((name) => reporter.get(name)?.installed), (el) => el

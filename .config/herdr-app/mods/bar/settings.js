@@ -1,6 +1,6 @@
-// The Customize panel (t3-chrome's palette button, or bar.settings): how new agents open and which
-// controls the top bar shows. Drawn as Herdr's own Settings (frame/settings): sections on the left, rows on the right.
-// Panels share bettr's keys with bettr-chrome's Layout dialog: "bettr.panels" and "bettr.agentView".
+// The Customize panel (t3-chrome's palette button, or bar.customize): which controls the bar shows
+// and agent reporter status per machine. Drawn as Herdr's own Settings (frame/settings).
+// Panels share bettr's key with bettr-chrome's Layout dialog: "bettr.panels".
 import { div, svg } from "gpui-kit";
 import { v_flex, h_flex, Scrollbar } from "gpui-base";
 import { run, props, closeOverlay, theme, shared, setShared, layout } from "herdr";
@@ -8,7 +8,6 @@ import { machinesPage } from "./machines.js";
 
 export const PANELS = [["files", "Files", "list-tree"], ["changes", "Changes", "git-compare"], ["activity", "Activity", "activity"], ["context", "Context", "gauge"]];
 export const enabledPanels = () => shared("bettr.panels") ?? [...(shared("workspace.panels") ?? ["files", "changes"]), "activity", "context"];
-export const chatSwitchOn = () => shared("bar.chatSwitch") ?? true;
 export function find(node, id) {
   if (node?.id === id) return node;
   for (const child of node?.children ?? []) { const found = find(child, id); if (found) return found; }
@@ -17,9 +16,7 @@ export function find(node, id) {
 export const CUSTOMIZE_SIZE = { width: 760, height: 480 };
 
 const icon = (name) => `mods/bar/icons/${name}.svg`;
-const SECTIONS = [{ id: "agents", title: "Agents", icon: "chat" }, { id: "chat", title: "Chat", icon: "type" }, { id: "bar", title: "Top bar", icon: "layers" }, { id: "machines", title: "Machines", icon: "server" }];
-// The chat's text size (the chat mod reads shared "chat.fontSize"; keep its default and range in step).
-const CHAT_FONT = 14, CHAT_FONT_MIN = 11, CHAT_FONT_MAX = 20;
+const SECTIONS = [{ id: "bar", title: "Top bar", icon: "layers" }, { id: "machines", title: "Machines", icon: "server" }];
 const ABOUT = {
   files: "The space's files, beside the terminals.",
   changes: "Git changes in the space, file by file.",
@@ -39,40 +36,6 @@ const toggle = (t, id, on, onClick) => div().id(id).w(36).h(20).rounded(10).p(2)
   .when(on, (el) => el.justify_end()).on_click(onClick)
   .child(div().w(16).h(16).rounded(8).bg(on ? t.accent_foreground : t.muted));
 
-function agentsPage(t) {
-  const now = shared("bettr.agentView") ?? "terminal";
-  const picker = h_flex().p(2).gap(2).rounded(8).border_1().border_color(t.border).bg(t.background)
-    .children([["terminal", "Terminal"], ["chat", "Chat"]].map(([value, label]) => div().id(`cz-view-${value}`).px(12).py(4).rounded(6).text_size(13).cursor_pointer()
-      .when(now === value, (el) => el.bg(t.raised).text_color(t.foreground).border_1().border_color(t.border))
-      .when(now !== value, (el) => el.text_color(t.muted).hover((s) => s.text_color(t.foreground)))
-      .on_click(() => setShared("bettr.agentView", value)).child(label)));
-  return v_flex().w_full().child(heading(t, "New agents"))
-    .child(row(t, "Open agents in", "Claude Code, Codex and Hermes start in their terminal, or in a chat that stands for it.", picker));
-}
-
-// Settings' − value + (frame/settings stepper).
-function stepper(t, id, value, onMinus, onPlus) {
-  const b = (k, label, f) => div().id(`${id}-${k}`).w(28).h(28).flex().items_center().justify_center().cursor_pointer().text_size(15)
-    .text_color(t.muted).hover((s) => s.bg(t.hover).text_color(t.foreground)).on_click(f).child(label);
-  return h_flex().items_center().rounded(7).border_1().border_color(t.border).bg(t.raised).overflow_hidden()
-    .child(b("minus", "\u2212", onMinus))
-    .child(div().w(54).text_size(13).text_color(t.foreground).flex().justify_center().child(value))
-    .child(b("plus", "+", onPlus));
-}
-
-function chatPage(t) {
-  const now = Number(shared("chat.fontSize")) || CHAT_FONT;
-  const set = (v) => setShared("chat.fontSize", Math.min(CHAT_FONT_MAX, Math.max(CHAT_FONT_MIN, v)));
-  return v_flex().w_full().child(heading(t, "Text"))
-    .child(row(t, "Font size", `Messages and what you type. Default ${CHAT_FONT}px.`,
-      h_flex().gap(8).items_center()
-        .when(now !== CHAT_FONT, (el) => el.child(div().id("cz-font-reset").text_size(12).text_color(t.dim).cursor_pointer()
-          .hover((s) => s.text_color(t.foreground)).on_click(() => setShared("chat.fontSize", null)).child("Reset")))
-        .child(stepper(t, "cz-font", `${now}px`, () => set(now - 1), () => set(now + 1)))))
-    .child(div().pt(18).child(div().text_size(Math.min(CHAT_FONT_MAX, now)).line_height(`${Math.round(now * 1.5)}px`).text_color(t.muted)
-      .child("The quick brown fox jumps over the lazy dog.")));
-}
-
 // view: the TopBar copy in this dialog, for setPanels (closing a panel turned off while open).
 function barPage(t, view) {
   const root = layout();
@@ -86,10 +49,6 @@ function barPage(t, view) {
   };
   const actions = !find(root, "actions")?.hidden;
   return v_flex().w_full()
-    .child(heading(t, "Agent"))
-    .child(row(t, "Chat switch", "Chat | Terminal for an agent with a chat, and Move to chat for one without.",
-      toggle(t, "cz-chat-switch", chatSwitchOn(), () => setShared("bar.chatSwitch", !chatSwitchOn()))))
-    .child(div().h(18))
     .child(heading(t, "Panels"))
     .children(PANELS.map(panel))
     .child(div().h(18))
@@ -121,7 +80,6 @@ export function customizeView(view) {
     .child(nav)
     .child(div().relative().flex_1().min_w(0).h_full()
       .child(div().id("cz-body").size_full().overflow_y_scroll()
-        .child(div().px(28).py(22).child(view.section === "bar" ? barPage(t, view) : view.section === "chat" ? chatPage(t)
-          : view.section === "machines" ? machinesPage(t, { heading, row, button }) : agentsPage(t))))
+        .child(div().px(28).py(22).child(view.section === "machines" ? machinesPage(t, { heading, row, button }) : barPage(t, view))))
       .child(Scrollbar.vertical("cz-body").absolute().inset_0()));
 }

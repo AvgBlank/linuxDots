@@ -12,18 +12,6 @@ export function navigation(beforeAsk = (_cx) => {}, core = { spaces, panes, agen
   let renaming = false, going, inView, wasHome, unread, focusWas, zoomOff, asking;
   const inboxShown = () => sidebarParts(layout()).stack?.active === "inbox";
   const nameOf = (c, lead, name) => c.named ? c.name : lead ? name(lead) : "Terminal";
-  // The chat mod: an agent shown in a chat lives in a hidden tab of its own (labels herdr.tab, and chat.tab
-  // naming the chat's tab). The bar shows the chat's tab for both. ponytail: local tab ids only, remote agents' chats aren't paired.
-  const chatPairs = () => new Map(terminals().filter(k => k.labels?.["chat.tab"] && k.labels["herdr.tab"] && k.labels["herdr.tab"] !== k.labels["chat.tab"])
-    .map(k => [k.address, { own: k.labels["herdr.tab"], chat: k.labels["chat.tab"] }]));
-  // A chat and its agent are one: closing the chat's tab or pane ends the agent too (chat.of: one owner only).
-  function endChatAgents(tab, pane) {
-    const of = shared("chat.of") ?? {}, local = String(tab ?? "").split("/").pop();
-    const chats = new Set(panes().filter(p => p.mod === "chat" && (pane ? p.pane === pane : p.tab === tab)).map(p => p.pane));
-    const ends = new Set([...chats].map(c => Object.keys(of).filter(k => of[k] === c)).filter(list => list.length === 1).flat());
-    if (!pane) for (const [address, x] of chatPairs()) if (x.chat === local) ends.add(address);
-    for (const terminal of ends) run("terminal.kill", { terminal });
-  }
 
   // Home: one place to land, a space of its own on this computer, known by its id so whatever someone arranges there is theirs.
   // The layout's lists leave it out and the keys that walk spaces go around it, so it takes no number. This mod answers for it
@@ -133,14 +121,12 @@ export function navigation(beforeAsk = (_cx) => {}, core = { spaces, panes, agen
   }
 
   async function closeTabNow(id, args, cx) {
-    endChatAgents(id);
     await leave(id, cx);
     run("tab.close", { id, ...args });
   }
 
   async function closePaneNow(pane, cx) {
     const ps = panes(), p = ps.find(p => p.pane === pane), tab = p?.tab;
-    if (p?.mod === "chat") endChatAgents(tab, pane);
     const homeTabs = spaces().find(s => s.id === homeId())?.tabs.map(c => c.id) ?? [];
     // Home's last pane gives way to the default page, which is how Home is reset.
     if (homeTabs.includes(tab) && ps.filter(p => homeTabs.includes(p.tab)).length === 1) run("pane.split", { direction: "right", pane, mod: "t3-home" });
@@ -207,11 +193,8 @@ export function navigation(beforeAsk = (_cx) => {}, core = { spaces, panes, agen
     // For the closes this mod doesn't make, which leave() can't go ahead of: the tab's menu, the program ending. Herdr has
     // already picked the neighbour, and it may have been shown.
     const terms = terminals(), every = agents();
-    // A pane whose terminal still runs moved rather than closed: the chat parks its agent in a tab of its own
-    // (chat.tab) when it opens beside other panes. Herdr's pick then is the chat's tab, where the person already is.
-    const moved = was?.terminal && terms.some(k => k.address === was.terminal && k.state === "live" && k.labels?.["chat.tab"]);
     // Only the tab going counts; an agent's pane closing in a split leaves the person in the tab, on its neighbour.
-    if (was && !moved && !alive(was.tab) && !home) {
+    if (was && !alive(was.tab) && !home) {
       // Still in its space: back to the tab before, agent or not. The agent in view whose space went too lands on Home.
       if (space?.id === was.space) goBack(was.space, was.tab);
       else if (was.agent) toHome();
@@ -283,12 +266,9 @@ export function navigation(beforeAsk = (_cx) => {}, core = { spaces, panes, agen
   function visibleTabs() {
     const space = spaces().find(s => s.active);
     if (!space || atHome()) return [];
-    // A chat's agent counts as in the chat's tab, its own tab stays out of the bar, and the chat's tab is lit while the terminal shows.
-    const pairs = chatPairs(), ownToChat = new Map([...pairs.values()].map(x => [x.own, x.chat]));
-    const lit = ownToChat.get(space.tabs.find(c => c.active)?.id);
-    const tabs = space.tabs.filter(c => !ownToChat.has(c.id)).map(c => c.id === lit ? { ...c, active: true } : c);
+    const tabs = space.tabs;
     if (!inboxShown()) return tabs;
-    const every = agents().map(a => pairs.has(a.address) ? { ...a, tab: pairs.get(a.address).chat } : a), all = terminals(), f = focused();
+    const every = agents(), all = terminals(), f = focused();
     const shownTab = going?.tab ?? tabs.find(c => c.active)?.id;
     const inTab = [shownTab, ...(trail[space.id] ?? [])].find(id => every.some(a => a.tab === id));
     const here = every.filter(a => a.tab === inTab);

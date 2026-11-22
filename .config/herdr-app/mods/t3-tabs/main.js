@@ -341,12 +341,8 @@ export default class Tabs extends View {
     const loose = (c) => !inbox || !every.some(a => a.tab === c.id);
     // A press holds a tab's id: an agent starting or a tab closing can change the bar under it.
     const pressedAt = shown.findIndex(c => c.id === this.pressed);
-    // The chat mod: a chat's tab reads as its agent (chat.of), whose pane is in a hidden tab of its own.
-    const chatOf = shared("chat.of") ?? {};
     const item = (c, i) => {
-      const mine = ps.filter(p => p.tab === c.id), chat = mine.find(p => p.mod === "chat");
-      const owner = chat && Object.keys(chatOf).find(k => chatOf[k] === chat.pane);
-      const lead = (owner && ps.find(p => p.terminal === owner)) ?? leadOf(mine);
+      const mine = ps.filter(p => p.tab === c.id), lead = leadOf(mine);
       const program = lead && programOf(lead);
       const name = nameOf(c, lead, tabName);
       // With the Inbox showing, what needs the person is the sidebar's to say, shown or hidden.

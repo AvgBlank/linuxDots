@@ -1,4 +1,4 @@
-import { panes, run, shared, terminals } from "herdr";
+import { panes, run } from "herdr";
 
 // A tab draws its zoomed pane whichever pane is focused, and focusing moves no zoom: the card would light one agent while another
 // shows, the keyboard would go nowhere, and showing that other one would cost it its done. So the zoom goes first, in the focus's
@@ -12,13 +12,6 @@ export function focusPane(pane) {
   run("pane.focus", { pane });
 }
 export function focusAgent(terminal) {
-  // The chat mod: an agent with a chat (chat.of) opens in it, unless its terminal is the side showing.
-  const ps = panes(), cp = ps.find(p => p.mod === "chat" && p.pane === (shared("chat.of") ?? {})[terminal]);
-  const tp = ps.find(p => p.terminal === terminal);
-  // Its terminal in the chat's own tab (swapped in by the Chat | Terminal switch in a split) is the side showing too.
-  const chatTab = terminals().find(k => k.address === terminal)?.labels?.["chat.tab"];
-  const inPlace = tp && chatTab && tp.tab.split("/").pop() === chatTab;
-  if (cp && !(tp?.focused) && !inPlace) return focusPane(cp.pane);
   zoomTo(p => p.terminal === terminal);
   run("agent.focus", { terminal });
 }

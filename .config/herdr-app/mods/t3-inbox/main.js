@@ -28,13 +28,11 @@ import { sidebarParts } from "./sidebar.js";
 const RETRY = 60000;
 
 
-// The chat mod: a focused chat pane stands for its agent (chat.of, one owner only), so that agent's row is the one in view.
-function withChatFocus(list) {
-  // Herdr's own focused stays on the last agent after you leave it (another space, a shell): what has the keyboard decides.
+// Herdr's own focused stays on the last agent after you leave it (another space, a shell): what has the keyboard decides.
+function withKeyboardFocus(list) {
   const on = () => {
-    const f = focused(), cp = f?.pane && panes().find(p => p.pane === f.pane && p.mod === "chat");
-    const of = shared("chat.of") ?? {}, mine = cp ? Object.keys(of).filter(k => of[k] === cp.pane) : [];
-    return mine.length === 1 ? mine[0] : cp ? null : (f?.pane ? panes().find(p => p.pane === f.pane)?.terminal : f?.terminal) ?? null;
+    const f = focused();
+    return (f?.pane ? panes().find(p => p.pane === f.pane)?.terminal : f?.terminal) ?? null;
   };
   // Read live, as agents().focused is: a key right after focus moves goes by where it is now, not the last draw.
   return list.map(a => Object.defineProperty({ ...a }, "focused", { get: () => a.address === on(), enumerable: true }));
@@ -203,7 +201,7 @@ export default class Inbox extends View {
   compute(cx, publish = true) {
     this.consumeUndo(cx);
     const now = Date.now();
-    const runs = withChatFocus(agents()), all = terminals(), ps = panes(), sp = spaces(), f = focused();
+    const runs = withKeyboardFocus(agents()), all = terminals(), ps = panes(), sp = spaces(), f = focused();
     // `pane:<id>` is a mod card's address, in t3-inbox.rows too. Docked alone, keep the original one-card-per-agentless-tab rule.
     const every = [...runs, ...sp.flatMap((s) => s.tabs.flatMap((c) => {
       const cards = ps.filter(x => x.tab === c.id && x.mod && programOf(x)?.inbox);

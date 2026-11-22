@@ -169,49 +169,7 @@ def equalize(tab):
     raise RuntimeError("the layout kept changing; try again")
 
 
-def swap(a, b):
-    """Two panes trade what they show, in the same tab or across tabs (no app command moves a pane between tabs), in the
-    core's "herdr-app" document. Only the content moves: each tab keeps its pane ids, which the app's view of the tab
-    (its focused pane) names; moving ids across tabs left a tab drawing one pane whole until it was shown again."""
-    machine, _, la = a.rpartition("/")
-    lb = b.rpartition("/")[2]
-
-    def spot(node, pid):
-        for i, child in enumerate(node.get("children") or []):
-            if child.get("id") == pid:
-                return node["children"], i
-            found = spot(child, pid)
-            if found:
-                return found
-        return None
-
-    for _ in range(3):
-        (doc,) = core(("doc.get", {"name": "herdr-app"}), on=machine or None)
-        value = doc["value"]
-        roots = [c["root"] for s in value.get("spaces", []) for c in s.get("tabs", [])]
-        sa = next(filter(None, (spot(r, la) for r in roots)), None)
-        sb = next(filter(None, (spot(r, lb) for r in roots)), None)
-        if not sa or not sb:
-            raise RuntimeError(f"no pane {a if not sa else b}")
-        (ka, ia), (kb, ib) = sa, sb
-        ka[ia]["content"], kb[ib]["content"] = kb[ib]["content"], ka[ia]["content"]
-        try:
-            core(("doc.set", {"name": "herdr-app", "value": value, "version": doc["version"]}), on=machine or None)
-            return
-        except RuntimeError as error:
-            if "conflict" not in str(error):
-                raise
-    raise RuntimeError("the layout kept changing; try again")
-
-
 if __name__ == "__main__":
-    if len(sys.argv) == 4 and sys.argv[1] == "swap":
-        try:
-            swap(sys.argv[2], sys.argv[3])
-        except (OSError, RuntimeError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
-            print(error, file=sys.stderr)
-            sys.exit(1)
-        sys.exit(0)
     if len(sys.argv) == 3 and sys.argv[1] == "equalize":
         try:
             equalize(sys.argv[2])

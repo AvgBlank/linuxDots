@@ -330,12 +330,6 @@
     "ctrl-alt-x": "overlay.close",
     "ctrl-alt-shift-x": "overlay.close"
   },
-  "mod:chat-file": {
-    "cmd-w": "overlay.close",
-    "cmd-shift-w": "overlay.close",
-    "ctrl-alt-x": "overlay.close",
-    "ctrl-alt-shift-x": "overlay.close"
-  },
   "mod:t3-pane": {
     "cmd-w": "overlay.close",
     "cmd-shift-w": "overlay.close",
