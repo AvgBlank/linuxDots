@@ -104,7 +104,7 @@ assert.ok(fnMatch, "mergeCustomKeys exported from main.js");
 const mergeCustomKeys = new Function(`${fnMatch[0].replace(/^export /, "")}\nreturn mergeCustomKeys;`)();
 
 const winBase = JSON.stringify({
-  global: { "ctrl-shift-t": "tab.new", "alt-1": "space.select:1", "alt-!": "extras.agent-1", "alt-@": "extras.agent-2" },
+  global: { "ctrl-shift-t": "tab.new", "alt-1": "space.select:1" },
   terminal: { "ctrl-shift-c": "terminal.copy", "ctrl-f": "terminal.search" },
 });
 const customText = fs.readFileSync(path.join(__dirname, "..", "..", "keys.custom.json"), "utf8");
@@ -118,8 +118,9 @@ assert.equal(parsedKeys.global["ctrl-a p"], "layout.toggle:sidebar");
 assert.equal(parsedKeys.global["ctrl-a ["], "extras.copymode");
 assert.equal(parsedKeys.global["ctrl-a m"], "extras.machine");
 assert.equal(parsedKeys.global["alt-f4"], "window.close");
-assert.equal("alt-!" in parsedKeys.global, false, "prunes alt-! that hijacks plain Shift+1 on Windows");
-assert.equal("alt-@" in parsedKeys.global, false, "prunes alt-@ that hijacks plain Shift+2 on Windows");
+// Windows GPUI reports Alt+Shift+1 as `alt-!` (shift stripped), so `alt-shift-1` alone never matches there.
+assert.equal(parsedKeys.global["alt-!"], "extras.agent-1", "Windows spelling of alt-shift-1");
+assert.equal(parsedKeys.global["alt-("], "extras.agent-9", "Windows spelling of alt-shift-9");
 assert.equal(parsedKeys.global["alt-shift-1"], "extras.agent-1", "keeps alt-shift-1 agent binding");
 assert.equal("ctrl-f" in parsedKeys.terminal, false, "removes shadowed terminal binding");
 assert.equal(parsedKeys.terminal["ctrl-shift-c"], "terminal.copy");
