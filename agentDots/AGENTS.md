@@ -65,7 +65,6 @@ agentDots/
 └── gemini/
     ├── GEMINI.md               # -> ~/.gemini/GEMINI.md
     ├── mcp_config.json         # -> ~/.gemini/config/mcp_config.json (figma, context7)
-    ├── hooks.json.tmpl         # Rendered -> ~/.gemini/config/hooks.json (__HOME__ -> $HOME)
     ├── cli-settings.json       # Rendered -> ~/.gemini/antigravity-cli/settings.json
     ├── statusline.sh           # -> ~/.gemini/antigravity-cli/statusline.sh (Tokyo Night status line)
     └── skills/                 # 3 Antigravity-native skills (delegate, figma, video)
@@ -82,7 +81,7 @@ agentDots/
 - **Adding an upstream skill repo:** Add the repo and active skill list to `manifest.json` under `skillRepos`, then run `./install.sh`.
 - **Adding a plugin:** Add `{name, repo, url, subdir, claudePlugin}` to `manifest.json` under `plugins`, then run `./install.sh`.
 - **Adding an MCP server:** Add it to `gemini/mcp_config.json` AND `manifest.json` (`mcps`), then re-run `./install.sh`. Never put API keys or bearer tokens in either file.
-- **Adding a hook:** Edit `claude/settings.json.tmpl` and/or `gemini/hooks.json.tmpl` using `__HOME__` instead of hardcoded home paths, then run `./install.sh --link-only`.
+- **Adding a hook:** Edit `claude/settings.json.tmpl` using `__HOME__` instead of hardcoded home paths, then run `./install.sh --link-only`. Leave Herdr-managed hooks (`~/.gemini/config/hooks.json`, `herdr-agent-state.sh`, `bettr-*`) out of the repo; Herdr writes them when enabled.
 
 ## Intentionally excluded (public repo)
 
@@ -92,5 +91,5 @@ Never commit any of the following to `linuxDots`:
 - `~/.claude.json` (mixes runtime state/history with MCPs; MCPs are registered via `claude mcp add` instead).
 - `autoMode` in `~/.claude/settings.json` and `trustedWorkspaces` in `~/.gemini/antigravity-cli/settings.json` (contain local project/file paths).
 - `~/.unslop/voice/husain/` (personal writing samples; copy privately or regenerate with `/unslop teach`).
-- `~/.claude/hooks/herdr-agent-state.sh` and `~/.gemini/config/hooks/herdr-agent-state.sh` (generated and overwritten by Herdr).
+- `~/.claude/hooks/herdr-agent-state.sh`, `~/.gemini/config/hooks/herdr-agent-state.sh`, and `~/.gemini/config/hooks.json` (generated and overwritten by Herdr).
 - `~/.claude/skills/synced/` and `~/.claude/plugins/synced/` (synced automatically by Claude account).

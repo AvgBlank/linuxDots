@@ -194,7 +194,7 @@ install_agy_plugin() {
   rm -rf "$tmpdir"
 }
 
-# 1. Rules, settings, themes, statusline, MCP & hooks configs
+# 1. Rules, settings, themes, statusline & MCP configs
 log "Linking rules, configs, theme, and statusline..."
 
 if [[ "$DO_CLAUDE" -eq 1 ]]; then
@@ -214,7 +214,6 @@ if [[ "$DO_AGY" -eq 1 ]]; then
   link_path "$SCRIPT_DIR/gemini/GEMINI.md" "$HOME/.gemini/GEMINI.md"
   link_path "$SCRIPT_DIR/gemini/mcp_config.json" "$HOME/.gemini/config/mcp_config.json"
   link_path "$SCRIPT_DIR/gemini/statusline.sh" "$HOME/.gemini/antigravity-cli/statusline.sh"
-  render_json_template "$SCRIPT_DIR/gemini/hooks.json.tmpl" "$HOME/.gemini/config/hooks.json"
   render_json_template "$SCRIPT_DIR/gemini/cli-settings.json" "$HOME/.gemini/antigravity-cli/settings.json" "trustedWorkspaces"
 fi
 

@@ -85,7 +85,7 @@
       "repo": "obra/superpowers",
       "url": "https://github.com/obra/superpowers.git",
       "subdir": ".",
-      "claudePlugin": "superpowers@superpowers"
+      "claudePlugin": "superpowers@superpowers-dev"
     }
   ],
   "globalTools": [
