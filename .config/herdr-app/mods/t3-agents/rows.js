@@ -1,6 +1,6 @@
 // The agents list's rows and group headers, including their leaving ghosts.
 import { div, svg } from "gpui-kit";
-import { h_flex, Popup } from "gpui-base";
+import { h_flex, v_flex, Popup } from "gpui-base";
 import { spaces, run, hc, notify, shared, setShared, openOverlay } from "herdr";
 import { namer } from "./name.js";
 import { focusAgent } from "./zoom.js";
@@ -14,6 +14,10 @@ import { MOTION, foldArrow } from "./motion.js";
 
 // T3's one-line row and shelf or folder header, its folders 8 apart and its list's 1px between items (gap-px).
 const ROW = 36, HEAD = 32, HEAD_GAP = 8;
+// An agent's row adds a 16px line under its name for the machine it runs on.
+const AGENT_ROW = 52;
+// The machine an agent runs on: an address's prefix, or "local" for this one.
+export const machineName = (a) => (a.address.includes("/") ? a.address.split("/")[0] : "local");
 export const STACK = 1;
 export const RANK = { blocked: 4, done: 3, working: 2, idle: 1 };
 export const SECTION = { 4: "Needs you", 3: "Done", 2: "Working", 1: "Idle" };
@@ -109,7 +113,7 @@ export function agentStatus(view, t, a, note = "", id) {
 export function agentEntries(view, t, { list, all, shown, ps, now, viewing, byPriority, own, shownStatus, groups }) {
   const withKids = (a) => {
     const subs = agentTree(all, a.address);
-    const r = { key: a.address, h: ROW + STACK, el: row(a, subs), ghost: () => row(a, subs, true) };
+    const r = { key: a.address, h: AGENT_ROW + STACK, el: row(a, subs), ghost: () => row(a, subs, true) };
     // A sub-agent with no pane of its own isn't in agents(): it's placed by the agent it hangs from, and has no branch to name, as its folder may be another worktree.
     const sub = (s) => ({ key: `sub-${s.t.address}`, h: ROW + STACK, el: agentSubRow(view, t, s, shown, (name, key) => details(list.find((x) => x.address === s.t.address) ?? { ...s.t, space: a.space, space_name: a.space_name }, name, key)), ghost: () => agentSubRow(view, t, s, shown, null, true) });
     if (!view.isFolded(a.address)) return [r, ...subs.map(sub)];
@@ -222,7 +226,7 @@ export function agentEntries(view, t, { list, all, shown, ps, now, viewing, byPr
       .relative()
       .w_full().min_w(0)
       .px(10)
-      .h(ROW)
+      .h(AGENT_ROW)
       .flex_none()
       .rounded(6)
       .items_center()
@@ -234,9 +238,13 @@ export function agentEntries(view, t, { list, all, shown, ps, now, viewing, byPr
           cx.stop_propagation();
           view.toggleFold(a.address, cx);
         })))
-      .child(h_flex().flex_1().min_w(0).gap(10).items_center()
+      .child(v_flex().flex_1().min_w(0)
         .child(div().min_w(0).truncate().when(on || st === "blocked" || st === "done", (el) => el.font_medium()).text_color(leads ? t.foreground : t.muted).child(name))
-        .when(Boolean(where), el => el.child(div().flex_1().flex_shrink(1000).min_w(0).truncate().text_size(12).text_color(t.dim).child(where))))
+        // The second line: the machine, then the space when the row names one; the space gives way first.
+        .child(h_flex().h(16).min_w(0).gap(4).items_center().text_size(12).text_color(t.dim)
+          .child(svg("mods/t3-agents/icons/server.svg").size(12).flex_none().text_color(t.dim))
+          .child(div().flex_none().child(machineName(a)))
+          .when(Boolean(where), el => el.child(div().flex_none().child("·")).child(div().flex_1().flex_shrink(1000).min_w(0).truncate().child(where)))))
       // Its number (alt-shift-N, extras.agent-N: this list's order), a key cap as the spaces' rows have.
       .when(num(a) > 0 && num(a) <= 9, el => el.child(div().flex_none().min_w(16).h(16).px(4).flex().items_center().justify_center().rounded(4)
         .border_1().border_color(t.border).text_size(10.5).text_color(on ? t.muted : t.dim).child(String(num(a)))))

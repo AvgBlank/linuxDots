@@ -756,13 +756,15 @@ test("a title is bright when it's in view, needs you or is done; hover brightens
   assert.deepEqual(look("Seen"), ["bright", false]);
 });
 
-test("a card's marks sit on its third line when it has one, else on the title's", () => {
-  const f = fixture(); f.add("m1/A"); f.add("m1/B");
+test("every card ends with a line naming its machine, this one as local", () => {
+  const f = fixture(); f.add("m1/A"); f.add("B");
   f.env.panes = () => [{ pane: "m1/A", branch: "dev" }];
   f.render();
+  const line = (addr) => find(f.tree, `machine-${addr}`);
+  assert.ok(texts(line("m1/A")).includes("m1"), "a remote agent's line names its machine");
+  assert.ok(texts(line("B")).includes("local"), "a local agent's line says local");
   assert.equal(find(lineOf(f.tree, "m1/A"), "machine-m1/A"), null, "the title keeps its whole line");
-  assert.ok(find(lineOf(f.tree, "dev"), "machine-m1/A"), "the branch line carries the mark");
-  assert.ok(find(lineOf(f.tree, "m1/B"), "machine-m1/B"), "no third line: the title's line carries it");
+  assert.equal(find(lineOf(f.tree, "dev"), "machine-m1/A"), null, "the branch keeps its line");
 });
 
 test("remote machine names stay in hover details; only Inbox cards carry a mark", () => {

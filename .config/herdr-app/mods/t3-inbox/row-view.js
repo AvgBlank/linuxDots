@@ -53,6 +53,8 @@ export function inboxRowView(view, t, model, actions, drag) {
   // A control's label in a row belongs to the same group as the row's card, so it too opens at once.
   const delay = detailsLive(view) ? 0 : 150;
   const machineOf = (a) => a.address.includes("/") ? a.address.split("/")[0] : null;
+  // The card's machine line names this one too, as "local".
+  const machineName = (a) => machineOf(a) ?? "local";
   const branchOf = (a) => ps.find((p) => p.pane === a.pane)?.branch;
   // A row's details, as T3's thread card: on the row's right from its top. A 1px anchor just outside its top right corner, as
   // a Popup hangs from its trigger's bottom left; clamped at the window's bottom the card slides up and still clears the row.
@@ -73,7 +75,7 @@ export function inboxRowView(view, t, model, actions, drag) {
   // `ghost`: the copy that follows the pointer, drawn without handlers or ids the list already uses.
   const card = (a, ghost) => {
     const st = state(a), on = viewing(a);
-    const machine = machineOf(a), branch = branchOf(a);
+    const branch = branchOf(a);
     // As T3's sidebar, a card says nothing of its sub-agents: its state takes theirs in (tree.js).
     const meta = branch ?? "";
     const pic = programIcon(a.program, 14, t.muted);
@@ -85,10 +87,8 @@ export function inboxRowView(view, t, model, actions, drag) {
     const over = !dragging && !view.sweep?.moved && (menu || view.hovered === a.address || within(view, [`card-${a.address}`, `settle-${a.address}`, `snooze-${a.address}`, `woke-${a.address}`]));
     // As T3's rows: what you're on or what wants you leads; the rest recede until hovered, in color only so nothing reflows.
     const leads = on || ghost || st === "blocked" || st === "done" || woke(a);
-    const marks = machine || pic ? h_flex().gap(4).flex_none().items_center()
-      .when(Boolean(machine), (el) => el.child(div().when(!ghost, (m) => m.id(`machine-${a.address}`).accessibility_label(`On ${machine}`))
-        .flex_none().child(svg("mods/t3-inbox/icons/server.svg").size(14).text_color(t.dim))))
-      .when(Boolean(pic), (el) => el.child(div().flex_none().opacity(0.6).child(pic))) : null;
+    const marks = pic ? h_flex().gap(4).flex_none().items_center()
+      .child(div().flex_none().opacity(0.6).child(pic)) : null;
     // Hovered, the corner offers Settle, but only for what's finished: a working or stuck tree stays in sight.
     const offer = over && !busy(a);
     const id = `settle-${a.address}`;
@@ -172,6 +172,10 @@ export function inboxRowView(view, t, model, actions, drag) {
         // T3's MiddleTruncate: a branch's start and end tell it apart.
         .child(div().flex_1().min_w(0).overflow_hidden().whitespace_nowrap().text_ellipsis_middle().child(meta))
         .when(Boolean(marks), (m) => m.child(marks))))
+      .child(h_flex().h(16).mt(2).gap(4).items_center().text_size(12).text_color(t.dim)
+        .when(!ghost, (m) => m.id(`machine-${a.address}`).accessibility_label(`On ${machineName(a)}`))
+        .child(svg("mods/t3-inbox/icons/server.svg").size(12).flex_none().text_color(t.dim))
+        .child(div().flex_1().min_w(0).truncate().child(machineName(a))))
       .when(!ghost, (el) => stop(view, t, `card-${a.address}`, el));
   };
 
