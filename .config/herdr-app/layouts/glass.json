@@ -84,6 +84,7 @@
         {
           "id": "work-body",
           "type": "row",
+          "background": "chrome",
           "children": [
             {
               "id": "main",
@@ -126,19 +127,70 @@
                       "id": "files",
                       "type": "block",
                       "content": {
-                        "mod": "bettr-files"
+                        "mod": "bettr-files",
+                        "props": {
+                          "layoutFramed": true
+                        }
                       },
                       "size": {
                         "weight": 1
                       },
-                      "hidden": true
+                      "hidden": true,
+                      "border": {
+                        "width": 1,
+                        "color": "border"
+                      },
+                      "radius": 10,
+                      "background": "background"
                     },
                     {
                       "id": "changes",
-                      "type": "block",
-                      "content": {
-                        "mod": "bettr-changes"
-                      },
+                      "type": "column",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "id": "changes-main",
+                          "type": "block",
+                          "content": {
+                            "mod": "bettr-changes",
+                            "props": {
+                              "layoutFramed": true
+                            }
+                          },
+                          "size": {
+                            "weight": 1
+                          },
+                          "min": 120,
+                          "border": {
+                            "width": 1,
+                            "color": "border"
+                          },
+                          "radius": 10,
+                          "background": "background"
+                        },
+                        {
+                          "id": "changes-worktrees",
+                          "type": "block",
+                          "content": {
+                            "mod": "bettr-changes",
+                            "props": {
+                              "section": "worktrees",
+                              "autoSize": "changes-worktrees",
+                              "layoutFramed": true
+                            }
+                          },
+                          "size": {
+                            "px": 37
+                          },
+                          "min": 37,
+                          "border": {
+                            "width": 1,
+                            "color": "border"
+                          },
+                          "radius": 10,
+                          "background": "background"
+                        }
+                      ],
                       "size": {
                         "weight": 1
                       },
@@ -220,13 +272,20 @@
                               "python3 -m unittest": "Tested",
                               "sleep": null
                             }
-                          }
+                          },
+                          "layoutFramed": true
                         }
                       },
                       "size": {
                         "weight": 1
                       },
-                      "hidden": true
+                      "hidden": true,
+                      "border": {
+                        "width": 1,
+                        "color": "border"
+                      },
+                      "radius": 10,
+                      "background": "background"
                     },
                     {
                       "id": "context",
@@ -239,13 +298,20 @@
                           "content": {
                             "mod": "bettr-context",
                             "props": {
-                              "cache": "context-cache"
+                              "cache": "context-cache",
+                              "layoutFramed": true
                             }
                           },
                           "size": {
                             "weight": 1
                           },
-                          "min": 120
+                          "min": 120,
+                          "border": {
+                            "width": 1,
+                            "color": "border"
+                          },
+                          "radius": 10,
+                          "background": "background"
                         },
                         {
                           "id": "context-cache",
@@ -254,13 +320,20 @@
                             "mod": "bettr-context",
                             "props": {
                               "section": "cache",
-                              "autoSize": "context-cache"
+                              "autoSize": "context-cache",
+                              "layoutFramed": true
                             }
                           },
                           "size": {
                             "px": 37
                           },
-                          "min": 37
+                          "min": 37,
+                          "border": {
+                            "width": 1,
+                            "color": "border"
+                          },
+                          "radius": 10,
+                          "background": "background"
                         }
                       ],
                       "size": {
@@ -285,6 +358,7 @@
         {
           "id": "extras",
           "type": "block",
+          "background": "chrome",
           "size": {
             "px": 1
           },
@@ -317,8 +391,8 @@
     12,
     17
   ],
-  "terminal_opacity": 0.6,
+  "terminal_opacity": 0,
   "colors": {
-    "chrome": "#0d0e17b3"
+    "chrome": "#12121ad6"
   }
 }

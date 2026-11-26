@@ -1,0 +1,4 @@
+logo.svg is pulls.review's favicon (https://github.com/antfu/pulls.review), MIT License, Copyright (c) 2021-PRESENT Anthony Fu.
+icons/pierre/: T3 Code 09a54f01 (MIT) and @pierre/trees 1.0.0-beta.6 (Apache-2.0), see that folder's NOTICE and licenses. Shapes are original; hue is supplied by layout theme tokens.
+vendor/char-width.js is made from get-east-asian-width (https://github.com/sindresorhus/get-east-asian-width), MIT License, see vendor/LICENSE-get-east-asian-width.
+icons/tree/ and the other icons in icons/ are from Lucide (https://lucide.dev), ISC License, Copyright (c) Lucide Contributors.

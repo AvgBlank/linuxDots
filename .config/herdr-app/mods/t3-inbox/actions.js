@@ -1,24 +1,25 @@
-import { focused, run, shared, setShared, props, notify, openOverlay } from "herdr";
+import { focused, run, shared, props, notify, openOverlay } from "herdr";
 import { focusAgent, focusPane } from "./zoom.js";
 import { detailsFor } from "./details.js";
-import { placeOf } from "./project.js";
+import { t3Settings } from "./layout-settings.js";
+import { KEY } from "./store.js";
+import { pinList, unpin, putBack } from "./pins.js";
 
 export function inboxActions(view, model) {
-  const { every, viewing, term, napUntil, wake, state, settledAt, busy, pinned, out, busyRows, sp, ps, put } = model;
+  const { every, viewing, term, napUntil, wake, state, settledAt, busy, pinned, out, busyRows } = model;
   // A row moving away from under the pointer reports no leave.
   const away = (a, cx) => {
     if (view.hovered !== a.address) return;
     view.hovered = null;
     detailsFor(view, null, cx);
   };
-  // Undo puts back only the pins it took, where they were: pins made since stay.
-  const repin = (before, took) => {
-    const current = [...(shared("agents.pins") ?? [])];
-    for (const p of before.filter((p) => took.includes(p) && !current.includes(p))) {
-      const next = before.slice(before.indexOf(p) + 1).find((q) => current.includes(q));
-      current.splice(next ? current.indexOf(next) : current.length, 0, p);
-    }
-    setShared("agents.pins", current);
+  // Undo puts back only the pins it took, where they were: pins made since stay (pins.js).
+  const repin = putBack;
+  const unpinRow = (address, cx) => {
+    const before = [...pinList()], took = [address];
+    if (!before.includes(address)) return;
+    unpin(took);
+    view.remember("Unpinned", 1, () => repin(before, took), cx);
   };
   // Brought back, it's news again: the top of the list.
   const unsettle = (a, cx) => {
@@ -33,48 +34,57 @@ export function inboxActions(view, model) {
   const moveOn = (xs) => {
     const cards = [...pinned, ...out, ...busyRows], i = cards.findIndex(viewing);
     if (i < 0 || !xs.includes(cards[i])) return false;
-    // With a Home in the layout, that's where it lands: what to look at next stays the person's to say.
-    if (props()?.home) { if (cards[i].mod) return false; run(props().home); return true; }
-    const next = [...cards.slice(i + 1), ...cards.slice(0, i)].find((a) => !xs.includes(a));
+    // With a Home in the layout, that's where it lands: what to look at next stays the person's to say; unless they chose
+    // the next card (t3.settings), and Home once none is left. Review goes back the tab bar's way (docs/adr/0007).
+    const home = props()?.home;
+    if (home && cards[i].mod) return false;
+    const next = home && t3Settings().afterAway !== "next" ? null : [...cards.slice(i + 1), ...cards.slice(0, i)].find((a) => !xs.includes(a));
     if (next) go(next);
-    return Boolean(next);
+    else if (home) run(home);
+    return Boolean(next || home);
   };
   // Undoing what took an agent off the screen brings it back, while Home is still where that left the person.
-  const bringBack = (a) => { if (a && props()?.home && focused()?.space === shared("t3-home.space")) go(a); };
+  const bringBack = (a) => { if (a && props()?.home && focused()?.space === shared(KEY.home)) go(a); };
   // Settling ends a snooze and a pin, as T3's. A mod pane closes, once the view has moved on from it.
   const settle = (xs, cx) => {
     const panes = xs.filter((a) => a.mod), kept = xs.filter((a) => !a.mod), seen = kept.find(viewing);
     for (const a of xs) away(a, cx);
     const naps = new Map(kept.map((a) => [a, napUntil(a)]));
-    const before = [...(shared("agents.pins") ?? [])];
+    const before = [...pinList()];
     const took = kept.map((a) => a.address);
-    if (before.some((p) => took.includes(p))) setShared("agents.pins", before.filter((p) => !took.includes(p)));
-    let undone = false;
-    for (const a of kept) {
-      view.setLabel("settled", a.address, `${Date.now()}:${term.get(a.address)?.turn ?? 0}`, cx, () => {
-        if (!undone && before.includes(a.address)) repin(before, [a.address]);
-      });
-      if (naps.get(a)) wake(a, cx);
-    }
+    unpin(took);
     // Undone, they're back where they were: no news, as T3 restores a thread, with its pin and a snooze that hasn't
     // run out.
-    if (kept.length) view.remember("Settled", kept.length, (cx) => {
-      undone = true;
-      repin(before, took);
+    if (kept.length) {
+      let undone = false;
+      const failed = new Set();
+      const note = view.remember("Settled", kept.length, () => {
+        undone = true;
+        const settled = kept.filter((a) => !failed.has(a.address));
+        repin(before, settled.map((a) => a.address));
+        for (const a of settled) {
+          view.setLabel("settled", a.address, "", cx);
+          if (naps.get(a) > Date.now()) view.setLabel("snoozed", a.address, String(naps.get(a)), cx);
+        }
+        bringBack(seen && !failed.has(seen.address) ? seen : null);
+      }, cx);
       for (const a of kept) {
-        view.setLabel("settled", a.address, "", cx);
-        if (naps.get(a) > Date.now()) view.setLabel("snoozed", a.address, String(naps.get(a)), cx);
+        view.setLabel("settled", a.address, `${Date.now()}:${term.get(a.address)?.turn ?? 0}`, cx, () => {
+          failed.add(a.address);
+          if (!undone && before.includes(a.address)) repin(before, [a.address]);
+          note.drop(1, cx);
+        });
+        if (naps.get(a)) wake(a, cx);
       }
-      bringBack(seen);
-    }, cx);
+    }
     const moved = moveOn(xs);
     for (const a of panes) run(props()?.home ? `t3-tabs.close-pane:${a.pane}` : "pane.close", props()?.home ? undefined : { pane: a.pane });
     return moved;
   };
   const snooze = (a, at, cx) => {
     const seen = viewing(a);
-    view.setLabel("snoozed", a.address, String(at), cx);
-    view.remember("Snoozed", 1, (cx) => { wake(a, cx); if (seen) bringBack(a); }, cx);
+    const note = view.remember("Snoozed", 1, () => { wake(a, cx); if (seen) bringBack(a); }, cx);
+    view.setLabel("snoozed", a.address, String(at), cx, () => note.drop(1, cx));
     // The card moves away without a pointer-leave event, for it or for the clock under the pointer.
     view.napMenu = view.hovered = view.hot = null;
     detailsFor(view, null, cx);
@@ -94,35 +104,19 @@ export function inboxActions(view, model) {
     view.napAt = -1;
     notify({ title: "Couldn't snooze the agent", body: "That time has passed. Choose another.", level: "warning" });
   };
-  // The Custom dialog's answer. By then it may have come to need the person, which T3 refuses too.
-  view.customSnooze = (answer, cx) => {
+  // Called with a fresh model when the Custom dialog answers. Its tree may now need the person.
+  const customSnooze = (answer, cx) => {
     const i = answer.lastIndexOf(":"), at = Number(answer.slice(i + 1)), a = every.find((x) => x.address === answer.slice(0, i));
-    if (a && state(a) !== "blocked" && at > Date.now()) snooze(a, at, cx);
+    if (a && term.has(a.address) && state(a) !== "blocked" && at > Date.now()) snooze(a, at, cx);
   };
+
   // The settle key: the agent in view, as its card's Settle (finished) or its settled row's undo.
-  view.settleKey = (cx) => {
+  const settleInView = (cx) => {
     const a = every.find(viewing);
     if (!a) return;
     if (settledAt(a)) unsettle(a, cx);
     else if (!busy(a)) settle([a], cx);
   };
 
-  // Clear closes settled agents' panes; Herdr then closes emptied tabs. The one in view stays.
-  const spaceNow = sp.find((s) => s.active), tabNow = spaceNow?.tabs.find((c) => c.active)?.id;
-  const doomed = put.filter((a) => a.pane && !viewing(a) && a.tab !== tabNow);
-  view.clearSettled = () => {
-    const gone = new Set(doomed.map((a) => a.pane));
-    for (const id of new Set(doomed.map((a) => a.space))) {
-      const s = sp.find((s) => s.id === id), tabs = s?.tabs.map((c) => c.id) ?? [];
-      const mine = ps.filter((p) => tabs.includes(p.tab));
-      // The space stays: pane.close refuses its last pane, so a space left empty gets a fresh shell tab first,
-      // where its terminals are now: an unnamed space is named after that, and s.folder is only where it began.
-      if (mine.every((p) => gone.has(p.pane))) run("tab.new", { space: id, folder: placeOf(s, ps) });
-      for (const a of doomed.filter((a) => a.space === id)) run("pane.close", { pane: a.pane });
-    }
-    // tab.new shows the new tab; go back to where the person was.
-    if (tabNow) { run("space.select", { id: spaceNow.id }); run("tab.select", { id: tabNow }); }
-  };
-
-  return { away, repin, unsettle, go, settle, pick, doomed };
+  return { away, unpinRow, unsettle, go, settle, pick, customSnooze, settleInView };
 }

@@ -1,5 +1,5 @@
-// A hover label as T3's (its ui/tooltip.tsx): small and dark, the label with its key, and under it a dim hint if there is one.
-// `.tooltip()` takes only a string, in the shell's own style, hence this. scripts/sync.sh copies this to the mods that use it.
+// A hover label as T3's ui/tooltip.tsx: the label with its key, a dim hint under it.
+// Herdr's `.tooltip()` takes only a string, in the shell's own style.
 import { div } from "gpui-kit";
 import { v_flex, Popup } from "gpui-base";
 import { keys, window } from "herdr";
@@ -7,6 +7,12 @@ import { keys, window } from "herdr";
 // An action's key as the new menu writes it: ⇧⌘O. Read from the bindings, so a rebound key says so.
 export function keyOf(action) {
   return keyLabel(keys().find(b => b.action === action)?.keys ?? "");
+}
+
+// The undo notice's button, as T3's threadUndoLabel: the key in it, so no hover is needed to learn it, and plain Undo with none bound.
+export function undoLabel(...actions) {
+  const key = actions.map(keyOf).find(Boolean);
+  return key ? `${key} to undo` : "Undo";
 }
 
 // Keys as keys.json writes them (`cmd-shift-o`), as this platform names them.
@@ -26,13 +32,10 @@ export function keyLabel(strokes) {
   }).join(" ");
 }
 
-// Herdr drops a leave while the pointer's last known place is in the element's last box (should_dispatch_hover), and GPUI has by then marked it left,
-// so none comes after: the pointer leaving the window, a key press or a press dragged out strand a hover. So what shows on hover also watches where the
-// pointer is. No box yet, as for what slid under a still pointer: its moving from `from`, where it was then, means off, as a move still on it would have
-// reported a box first; with no `from`, no word either way. macOS sends a window, active or not, no moves once the pointer is out, and its last place
-// stays put: one whose last step, twice over, crosses the window's edge has left. shortcut: a pointer stopped dead just short of an edge after a fast
-// step counts as gone; drop all this if Herdr's filter goes. shortcut: a window coming up over an inactive Herdr crosses no edge, so a hover under it
-// stays until the pointer's next move here; nothing a mod hears can say more.
+// Herdr drops a leave while the pointer's last place is in the element's last box (should_dispatch_hover), so a hover watches the pointer.
+// No box yet: moved from `from` means off. macOS sends no moves once the pointer is out, so a last step that, doubled, leaves the window has.
+// shortcut: drop this if Herdr's filter goes. A pointer stopped short of an edge after a fast step counts as gone, and a hover under a
+// window raised over an inactive Herdr stays until the pointer next moves here.
 export const POINTER_WATCH = 100;
 export const pointerAt = () => globalThis.window.mouse_position?.();
 const track = { at: null, step: { x: 0, y: 0 } };
@@ -41,8 +44,8 @@ export function pointerMoved(p) {
   if (track.at) track.step = { x: p.x - track.at.x, y: p.y - track.at.y };
   track.at = p;
 }
-export function pointerGone(box, from) {
-  const p = pointerAt(), size = globalThis.window.viewport_size?.();
+export function pointerGone(box, from, predictExit = true) {
+  const p = pointerAt(), size = predictExit && globalThis.window.viewport_size?.();
   if (p && size && track.at?.x === p.x && track.at.y === p.y) {
     const x = p.x + 2 * track.step.x, y = p.y + 2 * track.step.y;
     if (x < 0 || y < 0 || x >= size.width || y >= size.height) return true;
@@ -54,10 +57,13 @@ export function pointerGone(box, from) {
 // A drag has a release to wait for, and one out of an inactive window's sight never comes.
 export const dragGone = (box) => window()?.active === false || pointerGone(box);
 
-// The label fades and slides 4px off its control, in and out: T3's also scales, which Herdr can't. A transition adopts the first value it sees,
-// so it draws clear until laid out. A new id per opening: a size reports only the first time an id is laid out.
-// A Popup, as a HoverCard stays open under the pointer and a popup blocks what it covers even when clear: one fading out would leave a dead patch.
-const tips = new Map(), FADE = /** @type {const} */ ({ duration: 150, easing: "ease-out" });
+// A transition adopts the first value it sees, so the label draws clear until laid out; a size reports only the first time an id
+// is laid out, so each opening takes a new id. A popup blocks what it covers even when clear.
+const tips = new Map();
+export const FADE = /** @type {const} */ ({ duration: 150, easing: "ease-out" });
+/** The label's card, as T3's TooltipPopup: docs/internals/t3-tokens.md「Tooltip」. measured-text.js's named() draws it too. */
+export const tipCard = (t, id) => v_flex().id(id).max_w(320).px(8).py(4).gap(2).rounded(6).border(1).border_color(t.border).bg(t.chrome).shadow_md()
+  .text_size(12).font_normal().line_height(1.375).text_color(t.foreground);
 let opened = 0;
 
 function dropTip(id, s) {
@@ -74,10 +80,16 @@ function leaveTip(id, s, cx) {
   s.timer = cx.timer.after(FADE.duration, (cx) => { dropTip(id, s); cx.notify(); });
 }
 
+// Read only for a label that is up: keyOf copies every binding, and every control with an action draws a tip.
+function withKey(label, action) {
+  const key = action ? keyOf(action) : "";
+  return key ? `${label} (${key})` : label;
+}
+
 // Above, as T3's. `below` for what has no room up there: a Popup doesn't flip as T3's does, it is pushed back over its trigger.
 // `off`: not lit whatever the pointer's on, as under the control's own menu.
 export function tip(view, t, id, label, trigger, { action, hint, below, delay = 150, off } = /** @type {{ action?: any, hint?: string, below?: boolean, delay?: number, off?: any }} */ ({})) {
-  const key = action ? keyOf(action) : "", hot = off ? null : view.hot, s = tips.get(id), shown = hot === id && s?.drawn;
+  const hot = off ? null : view.hot, s = tips.get(id), shown = hot === id && s?.drawn;
   const watch = (s, cx) => {
     s.watch = cx.timer.every(POINTER_WATCH, (cx) => {
       if (!pointerGone(s.box, s.from)) return;
@@ -101,11 +113,11 @@ export function tip(view, t, id, label, trigger, { action, hint, below, delay = 
     watch(next, cx);
   };
   return Popup.new(`tip-${id}`, div().id(`tip-over-${id}`).on_hover(hover).on_mouse_move((e) => { pointerMoved(e.position); const at = tips.get(id); if (at) at.box = e.bounds; }).child(trigger)).anchor(below ? "top_center" : "bottom_center")
-    // While lit or leaving: a dialog opened from the button covers it, nothing reports the leaving until the pointer moves, and the label would stay up over it.
-    .when(Boolean(s?.open && (hot === id || s.closing)), pop => pop.content(v_flex().id(`tip-body-${id}-${s.n}`)
+    // While lit or leaving only: a dialog opened from the button gets no leave until the pointer moves, and the label would stay over it.
+    .when(Boolean(s?.open && (hot === id || s.closing)), pop => pop.content(tipCard(t, `tip-body-${id}-${s.n}`)
       .opacity(shown ? 1 : 0).top(shown ? 0 : below ? -4 : 4).transition("opacity", FADE).transition("top", FADE)
-      .on_size_change((_size, cx) => { if (tips.get(id) !== s || s.drawn) return; s.drawn = true; cx.notify(); }).when(below, el => el.mt(4)).when(!below, el => el.mb(4)).max_w(320).px(8).py(4).gap(2).rounded(6).border(1).border_color(t.border).bg(t.chrome).shadow_md().text_size(12).line_height(1.375).text_color(t.foreground)
-      .child(div().child(key ? `${label} (${key})` : label))
+      .on_size_change((_size, cx) => { if (tips.get(id) !== s || s.drawn) return; s.drawn = true; cx.notify(); }).when(below, el => el.mt(4)).when(!below, el => el.mb(4))
+      .child(div().child(withKey(label, action)))
       .when(Boolean(hint), el => el.child(div().text_color(t.muted).child(hint)))));
 }
 
@@ -117,21 +129,23 @@ export const glow = (view, id) => (on, cx) => {
 };
 
 // A hover kept in view[key], for what has no label or card to go with the pointer: it goes even when its leave never comes.
-export function hoverKept(view, key, id, el) {
-  return el.on_hover((on, cx) => {
+export const hoverKept = (view, key, id, el) => { const kept = keptHover(view, key, id); return el.on_hover(kept.hover).on_mouse_move(kept.move); };
+/** hoverKept's two handlers, for an element whose hover does more (shared/tab.js). */
+export function keptHover(view, key, id, { predictExit = true } = {}) {
+  return { hover: (on, cx) => {
     if (on) {
       view[key] = id;
       view.keptBox = null;
       view.keptWatch?.cancel();
       const from = pointerAt();
       view.keptWatch = cx.timer.every(POINTER_WATCH, (cx) => {
-        if (view[key] === id && !pointerGone(view.keptBox, from)) return;
+        if (view[key] === id && !pointerGone(view.keptBox, from, predictExit)) return;
         view.keptWatch.cancel();
         if (view[key] === id) { view[key] = null; cx.notify(); }
       });
     } else if (view[key] === id) view[key] = null;
     cx.notify();
-  }).on_mouse_move((e) => { pointerMoved(e.position); if (view[key] === id) view.keptBox = e.bounds; });
+  }, move: (e) => { pointerMoved(e.position); if (view[key] === id) view.keptBox = e.bounds; } };
 }
 
 // A mark with no words of its own says what it is on hover, unless the row's details already do.

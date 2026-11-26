@@ -3,15 +3,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 
-function bundle(file, seen = new Set()) {
-  if (seen.has(file)) return "";
-  seen.add(file);
-  const src = fs.readFileSync(path.join(__dirname, file), "utf8");
-  const needs = [...src.matchAll(/^import [^;]*? from "\.\/(.+?)";/gm)].map(m => bundle(m[1], seen)).join("\n");
-  return needs + "\n" + src.replace(/^import [^;]*;\r?\n/gm, "").replace(/^export (function|const) /gm, "$1 ");
-}
-const source = bundle("repos.js");
-const plain = value => JSON.parse(JSON.stringify(value));
+const kit = require("./check-kit.js"), { plain } = kit;
+const source = kit.bundle((file) => fs.readFileSync(path.join(__dirname, file), "utf8"), "repos.js");
 const flush = async () => { for (let i = 0; i < 4; i++) await new Promise(setImmediate); };
 const status = ["--no-optional-locks", "-c", "core.fsmonitor=false", "status", "--porcelain=v2", "--branch", "--untracked-files=no"];
 const space = (id, folder, machine = null) => ({ id, folder, machine, tabs: [{ id: `b-${id}` }] });
@@ -22,13 +15,21 @@ function fixture(spaces = [space("s0", "/work/s0"), space("s1", "/work/p1"), spa
   const commands = [], watches = [], errors = [];
   let now = 1000000, answer = (_cmd, args, { cwd }) => {
     const top = cwd.split("/").slice(0, 3).join("/");
-    return { code: 0, stderr: "", stdout: args.includes("status") ? "# branch.head x\n" : args.includes("--show-toplevel") ? `${top}\n` : `${top}/.git\n` };
+    return { code: 0, stderr: "", stdout: args.includes("status") ? "# branch.head x\n" : `${top}\n${top}/.git\n` };
   };
   const cx = { notify() {}, spawn(fn) { fn(cx).catch(e => errors.push(e)); } };
   const adapter = {
     cx,
     exec: (cmd, args, options) => { commands.push([cmd, [...args], { ...options }]); return Promise.resolve().then(() => answer(cmd, args, options)); },
-    watchFolder: dir => new Promise(resolve => watches.push({ dir, resolve })),
+    watchFolder(dir) {
+      let finish;
+      const wait = new Promise(resolve => {
+        const watch = { dir, resolve: paths => { watches.splice(watches.indexOf(watch) >>> 0, 1); resolve(paths); } };
+        watches.push(watch); finish = watch.resolve;
+      });
+      wait.cancel = () => finish([]);
+      return wait;
+    },
   };
   const scope = vm.createContext({ Date: { now: () => now } });
   vm.runInContext(source, scope, { filename: "repos.js" });
@@ -37,14 +38,48 @@ function fixture(spaces = [space("s0", "/work/s0"), space("s1", "/work/p1"), spa
     snapshot, repos, commands, watches,
     answer: fn => { answer = fn; },
     update(at = now) { now = at; repos.update(snapshot, now); },
-    fact: s => plain(repos.forSpace(s, snapshot.panes)),
+    // A new list each ask, as panes() gives (project.js indexes each list once).
+    fact: s => plain(repos.forSpace(s, [...snapshot.panes])),
     looks: () => commands.filter(([, args]) => args.includes("status")).map(([, , { cwd, on }]) => [on, cwd]),
-    wake(dir) { for (const watch of watches.splice(0)) { if (watch.dir === dir) watch.resolve([]); else watches.push(watch); } },
+    wake(dir) { for (const watch of [...watches]) if (watch.dir === dir) watch.resolve([]); },
     async flush() { await flush(); assert.deepEqual(errors, []); },
   };
 }
 
 async function check() {
+  {
+    const s = space("s", "/work/main"), f = fixture([s]);
+    const other = fixture([space("other", "/work/main")]);
+    other.update(); await other.flush();
+    for (let i = 0; i < 65; i++) {
+      f.update(); await f.flush();
+      assert.equal(f.watches.length, 1, "reopening has exactly one wait");
+      f.snapshot.spaces = []; f.update();
+      assert.equal(f.watches.length, 0, "closing a silent repo immediately cancels its pending wait");
+      await f.flush();
+      assert.equal(other.watches.length, 1, "another subscriber to the same folder stays alive");
+      f.snapshot.spaces = [s];
+    }
+    f.update(); await f.flush();
+    f.repos.close();
+    assert.equal(f.watches.length, 0, "closing the view releases its waits too");
+    await f.flush();
+    assert.equal(f.watches.length, 0, "cancel does not restart a loop");
+  }
+  {
+    const f = fixture([space("s", "/work/main")]);
+    let finish;
+    f.answer(() => new Promise(resolve => { finish = resolve; }));
+    f.update(); await f.flush();
+    f.snapshot.spaces = []; f.update();
+    finish({ code: 0, stdout: "# branch.head main\n", stderr: "" });
+    await f.flush();
+    assert.equal(f.watches.length, 0, "a read for a closed repo cannot install a late watch");
+    assert.equal(f.commands.length, 1, "a closed repo needs no further probes");
+    f.answer((_cmd, args) => ({ code: 0, stderr: "", stdout: args.includes("status") ? "# branch.head main\n" : "/work/main\n/work/main/.git\n" }));
+    f.snapshot.spaces = [space("s", "/work/main")]; f.update(); await f.flush();
+    assert.equal(f.watches.length, 1, "reopening after an abandoned first read probes and watches again");
+  }
   {
     // One queue per machine; a place is asked only once while waiting.
     const f = fixture(), [s0, s1, s2] = f.snapshot.spaces;
@@ -56,7 +91,7 @@ async function check() {
       if (on) await away;
       if (args.includes("status")) await hold;
       const top = cwd.split("/").slice(0, 3).join("/");
-      return { code: 0, stderr: "", stdout: args.includes("status") ? "# branch.head x\n" : args.includes("--show-toplevel") ? `${top}\n` : `${top}/.git\n` };
+      return { code: 0, stderr: "", stdout: args.includes("status") ? "# branch.head x\n" : `${top}\n${top}/.git\n` };
     });
     for (let i = 0; i < 3; i++) { f.update(); await f.flush(); }
     assert.deepEqual(f.looks(), [["vps", "/work/s2"], [null, "/work/s0"]], "the next local place waits for its queue; polls cannot duplicate a read");
@@ -75,8 +110,7 @@ async function check() {
       const commands = f.commands.filter(([, , o]) => o.cwd === s.folder);
       assert.deepEqual(commands, [
         ["git", status, { cwd: s.folder, on: s.machine }],
-        ["git", ["rev-parse", "--show-toplevel"], { cwd: s.folder, on: s.machine }],
-        ["git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd: s.folder, on: s.machine }],
+        ["git", ["--no-optional-locks", "-c", "core.fsmonitor=false", "rev-parse", "--path-format=absolute", "--show-toplevel", "--git-common-dir"], { cwd: s.folder, on: s.machine }],
       ], "all git arguments and the target machine survive extraction");
     }
     assert.deepEqual(f.watches.map(w => w.dir), ["/work/s0/.git", "/work/p1/.git"], "remote repos never enter the local watch");
@@ -107,7 +141,7 @@ async function check() {
     f.snapshot.spaces.push(s1);
     f.update();
     await f.flush();
-    assert.equal(f.watches.filter(w => w.dir === "/work/p1/.git").length, 2, "the old watch can't be taken back");
+    assert.equal(f.watches.filter(w => w.dir === "/work/p1/.git").length, 1, "the old watch is cancelled before reopening");
     f.commands.splice(0);
     f.wake("/work/p1/.git");
     await f.flush();
@@ -217,7 +251,7 @@ async function check() {
     const main = space("main", "/work/main"), linked = space("linked", "/work/linked"), f = fixture([main, linked]);
     const pane = { pane: "p", terminal: "t", tab: "b-main", cwd: main.folder, status: "working", program: { agent: true } };
     f.snapshot.panes.push(pane);
-    f.answer((_cmd, args, { cwd }) => ({ code: 0, stderr: "", stdout: args.includes("status") ? "# branch.head feature\n# branch.ab +2 -1\n" : args.includes("--show-toplevel") ? `${cwd}\n` : "/work/main/.git\n" }));
+    f.answer((_cmd, args, { cwd }) => ({ code: 0, stderr: "", stdout: args.includes("status") ? "# branch.head feature\n# branch.ab +2 -1\n" : `${cwd}\n/work/main/.git\n` }));
     f.update();
     await f.flush();
     assert.deepEqual(f.fact(main).git, { name: "main", branch: "feature", ahead: 2, behind: 1, repo: '[null,"/work/main/.git"]', linked: false });
@@ -241,6 +275,45 @@ async function check() {
     assert.deepEqual(f.looks(), [[null, "/work/main"], [null, "/work/linked"]], "a machine back re-asks its places");
     const other = fixture([main]);
     assert.deepEqual(other.fact(main), { git: null, answered: false }, "Spaces copies never share facts or queues");
+  }
+  {
+    // A look runs four times a second: each space is placed from its own panes, not by walking every pane for every space.
+    const list = Array.from({ length: 20 }, (_, i) => space(`s${i}`, `/work/s${i}`)), f = fixture(list);
+    let asked = 0;
+    f.snapshot.panes = list.map((s, i) => ({ pane: `p${i}`, terminal: `t${i}`, get tab() { asked++; return `b-${s.id}`; }, cwd: `/work/s${i}/src`, program: { shell: true } }));
+    f.update();
+    assert.ok(asked <= 4 * list.length, `a look asks each pane's tab a few times, not once per space: ${asked} for ${list.length} panes`);
+    await f.flush();
+    assert.deepEqual(f.looks().at(-1), [null, "/work/s19/src"], "and still finds where each space is");
+  }
+  {
+    // A failed or malformed rev-parse never records an empty repo or starts a watch on "", and retries as unsure.
+    const s = space("s", "/work/s"), f = fixture([s]);
+    f.snapshot.active = true;
+    let at = 1000000;
+    for (const bad of [
+      { code: 128, stdout: "", stderr: "fatal: error" },
+      { code: 0, stdout: "", stderr: "" },
+      { code: 0, stdout: "/work/s\n", stderr: "" },
+      { code: 0, stdout: "\n/work/s/.git\n", stderr: "" },
+      { code: 0, stdout: "/work/s\n\n/work/s/.git\n", stderr: "" },
+      { code: 0, stdout: "/work/s\n/work/s/.git\nextra\n", stderr: "" },
+    ]) {
+      f.answer((_cmd, args) => args.includes("status") ? { code: 0, stderr: "", stdout: "# branch.head main\n" } : bad);
+      f.commands.splice(0);
+      f.update(at);
+      await f.flush();
+      assert.deepEqual(f.fact(s), { git: null, answered: true }, "malformed rev-parse stores no empty repo fact");
+      assert.deepEqual(f.watches, [], "malformed rev-parse never watches an empty path");
+      at += 61000;
+    }
+    f.answer((_cmd, args) => ({ code: 0, stderr: "", stdout: args.includes("status") ? "# branch.head main\n" : "/work/s\n/work/s/.git\n" }));
+    f.commands.splice(0);
+    f.update(at);
+    await f.flush();
+    assert.deepEqual(f.looks(), [[null, "/work/s"]], "marked unsure, it retries on fallback");
+    assert.equal(f.fact(s).git.repo, '[null,"/work/s/.git"]');
+    assert.deepEqual(f.watches.map(w => w.dir), ["/work/s/.git"]);
   }
   console.log("ok: repository facts, per-machine queues, trusted results, retries, local watches and fallback.");
 }

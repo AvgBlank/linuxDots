@@ -14,21 +14,25 @@ const result = (cpu, gpu, used, total) => ({ cpu: clamp(cpu), gpu: clamp(gpu), r
 
 // macOS: CPU over one second (iostat), memory as Activity Monitor counts it
 // (app + wired + compressed), GPU from the accelerator's statistics. No sudo.
-const MACOS = [
-  "iostat -C -n 0 -c 2 -w 1 | tail -1",
-  "sysctl -n hw.memsize",
-  "vm_stat",
-  "ioreg -r -d 1 -w 0 -c IOAccelerator | grep -o '\"Device Utilization %\"=[0-9]*'",
-].join("; ");
+// The memory size is read once; `ioreg` costs the most, so the GPU is read every GPU_EVERY samples.
+const MACOS = "iostat -C -n 0 -c 2 -w 1 | tail -1; vm_stat";
+const MACOS_TOTAL = "sysctl -n hw.memsize";
+const MACOS_GPU = "ioreg -r -d 1 -w 0 -c IOAccelerator | grep -o '\"Device Utilization %\"=[0-9]*'";
+const GPU_EVERY = 5;
+let macTotal = null, macGpu = null, macSamples = 0;
 
 async function macos() {
+  const gpuDue = macSamples++ % GPU_EVERY === 0;
+  // One command at a time: the footer stopped when these ran together in a Promise.all.
   const out = await sh(MACOS);
+  if (macTotal === null) macTotal = number(await sh(MACOS_TOTAL), /^(\d+)$/m);  // Asked again until it answers.
+  if (gpuDue) macGpu = number(await sh(MACOS_GPU), /"Device Utilization %"=(\d+)/);
   const idle = Number(out.trim().split("\n")[0].trim().split(/\s+/)[2]);
   const page = number(out, /page size of (\d+)/);
   const pages = name => number(out, new RegExp(`${name}:\\s+(\\d+)`)) ?? 0;
   const used = page && (pages("Anonymous pages") - pages("Pages purgeable") + pages("Pages wired down")
     + pages("Pages occupied by compressor")) * page;
-  return result(100 - idle, number(out, /"Device Utilization %"=(\d+)/), used, number(out, /^(\d+)$/m));
+  return result(100 - idle, macGpu, used, macTotal);
 }
 
 // Linux: CPU from the change in /proc/stat since the last sample, memory from

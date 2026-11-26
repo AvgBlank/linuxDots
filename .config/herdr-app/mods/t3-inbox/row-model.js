@@ -1,19 +1,29 @@
-import { kidStatus, descendants, ownStatus, treeStatus } from "./tree.js";
+import { descendants, kidStatus, ownStatus, subAgents, treeStatus } from "./tree.js";
 
 // The settled tail opens on this many, then grows by MORE.
 export const FIRST = 10, MORE = 25;
+
+// As T3's sidebar times: no "ago", nothing past days.
+export function ago(ms, now) {
+  const m = Math.floor((now - ms) / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m`;
+  if (m < 1440) return `${Math.floor(m / 60)}h`;
+  return `${Math.floor(m / 1440)}d`;
+}
 // A run that stops stays on the Working shelf this long (ms), as in T3: a quick continuation doesn't move it twice.
 const GRACE = 2000;
 const BUSY = new Set(["working", "blocked"]);
 // The last word when times tie, so the order doesn't follow the order the data came in.
 const byAddress = (x, y) => x.address.localeCompare(y.address);
-export const byRecent = (x, y) => y.since - x.since || byAddress(x, y);
+const byRecent = (x, y) => y.since - x.since || byAddress(x, y);
+// The cards: one waiting on the person first, however long it has waited; the rest by when each came back.
+export const byCard = (x, y) => Number(y.blocked) - Number(x.blocked) || byRecent(x, y);
 
 // Takes each agent's state as working, blocked or idle (done counts as idle: looking at it isn't news).
-// A run's place in Working is when it started, as T3's is the person's message: a pause for them, or a stop
-// that goes on within the grace, is the same run. Pinned and settled ones skip the grace, as in T3: their
-// place doesn't hang on it. A turn ended while we weren't watching is news too. Hidden, nothing draws, so it goes by
-// `changed`, when it really changed; a time no later than the last we saw is about something else, so then it's now.
+// A run's place in Working is when it started, as T3's: a pause for the person, or a stop that goes on within the grace, is the
+// same run; pinned and settled ones skip the grace. A turn ended while we weren't watching is news too. Hidden, it goes by
+// `changed`; a time no later than the last we saw is about something else, so then it's now.
 export function trackInboxRows(previous, list, all, now) {
   const changes = { ...previous }, waits = [];
   let dirty = false;
@@ -80,7 +90,7 @@ export function inboxFields({ every, all, term, pending, changed, now, inView })
     return v ? v.split(":").map(Number) : null;
   };
   const listed = new Map(every.map((a) => [a.address, a.status]));
-  const kids = new Map(every.map((a) => [a.address, descendants(all, a.address).map((k) => kidStatus(k, listed))]));
+  const under = subAgents(every, all), kids = new Map(every.map((a) => [a.address, under(a.address)]));
   // It, or anything under it, is working or needs the person.
   const busy = (a) => BUSY.has(ownStatus(a.status, a.address, all)) || kids.get(a.address).some((s) => BUSY.has(s));
   // It with what's under it (tree.js).
@@ -114,8 +124,8 @@ export function inboxSections(every, { scope, pins, workOpen, napOpen, open, lim
   const list = scope.length ? every.filter((x) => scope.includes(x.a.space)) : every;
   const pinned = pins.map((p) => list.find((x) => x.address === p)).filter((x) => x && !x.hidden);
   const rest = list.filter((x) => !pins.includes(x.address));
-  // Active by when each came back to the person; Working by when its run started.
-  const out = rest.filter((x) => !x.settledAt && !x.hidden && !x.working).sort(byRecent);
+  // Active as byCard; Working by when its run started.
+  const out = rest.filter((x) => !x.settledAt && !x.hidden && !x.working).sort(byCard);
   const work = rest.filter((x) => !x.settledAt && !x.hidden && x.working).sort((x, y) => y.begun - x.begun || byAddress(x, y));
   // Soonest back first; pinned ones too: they wake back to their pin.
   const nap = list.filter((x) => x.hidden).sort((x, y) => x.napUntil - y.napUntil || byAddress(x, y));

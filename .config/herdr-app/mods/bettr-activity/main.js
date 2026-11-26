@@ -11,13 +11,15 @@ const readFont = () => { font = settings()?.font_family || "JetBrains Mono"; };
 
 // A message row's line height; closed, a message shows one line.
 const LINE = 17;
+// A closed turn's heading with its digest line under the title.
+const DIGEST_HEAD = 50;
 // The subagents section: rows of two fixed-height lines, with SUB_PAD above, between and
 // below them. It is as tall as its rows, up to SUB_MAX; more rows scroll.
 const SUB_TOP = 18, SUB_BOTTOM = 16, SUB_ROW = SUB_TOP + 2 + SUB_BOTTOM, SUB_PAD = 10, SUB_MAX = 200;
 // A step row's Lucide icon (mods/bettr-activity/icons), by the verb the layout's
 // `verbs` table gives it. Any other verb (a tool's own name) gets the wrench.
 const ICONS = {
-  Read: "text-initial", Searched: "search", Edited: "pen-line", Fetched: "globe", Spawned: "bot",
+  Read: "text-initial", Searched: "search", Explored: "search", Edited: "pen-line", Fetched: "globe", Spawned: "bot",
   Messaged: "message-square", Stopped: "ban", Asked: "message-circle-question-mark", Used: "wrench",
   Proposed: "square-chart-gantt", Staged: "message-square-diff", Committed: "git-commit-vertical",
   Pulled: "arrow-down-to-line", Pushed: "arrow-up-from-line", Tested: "bug", Ran: "terminal", Steered: "user",
@@ -130,13 +132,27 @@ export default class Activity extends View {
 
   row(row, t) {
     if (row.type === "prompt") {
-      return h_flex().w_full().h(36).px(14).gap(6).items_center()
+      const digest = row.digest ?? [];
+      return v_flex().w_full().h(digest.length ? DIGEST_HEAD : 36).px(14).gap(2).justify_center()
         .when(!row.first, el => el.border_t(1).border_color(t.border))
         .when(row.expandable, el => el.cursor_pointer())
-        .child(fitted(row.title, row.untitled ? t.dim : t.foreground).font_medium())
-        .when(Boolean(row.elapsed), el => el.child(mono(div()).flex_none().text_size(11).text_color(t.dim)
-          .child(row.elapsed)))
-        .child(div().flex_none().text_size(11).text_color(t[row.tone]).child(row.status));
+        .when(digest.length > 0, el => el.accessibility_label(
+          [row.title, row.elapsed, row.status, ...digest.map(part => part.text)].filter(Boolean).join(", ")))
+        .child(h_flex().w_full().gap(6).items_center()
+          .child(fitted(row.title, row.untitled ? t.dim : t.foreground).font_medium())
+          .when(Boolean(row.elapsed), el => el.child(mono(div()).flex_none().text_size(11).text_color(t.dim)
+            .child(row.elapsed)))
+          .child(div().flex_none().text_size(11).text_color(t[row.tone]).child(row.status)))
+        // What the closed turn did: `3 files +42 −7 · 1 failed · committed`, or the reply's first line.
+        // A plain line (the reply) is cut with "…"; a row of parts is clipped at the edge.
+        // Not `fitted`: its flex_1 would grow this line down the column and push the title to the top.
+        .when(digest.length > 0, el => el.child(div().w_full().min_w(0).flex_none().truncate().text_size(11)
+          .text_color(t.dim).child(digest.length === 1 && !digest[0].tone && !digest[0].diff
+            ? digest[0].text
+            : h_flex().children(digest.map((part, at) => h_flex().flex_none()
+              .when(at > 0, el => el.child(div().text_color(t.dim).child(" · ")))
+              .child(div().text_color(part.tone ? t[part.tone] : t.dim)
+                .child(part.diff ? counted(part.text) : part.text)))))));
     }
     if (row.type === "message") {
       // The agent's text: full width, no verb. Closed, one line
@@ -204,8 +220,8 @@ export default class Activity extends View {
     const empty = !state ? "Focus an agent to see its activity"
       : !rows.length ? "No activity in this session" : "";
 
-    return v_flex().id("activity").size_full().min_h(0).rounded(10).overflow_hidden()
-      .bg(t.background).border_1().border_color(t.border).text_color(t.foreground).text_size(13)
+    return v_flex().id("activity").size_full().min_h(0).overflow_hidden()
+      .text_color(t.foreground).text_size(13)
       .child(h_flex().h(36).flex_none().px(14).gap(8).items_center().border_b(1).border_color(t.border)
         .child(div().flex_1().font_medium().child("Activity"))
         // Styled as the Cache header's hit rate, in the same place.

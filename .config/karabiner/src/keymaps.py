@@ -89,7 +89,7 @@ FUNCTION_KEY_REMAPS_NON_TERMINAL = same_key_manipulators(
 
 TERMINAL_ONLY_REMAPS = [
     *same_key_manipulators(
-        list("tzvac"),
+        [*list("tzvac"), "return_or_enter"],
         {"mandatory": ["fn"]},
         ["left_control"],
         TERMINAL_IF_INTERNAL,

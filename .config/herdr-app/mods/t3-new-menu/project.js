@@ -1,12 +1,14 @@
 // A space's mark, as T3 Code's sidebar draws a project (ProjectFavicon): the project's own icon when it has
-// one, else a two-letter monogram tinted with a color its name picks. One rule, with a copy in each mod that
-// draws spaces or opens a tab in one (t3-inbox, t3-agents, t3-pane, t3-picker, t3-spaces, t3-new-menu, t3-tabs, t3-menu).
+// one, else a monogram tinted with a color its name picks.
 import { image, svg } from "gpui-kit";
 import { h_flex } from "gpui-base";
-import { exec, readTextFile, appHome, settings, shared, setShared, spaces, panes, run } from "herdr";
+import { checking, exec, readTextFile, appHome, settings, shared, setShared, spaces, panes, run } from "herdr";
 import { Buffer } from "buffer";
 import { createHash } from "crypto";
 import * as fs from "fs/promises";
+import { KEY } from "./store.js";
+import { alpha } from "./color.js";
+import { prepareSpace } from "./space-arrival.js";
 
 // T3's project colors in its order, each as Tailwind's 400 (dark themes) and 600 (light).
 const PALETTE = [
@@ -25,7 +27,7 @@ function monogram(name) {
 }
 
 // As T3: the name, folded, hashed into the palette, so a name has one color everywhere.
-export function tint(name, dark) {
+export function monogramColor(name, dark) {
   const seed = name.normalize("NFKC").trim().toLocaleLowerCase("en-US") || "project";
   let i = 0;
   for (const g of seed) i = (i * 31 + g.codePointAt(0)) % PALETTE.length;
@@ -39,19 +41,34 @@ function isDark(t) {
   return (n >> 16) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114 < 128;
 }
 
-// `ps`: panes(), read once by the caller (each read copies every pane). `follow`: drawn beside a mod that keeps looking
+// Each list panes() gave, indexed once, as a draw asks about every space (tree.js byParent): each tab's first pane with a
+// folder, and what every mark of that draw reads alike, the known icons and the letters' font. Herdr gives a new list each
+// call, so a list never outlives its draw.
+const draws = new WeakMap();
+function drawOf(ps) {
+  let d = draws.get(ps);
+  if (!d) {
+    d = { first: new Map(), icons: undefined, font: undefined };
+    let i = 0;
+    for (const p of ps) { if (p.cwd && !d.first.has(p.tab)) d.first.set(p.tab, { i, cwd: p.cwd }); i++; }
+    draws.set(ps, d);
+  }
+  return d;
+}
+
+// `ps`: panes(), read once by the caller's draw (each read copies every pane). `follow`: drawn beside a mod that keeps looking
 // (t3-spaces, t3-inbox), so it asks only where no one has answered yet.
-export function projectMark(s, size, t, ps, follow) {
+export function projectMark(mod, s, size, t, ps, follow) {
   const icon = s && projectIcon(s, ps, follow);
   if (icon) return image(icon).size(size).flex_none().rounded(size / 4);
   const text = monogram(s?.name ?? "");
   // Nothing to spell: T3's plain folder.
   if (!text) return h_flex().size(size).flex_none().items_center().justify_center()
-    .child(svg("mods/workspace-chrome/folder.svg").size(size).text_color(t.dim));
-  const color = tint(s.name, isDark(t));
-  // As T3's ProjectMonogram: the color on a 14% wash of itself, bold monospace at its 8.25 in a 16 tile.
-  return h_flex().size(size).flex_none().rounded(size / 4).bg(color + "24").items_center().justify_center()
-    .font_family(settings().font_family ?? "JetBrains Mono").font_bold().text_size(size * 8.25 / 16).text_color(color)
+    .child(svg(`${mod}/icons/folder.svg`).size(size).text_color(t.dim));
+  const color = monogramColor(s.name, isDark(t));
+  // As T3's ProjectMonogram.
+  return h_flex().size(size).flex_none().rounded(size / 4).bg(alpha(color, "24")).items_center().justify_center()
+    .font_family(fontOf(ps)).font_bold().text_size(size * 8.25 / 16).text_color(color)
     .child(text);
 }
 
@@ -63,13 +80,15 @@ const PLACES = ["favicon.svg", "favicon.ico", "favicon.png", "public/favicon.svg
 // Then the pages that may link one.
 const PAGES = ["index.html", "public/index.html", "app/routes/__root.tsx", "src/routes/__root.tsx", "app/root.tsx", "src/root.tsx", "src/index.html"];
 
+const ICON_EXTS = new Set([".svg", ".png", ".ico", ".jpg", ".jpeg", ".webp", ".gif"]);
+
 // As T3: an HTML <link rel="icon" href>, else a route's { rel: "icon", href }.
 function linkedIcon(source) {
-  const html = /<link\b(?=[^>]*\brel=["'](?:icon|shortcut icon)["'])(?=[^>]*\bhref=["']([^"'?]+))[^>]*>/i.exec(source);
+  const html = /<link\b(?=[^>]*\brel=["'](?:icon|shortcut icon)["'])(?=[^>]*\bhref=["']([^"'?#]+))[^>]*>/i.exec(source);
   if (html) return html[1];
   for (const run of source.split("}")) {
     if (!/\brel\s*:\s*["'](?:icon|shortcut icon)["']/i.test(run)) continue;
-    const href = /\bhref\s*:\s*["']([^"'?]+)/i.exec(run);
+    const href = /\bhref\s*:\s*["']([^"'?#]+)/i.exec(run);
     if (href) return href[1];
   }
   return null;
@@ -79,7 +98,7 @@ function linkedIcon(source) {
 // folder (images show only from there); null if it has none. All through exec and readTextFile, so another
 // machine's space works the same.
 async function lookUp(on, dir) {
-  const top = await exec("git", ["rev-parse", "--show-toplevel"], { cwd: dir, on });
+  const top = await exec("git", ["--no-optional-locks", "-c", "core.fsmonitor=false", "rev-parse", "--show-toplevel"], { cwd: dir, on });
   const root = (top.code === 0 && top.stdout.trim()) || dir;
   const first = async (paths) => (await exec("sh", ["-c", 'for f; do [ -f "$f" ] && { printf %s "$f"; exit; }; done', "sh", ...paths], { cwd: root, on })).stdout || null;
   let hit = await first(PLACES);
@@ -90,11 +109,14 @@ async function lookUp(on, dir) {
     if (href && !href.split("/").includes("..")) hit = await first([`public/${href}`, href]);
   }
   if (!hit) return null;
+  const dot = hit.lastIndexOf(".");
+  const ext = dot > hit.lastIndexOf("/") ? hit.slice(dot).toLowerCase() : "";
+  if (!ICON_EXTS.has(ext)) return null;
   const r = await exec("sh", ["-c", 'base64 < "$1"', "sh", hit], { cwd: root, on });
   if (r.code !== 0) return null;
   const bytes = Buffer.from(r.stdout.replace(/\s+/g, ""), "base64");
   // Named by its content: a changed icon is a new file, so nothing keeps showing the old one.
-  const name = `cache/t3-icons/${createHash("sha256").update(bytes).digest("hex").slice(0, 16)}${hit.slice(hit.lastIndexOf(".")).toLowerCase()}`;
+  const name = `cache/t3-icons/${createHash("sha256").update(bytes).digest("hex").slice(0, 16)}${ext}`;
   if (!(await fs.exists(`${appHome()}/${name}`))) {
     await fs.mkdir(`${appHome()}/cache/t3-icons`, { recursive: true });
     await fs.writeFile(`${appHome()}/${name}`, bytes);
@@ -104,32 +126,42 @@ async function lookUp(on, dir) {
 
 // Where a space is now, as t3-spaces has it: its first terminal's live folder, else where it was made.
 export function placeOf(s, ps) {
-  const tabs = new Set((s.tabs ?? []).map((c) => c.id));
-  return ps?.find((p) => tabs.has(p.tab) && p.cwd)?.cwd || s.folder;
+  if (!ps) return s.folder;
+  const { first } = drawOf(ps);
+  let hit;
+  for (const c of s.tabs ?? []) { const f = first.get(c.id); if (f && (!hit || f.i < hit.i)) hit = f; }
+  return hit?.cwd || s.folder;
 }
 
 // A terminal tab where the space is now, as its mark and folder say: Herdr's tab.new alone starts where the space was made.
-export const newTab = (s) => run("tab.new", { space: s.id, folder: placeOf(s, panes()) });
+export const newTab = (s) => {
+  prepareSpace(s.id);
+  return run("tab.new", { space: s.id, folder: placeOf(s, panes()) });
+};
 
-// Shared "space.icons": [machine, folder] -> the copy's path or null, so every mod shows what one found.
+// Shared KEY.spaceIcons: [machine, folder] -> the copy's path or null, so every mod shows what one found.
 // shortcut: folders with an icon that no space uses any more stay listed; prune them if the list ever grows noticeably.
-const looked = new Map(); // [machine, folder] -> when this copy last looked
+const looked = () => (globalThis.t3ProjectLooked ??= new Map()); // [machine, folder] -> when any copy last looked
 const lastIcon = new Map(); // space -> its icon where it last had an answer
 const iconKey = (s, ps) => JSON.stringify([s.machine ?? null, placeOf(s, ps)]);
+const iconsOf = (ps) => (ps ? drawOf(ps).icons ??= shared(KEY.spaceIcons) ?? {} : shared(KEY.spaceIcons) ?? {});
+const fontOf = (ps) => (ps ? drawOf(ps).font ??= settings().font_family ?? "JetBrains Mono" : settings().font_family ?? "JetBrains Mono");
 function projectIcon(s, ps, follow) {
   const folder = placeOf(s, ps);
   if (!folder) return null;
-  const key = iconKey(s, ps), icons = shared("space.icons") ?? {}, known = icons[key] ?? null;
-  // As T3's cache: a found icon is looked for again after 10 minutes, a missing one after a minute.
-  const stale = !looked.has(key) || Date.now() - looked.get(key) > (known ? 600000 : 60000);
+  const key = iconKey(s, ps), icons = iconsOf(ps), known = icons[key] ?? null;
+  if (checking()) return known;
+  const seen = looked();
+  // As T3's cache: a missing icon is looked for again sooner than a found one.
+  const stale = !seen.has(key) || Date.now() - seen.get(key) > (known ? 600000 : 60000);
   if (stale && !(follow && key in icons)) {
-    looked.set(key, Date.now());
+    seen.set(key, Date.now());
     lookUp(s.machine ?? null, folder).then((found) => {
-      const all = shared("space.icons") ?? {};
+      const all = shared(KEY.spaceIcons) ?? {};
       if (all[key] === found) return;
       // Each folder a terminal passes through would otherwise stay listed as having none.
       const ps = panes(), used = new Set(spaces().map((x) => iconKey(x, ps)));
-      setShared("space.icons", { ...Object.fromEntries(Object.entries(all).filter(([k, icon]) => icon || used.has(k))), [key]: found });
+      setShared(KEY.spaceIcons, { ...Object.fromEntries(Object.entries(all).filter(([k, icon]) => icon || used.has(k))), [key]: found });
     }, () => {}); // a machine away, no sh: the next look tries again
   }
   // Until a place new to it answers (a cd), the space keeps the icon it had, not a flash of its letter.

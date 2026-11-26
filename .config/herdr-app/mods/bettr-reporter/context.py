@@ -293,9 +293,12 @@ def update(state, event, events, provider, module):
     starts = any(item.get("type") in {"session.start", "session.prompt"} for item in events)
     if state and state["sessionId"] != session and not starts:
         return None  # A late event from an old conversation.
-    if not state or state["sessionId"] != session or state["path"] != path or state["provider"] != provider:
+    new = not state or state["sessionId"] != session or state["path"] != path or state["provider"] != provider
+    if new:
         state = fresh(provider, session, path)
-    if not read(state, path, module):
+    # A new conversation's transcript can be missing at its first events. Publish it empty, so the
+    # old label goes and later events (not starts) of this conversation are not taken as late.
+    if not read(state, path, module) and not (new and starts):
         return None
     value = dump(summary(state, module))
     if value == state["label"]:

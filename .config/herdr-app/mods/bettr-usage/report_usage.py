@@ -15,7 +15,6 @@ if that costs more than a hook should. The script prints nothing to stdout and a
 so it can never change what the agent does.
 """
 import datetime
-import fcntl
 import hashlib
 import json
 import math
@@ -25,6 +24,11 @@ import sys
 import time
 import unicodedata
 from pathlib import Path
+
+try:
+    import fcntl
+except ImportError:  # Windows: no lock, so parallel hooks can each ask once.
+    fcntl = None
 
 CACHE = Path.home() / ".cache" / "bettr" / "usage"
 # When Claude's usage was last asked for and may be asked for next. Outside CACHE, which the
@@ -39,6 +43,9 @@ INTERVAL_S = 120
 MAX_WAIT_S = 900
 CLICK_GAP_S = 30  # A click asks at once, even while hooks wait, but not twice in 30 s.
 TIMEOUT_S = 10  # Per agent, so --now stays inside Herdr's 30 s exec limit.
+# A hook reads this much of the end of a Codex rollout. Codex saves its limits after each model
+# response, so a rollout with none there (an API-key login) has none: do not read it all on each tool call.
+SCAN_BYTES = 4 << 20
 SYSTEM_CAS = "/etc/ssl/cert.pem"
 
 
@@ -100,7 +107,8 @@ def gate(change):
     Parallel tool calls start their hooks at the same moment; the lock lets only one of them ask."""
     CACHE.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     with open(os.open(GATE, os.O_RDWR | os.O_CREAT, 0o600), "r+") as handle:
-        fcntl.flock(handle, fcntl.LOCK_EX)
+        if fcntl:
+            fcntl.flock(handle, fcntl.LOCK_EX)
         try:
             state = json.loads(handle.read() or "{}")
         except ValueError:
@@ -193,19 +201,21 @@ def codex_windows(limits):
     return windows
 
 
-def reverse_lines(path):
-    """Read backward in 64 KiB chunks; the newest usage event is usually in the last one."""
+def reverse_lines(path, limit=None):
+    """Read backward in 64 KiB chunks; the newest usage event is usually in the last one.
+    With `limit`, stop after about that many bytes."""
     with path.open("rb") as stream:
         position = stream.seek(0, 2)
+        stop = max(0, position - limit) if limit else 0
         tail = b""
-        while position:
+        while position > stop:
             size = min(position, 65536)
             position -= size
             stream.seek(position)
             lines = (stream.read(size) + tail).split(b"\n")
             tail = lines[0]
             yield from reversed(lines[1:])
-        if tail:
+        if tail and not position:  # Not the cut line where a limited read stopped.
             yield tail
 
 
@@ -216,7 +226,7 @@ def codex_rollout(hook):
         path = max(root.rglob("*.jsonl"), key=lambda p: p.stat().st_mtime, default=None)
         if path is None:
             return None
-    for line in reverse_lines(Path(path)):
+    for line in reverse_lines(Path(path), SCAN_BYTES):
         if b'"rate_limits"' not in line:
             continue
         try:

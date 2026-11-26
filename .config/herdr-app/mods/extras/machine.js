@@ -83,7 +83,7 @@ function currentItems() {
     allSpaces: spaces(),
     byMachine: shared("t3-spaces.by-machine"),
     lastByMachine: shared("extras.last-space-by-machine"),
-    homeId: shared("t3-home.space") ?? null,
+    homeId: shared("t3-tabs.home") ?? shared("t3-home.space") ?? null,
   });
 }
 

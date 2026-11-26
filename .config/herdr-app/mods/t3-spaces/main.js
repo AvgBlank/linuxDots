@@ -1,20 +1,24 @@
-// Workspace spaces: stable colored avatars, worktrees under their checkout,
-// grouped by machine when more than one is known. After a space's name, the repo
-// its first terminal is in now, only where unusual: branch, ahead/behind. Agent state lives in the agents list, not here. Click to
-// switch, right-click for its menu, drag to reorder.
+// Workspace spaces: stable colored avatars, worktrees under their checkout, grouped by machine when more than one is known.
+// After a space's name, its repo only where unusual (branch, ahead/behind); agent state lives in the agents list, not here.
 
 import { View, div, svg } from "gpui-kit";
 import { foldArrow, planMotion, flying, leavingRows } from "./motion.js";
 import { v_flex, h_flex } from "gpui-base";
-import { spaces, machines, panes, focused, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, props, layout, nextCommand } from "herdr";
-import { projectMark, tint } from "./project.js";
+import { checking, spaces, machines, panes, focused, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, props, layout, nextCommand } from "herdr";
+import { projectMark, monogramColor } from "./project.js";
+import { newSpaceButton } from "./new-space.js";
 import { repoFacts } from "./repos.js";
+import { spaceOrdering } from "./ordering.js";
 import { dragGone, glow, hoverKept, tip, tipMark, POINTER_WATCH, pointerMoved } from "./tip.js";
-import { stopsInit, stopsEnd, stop, focusRoot, enter, pressed, justClosed } from "./focus.js";
+import { openMenu } from "./menu.js";
+import { stopsInit, stopsEnd, stop, focusRoot, enter } from "./focus.js";
+import { trigger } from "./trigger.js";
 import { sidebarParts } from "./sidebar.js";
+import { KEY, closedKey, readLocal } from "./store.js";
+import { button, radiusOf } from "./button.js";
+import { alpha } from "./color.js";
+import { prepareSpace } from "./space-arrival.js";
 
-// How long a checkout being opened may take to show up before it's asked for again.
-const OPENING = 5000;
 // T3's project row, and its list's 1px between items (gap-px). A drag's math goes by the pitch.
 const ROW = 32, STACK = 1, PITCH = ROW + STACK;
 // Docked alone there's no Inbox to be behind.
@@ -28,53 +32,84 @@ const keycap = (t, n, on) => div().flex_none().min_w(16).h(16).px(4).flex().item
   .border_1().border_color(t.border).text_size(10.5).text_color(on ? t.muted : t.dim).child(String(n));
 
 export default class Spaces extends View {
-  async close() { stopsEnd(this); }
+  async close() { this.repos?.close(); stopsEnd(this); }
 
   init(_props, cx) {
     stopsInit(this, cx);
     this.dragKeys = cx.focus_handle();
     // pane.go onto this list (mod.json's "focusable"): the keyboard starts at the heading's button.
     cx.spawn(async (cx) => {
-      for (;;) if (await nextCommand() === "focus") enter(this, cx, "space-new");
+      for (;;) {
+        const command = await nextCommand();
+        if (command === "focus") enter(this, cx, "space-new");
+        // A machine heading's menu (t3-menu): its Connect.
+        else if (command.startsWith("reconnect:")) {
+          const name = command.slice("reconnect:".length), machine = this.machines.find(k => k.name === name) ?? this.reconnecting[name]?.machine;
+          if (machine) this.reconnect(machine, cx);
+        }
+      }
     });
     this.repos = repoFacts({ exec, watchFolder, cx });
-    this.opening = new Map(); // repo -> when its checkout was opened from its dim row
     // Spaces made while this runs wait (at most a moment) for their git, so a
     // worktree appears under its repo instead of jumping there.
     this.shown = new Set(spaces().map((s) => s.id));
-    this.born = {};
-    this.drag = null; // { id, key, at, top, moved, dy, y, slot, drawn }: a pressed row, lifted once it moves 6px
+    this.drag = null; // Pressed row, lifted once it moves 6px; edge names the gap actually drawn.
     this.machines = [];
-    this.reconnecting = JSON.parse(localStorage.getItem("machines.reconnecting") ?? "{}");
-    for (const state of Object.values(this.reconnecting)) state.busy = false;
-    this.folded = new Set(JSON.parse(localStorage.getItem("machines.folded") ?? "[]"));
-    this.foldedRepos = new Set(JSON.parse(localStorage.getItem("repos.folded") ?? "[]"));
+    this.reconnecting = readLocal("machines.reconnecting", {});
+    for (const state of Object.values(this.reconnecting)) if (state && typeof state === "object") state.busy = false;
+    this.folded = new Set(readLocal("machines.folded", []));
+    this.foldedRepos = new Set(readLocal("repos.folded", []));
+    this.order = spaceOrdering({ spaces, panes, machines, run, home: () => shared(KEY.home), facts: (w, ps) => this.repos.forSpace(w, ps),
+      shown: this.shown, foldedRepos: this.foldedRepos, row: ROW, pitch: PITCH });
     this.machinesSeen = this.machinesNow();
-    this.refreshMachines(cx);
-    cx.timer.every(15000, cx => this.refreshMachines(cx));
+    this.machinesDirty = false;
+    this.machinesRefreshedAt = -Infinity;
+    this.wasInView = listInView();
+    if (this.wasInView) this.refreshMachines(cx);
+    cx.timer.every(15000, cx => {
+      if (listInView()) this.refreshMachines(cx);
+    });
     // `git status` walks the whole tree, on another machine a process there:
     // only when its answer could have changed (repos.js).
     cx.timer.every(250, (cx) => this.checkNew(cx));
   }
 
-  machinesNow() {
-    return JSON.stringify(machines().map((m) => [m.name, m.layout]));
+  machinesNow(list = machines()) {
+    return JSON.stringify(list.map((m) => [m.name, m.layout]));
   }
 
   checkNew(cx) {
+    if (checking()) return;
     const now = Date.now();
-    const sp = spaces();
-    // A machine came or went: its heading needn't wait for the next poll.
-    const seen = this.machinesNow();
+    const known = machines();
+    // A machine came or went: tracked while hidden, asked once back in view.
+    const seen = this.machinesNow(known);
     if (seen !== this.machinesSeen) {
       this.machinesSeen = seen;
+      this.machinesDirty = true;
+    }
+    const sp = spaces(), active = window().active, draw = sp.some((s) => !this.shown.has(s.id)) || this.order.due(now);
+    // layout() copies the whole tree: skip when already in view and neither active nor drawing;
+    // once hidden, check every tick so returning to view wakes polling immediately.
+    const inView = !this.wasInView || active || draw ? listInView() : true;
+    if (!inView) {
+      this.wasInView = false;
+      return;
+    }
+    const returned = !this.wasInView;
+    this.wasInView = true;
+    if (this.machinesDirty || (returned && now - this.machinesRefreshedAt >= 15000)) {
       this.refreshMachines(cx);
     }
-    this.repos.update({ spaces: sp, panes: panes(), machines: machines(), active: window().active, visible: listInView(), folded: this.folded }, now);
-    if (sp.some((s) => !this.shown.has(s.id)) || this.orderingDue(now)) cx.notify();
+    const visible = Boolean(active || draw);
+    this.repos.update({ spaces: sp, panes: panes(), machines: known, active, visible, folded: this.folded }, now);
+    if (draw && visible) cx.notify();
   }
 
   refreshMachines(cx) {
+    if (checking()) return;
+    this.machinesDirty = false;
+    this.machinesRefreshedAt = Date.now();
     cx.spawn(async cx => {
       try {
         const r = await hc(["machine", "ls", "--json"]);
@@ -137,86 +172,6 @@ export default class Spaces extends View {
     });
   }
 
-  menu(w) {
-    // A popup is as tall as its items; height is only the most.
-    openOverlay({ mod: "t3-menu", kind: "popup", width: 220, height: 260, props: { tab: "space", target: { id: w.id } } });
-  }
-
-  orderingDue(now) {
-    return this.ordering && now - this.ordering.at >= 1000
-      && this.ordering.machines.every(name => machines().some(m => m.name === name && m.layout === "ready"));
-  }
-
-  // Spaces in order, each worktree space moved under its main checkout's.
-  ordered() {
-    const sp = spaces(), ps = panes();
-    const ready = (w) => this.shown.has(w.id) || this.repos.forSpace(w, ps).answered || Date.now() - (this.born[w.id] ??= Date.now()) > 1500;
-    for (const w of sp) if (!this.shown.has(w.id) && ready(w)) this.shown.add(w.id);
-    // Home stays in the model's order below, so the moves count it, but it's no one's checkout and has no row.
-    const homeId = shared("t3-home.space");
-    const list = sp.map((w, i) => ({ w, i, g: w.id === homeId ? null : this.repos.forSpace(w, ps).git }));
-    const mains = new Set(list.filter((r) => r.g && !r.g.linked).map((r) => r.g.repo));
-    const worktrees = (repo) => list.filter((k) => k.g?.linked && k.g.repo === repo);
-    // A checkout just opened from its dim row arrives last: it takes that row's place, so the group doesn't jump to the list's end.
-    for (const [repo, at] of this.opening) {
-      const main = list.findIndex((r) => r.g && !r.g.linked && r.g.repo === repo);
-      const first = list.findIndex((r) => r.g?.linked && r.g.repo === repo);
-      if (main >= 0 && first >= 0 && main > first) list.splice(first, 0, list.splice(main, 1)[0]);
-      else if (main >= 0 || Date.now() - at > OPENING) this.opening.delete(repo);
-    }
-    // Grouped by repo, as T3's projects, so closing a checkout doesn't scatter its worktrees. One alone isn't worth a row over it.
-    const nested = (r) => r.g?.linked && (mains.has(r.g.repo) || worktrees(r.g.repo).length > 1);
-    const out = /** @type {any[]} */ ([]);
-    const placed = new Set(); // repos whose worktrees are listed (under the first of its spaces)
-    const hang = (top) => {
-      const kids = worktrees(top.g.repo), folded = this.foldedRepos.has(top.g.repo);
-      // Closed, the one you're on still shows, as T3's route row, and the count leaves it out.
-      const keep = (k) => folded && k.w.active;
-      top.kids = kids.length;
-      top.members = kids.map((k) => k.w.id); // folded ones too: a drop's index counts them
-      top.hiding = kids.filter((k) => !keep(k)).length;
-      kids.forEach((k, n) => out.push({ ...k, folded: folded && !keep(k), tree: folded || n === kids.length - 1 ? "└─" : "├─" }));
-    };
-    for (const r of list) {
-      if (nested(r)) {
-        if (mains.has(r.g.repo) || placed.has(r.g.repo)) continue;
-        placed.add(r.g.repo);
-        // Its checkout isn't a space: a row stands for it, where its first worktree was. No .git folder (a bare repo): nothing to open.
-        const [, common] = JSON.parse(r.g.repo);
-        const head = { head: true, g: r.g, w: { id: `repo-${r.g.repo}`, name: r.g.name, machine: r.w.machine ?? null, folder: common.endsWith("/.git") ? common.slice(0, -5) : null } };
-        out.push(head);
-        hang(head);
-        continue;
-      }
-      const top = { ...r, tree: null, kids: 0 };
-      out.push(top);
-      if (!r.g || r.g.linked || placed.has(r.g.repo)) continue;
-      placed.add(r.g.repo);
-      hang(top);
-    }
-    // space.next/prev and ctrl-N follow the model, so it keeps the rows' order, folded rows included: folding moves nothing. A row with no space isn't in it.
-    // Simulate the batch so later indexes include earlier moves. An attempted write can lose a sync conflict: let its echo settle before retrying.
-    const real = out.filter((r) => !r.head);
-    const order = sp.map(w => w.id);
-    const target = real.map(r => r.w.id);
-    const key = JSON.stringify([order, target, machines()]);
-    if (order.every((id, i) => id === target[i])) {
-      this.ordering = null;
-    } else if (this.ordering?.key !== key || this.orderingDue(Date.now())) {
-      const moved = new Set();
-      this.ordering = { key, at: Date.now(), machines: [] };
-      for (let i = 0; i < real.length; i++) {
-        const from = order.indexOf(real[i].w.id);
-        if (from === i) continue;
-        run("space.move", { id: real[i].w.id, index: i + 1 });
-        moved.add(real[i].w.machine ?? null);
-        order.splice(i, 0, order.splice(from, 1)[0]);
-      }
-      this.ordering.machines = [...moved];
-    }
-    return out.filter(r => (r.head || this.shown.has(r.w.id)) && !r.folded && r.w.id !== homeId);
-  }
-
   toggleRepo(repo, cx) {
     this.foldedRepos.has(repo) ? this.foldedRepos.delete(repo) : this.foldedRepos.add(repo);
     localStorage.setItem("repos.folded", JSON.stringify([...this.foldedRepos]));
@@ -226,8 +181,9 @@ export default class Spaces extends View {
 
   // The list's rows, each { key, h, el, ghost, m (its machine), r (a space's or repo's row) }; ghost() draws one
   // without the ids, handlers and labels the list uses.
-  grouped(t) {
-    const rows = this.ordered(), ps = panes(), lifting = Boolean(this.drag?.moved);
+  // `sp`, `ps`: the draw's one read of spaces() and panes().
+  grouped(t, sp, ps) {
+    const rows = this.order.rows(sp, ps), lifting = Boolean(this.drag?.moved), here = sp.find(s => s.active)?.machine ?? null;
     // Each space's number within its own machine (1..9 per device), for ctrl-a alt-N and ctrl-alt-shift-N.
     const machineOrder = [null, ...[...new Set(rows.map(r => r.w.machine).filter(Boolean))].sort()];
     const byMachine = {};
@@ -245,13 +201,14 @@ export default class Spaces extends View {
     const entry = (r) => ({ key: r.head ? r.w.id : `space-${r.w.id}`, h: PITCH, m: r.w.machine ?? null, r, el: draw(r), ghost: () => draw(r, true) });
     const plain = (key, m, draw) => ({ key, h: PITCH, m, el: draw(false), ghost: () => draw(true) });
     const remote = [...new Set([...rows.map(r => r.w.machine).filter(Boolean), ...this.machines.filter(m => !m.temporary).map(m => m.name), ...Object.keys(this.reconnecting)])].sort();
+    let known;
     const loading = m => {
-      const layout = machines().find(k => k.name === m)?.layout;
+      const layout = (known ??= machines()).find(k => k.name === m)?.layout;
       return layout === "loading" || (!layout && this.machines.some(k => k.name === m && k.state === "connected"))
-        || spaces().some(s => (s.machine ?? null) === m && !this.shown.has(s.id));
+        || sp.some(s => (s.machine ?? null) === m && !this.shown.has(s.id));
     };
     const loadingRow = m => plain(`machine-loading-${m ?? "local"}`, m, ghost => div().when(!ghost, el => el.id(`machine-loading-${m ?? "local"}`))
-      .h(ROW).flex_none().px(10).flex().items_center().text_color(t.dim).child("Loading…"));
+      .h(ROW).flex_none().px(8).flex().items_center().text_color(t.dim).child("Loading…"));
     if (!remote.length) return loading(null) && !rows.length ? [loadingRow(null)] : rows.map(entry);
     const machineNames = [null, ...remote];
     return machineNames.flatMap((m) => {
@@ -262,11 +219,13 @@ export default class Spaces extends View {
       const rebuilt = this.rebuilt(machine) || !!repair;
       const folded = this.folded.has(m);
       const id = m ?? "local";
-      // Drawn as the agents list's shelves, T3's: 2 and 8 in, the chevron at the row's end and its + as T3's folder has it, 24 and 2 before.
+      // Drawn as the agents list's shelves, T3's: the chevron at the row's end and its + as T3's folder has it.
       // By the row's id: this computer's m is null, which a cleared field would equal. Kept as Agents' headings are, as a leave can go missing.
       const head = hoverKept(this, "overMachine", `machine-${id}`, h_flex().id(`machine-${id}`).h(ROW).flex_none().mx(2).px(8).gap(8).items_center()
         .text_size(12).font_medium().text_color(t.dim)
         .role("button").accessibility_label(`${folded ? "Expand" : "Collapse"} ${m ?? "This computer"}`))
+        // Its + and its Connect in a menu; asleep, with neither, it has none.
+        .when(connected || (rebuilt && !repair?.busy), el => el.on_mouse_down("right", (_e, cx) => openMenu(this, "machine", { machine: m, connected, connect: rebuilt && !repair?.busy }, cx)))
         .on_click((_e, cx) => {
           folded ? this.folded.delete(m) : this.folded.add(m);
           localStorage.setItem("machines.folded", JSON.stringify([...this.folded]));
@@ -277,30 +236,33 @@ export default class Spaces extends View {
         // The dot describes the machine, so it follows its name, however short.
         .child(h_flex().flex_1().min_w(0).gap(8).items_center()
           .child(div().min_w(0).truncate().child(m ?? "This computer"))
-          .child(tipMark(this, t, `machine-state-${id}`, connected ? "Connected" : (machine?.state ?? "asleep").replace(/_/g, " ").replace(/^./, c => c.toUpperCase()), div().size(6).rounded_full().flex_none().bg(connected ? t.ansi2 : t.dim))))
+          .child(tipMark(this, t, `machine-state-${id}`, connected ? "Connected" : (machine?.state ?? "asleep").replace(/_/g, " ").replace(/^./, c => c.toUpperCase()), div().size(6).rounded_full().flex_none().bg(connected ? t.ansi2 : t.dim)))
+          .when(machine?.keeps_running_after_logout === false, el => el.child(trigger(this, t, `machine-logout-${id}`, {
+            icon: "mods/t3-spaces/icons/circle-alert.svg", label: "Agents stop when you disconnect. Show the fix", size: "micro", surface: "row", color: t.blocked, open: false,
+            onOpen: () => openOverlay({ mod: "machine-add", kind: "dialog", width: 560 }),
+          }))))
         .when(!connected && !rebuilt, el => el.child(div().flex_none().child((machine?.state ?? "asleep").replace(/_/g, " "))))
         .when(rebuilt, el => el.child(h_flex().flex_none().gap(4).items_center()
           .child(div().max_w(140).truncate().child(repair?.error || "rebuilt ·"))
-          .child(tip(this, t, `machine-connect-${m}`, `Connect ${m}`, stop(this, t, `machine-connect-${m}`, div().id(`machine-connect-${m}`).text_color(repair?.error ? t.blocked : t.muted)
-            .hover(s => s.text_color(t.foreground)).on_hover(glow(this, `machine-connect-${m}`))
+          .child(stop(this, t, `machine-connect-${m}`, div().id(`machine-connect-${m}`).text_color(repair?.error ? t.blocked : t.muted)
+            .hover(s => s.text_color(t.foreground))
             .role("button").accessibility_label(`Connect ${m}`)
             .on_click((_e, cx) => { cx.stop_propagation(); this.reconnect(machine, cx); })
-            .child(repair?.busy ? "Connecting…" : "Connect"), 4)))))
+            .child(repair?.busy ? "Connecting…" : "Connect"), 4))))
         // T3's folder sizes: a 24px + with a 14px icon (icon-xs) and a 12px chevron, in the heading buttons' two columns, 50 and
-        // 22px from the sidebar's edge. The -2 sits on the group: on the chevron's own box it threw the whole group past the edge.
+        // 22px from the sidebar's edge. The -2 sits on the group: on the chevron's own box it pushes the whole group past the edge.
         .child(h_flex().flex_none().mr(-2).gap(10).items_center()
-          .when(connected, el => el.child(tip(this, t, `machine-add-${id}`, "New space here", stop(this, t, `machine-add-${id}`, div().id(`machine-add-${id}`).size(24).flex_none().flex().items_center().justify_center().rounded(8)
-            .text_color(this.hot === `machine-add-${id}` ? t.foreground : t.dim).on_hover(glow(this, `machine-add-${id}`))
-            .role("button").accessibility_label("New space here")
-            .on_click((_e, cx) => { cx.stop_propagation(); run("space.new", { machine: m ?? "" }); }).child(svg("mods/t3-spaces/icons/plus.svg").size(14)), 8),
+          .when(connected, el => el.child(tip(this, t, `machine-add-${id}`, "New space here", stop(this, t, `machine-add-${id}`, button(t, `machine-add-${id}`, { icon: "mods/t3-spaces/icons/plus.svg", label: "New space here", surface: "row", hot: this.hot === `machine-add-${id}` })
+            .on_hover(glow(this, `machine-add-${id}`))
+            .on_click((_e, cx) => { cx.stop_propagation(); run("space.new", { machine: m ?? "" }); }), radiusOf()),
             // The key makes a space on the current space's machine: it names this + only on that one.
-            { action: (spaces().find(s => s.active)?.machine ?? null) === m ? "space.new" : null })))
+            { action: here === m ? "space.new" : null })))
           // An indicator, not a button: the whole row folds, so it lights with the row and has no label of its own.
           .child(div().id(`machine-fold-${id}`).flex_none()
             .text_color(this.overMachine === `machine-${id}` ? t.foreground : t.dim)
             .child(foldArrow("t3-spaces", `machine-fold-${id}`, !folded, 12, this.overMachine === `machine-${id}` ? t.foreground : t.dim))));
       const empty = plain(`machine-new-${id}`, m, ghost => {
-        const el = h_flex().h(ROW).flex_none().px(10).gap(10).items_center().rounded(8)
+        const el = h_flex().h(ROW).flex_none().px(8).gap(10).items_center().rounded(8)
           .text_color(this.hot === `machine-new-${id}` ? t.foreground : t.dim)
           // Laid out as a space's row: the + in the mark's 16px, the words where a name starts.
           .child(div().size(16).flex_none().flex().items_center().justify_center().child(svg("mods/t3-spaces/icons/plus.svg").size(12))).child("New space here");
@@ -347,38 +309,30 @@ export default class Spaces extends View {
   foldButton(t, id, repo, hiding, ghost) {
     const folded = this.foldedRepos.has(repo), lit = this.hot === id ? t.foreground : t.dim;
     const label = folded ? "Expand worktrees" : "Collapse worktrees";
-    const el = div().h(20).min_w(20).mr(-8).px(6).gap(4).flex_none().flex().items_center().justify_center().rounded(4)
-      // raised: the row under it already shows hover or selected.
-      .text_size(11).text_color(lit)
+    const el = button(t, ghost ? undefined : id, { size: "micro", wide: true, surface: "row", label, hot: !ghost && this.hot === id }).min_w(20).mr(-8)
       .when(folded && hiding > 0, el => el.child(String(hiding)))
       .child(foldArrow("t3-spaces", ghost ? null : id, !folded, 12, lit));
-    return ghost ? el : tip(this, t, id, label, stop(this, t, id, el.id(id)
-      .role("button").accessibility_label(label)
+    return ghost ? el : tip(this, t, id, label, stop(this, t, id, el
       .on_hover(glow(this, id))
       // Pressing it neither selects nor drags the space.
       .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
-      .on_click((_e, cx) => { cx.stop_propagation(); this.toggleRepo(repo, cx); }), 4));
-  }
-
-  // Once, however often it's pressed: the new space takes a moment to show.
-  openCheckout({ w, g }) {
-    if (Date.now() - (this.opening.get(g.repo) ?? -Infinity) < OPENING) return;
-    this.opening.set(g.repo, Date.now());
-    run("space.new", { folder: w.folder, machine: w.machine ?? "" });
+      .on_click((_e, cx) => { cx.stop_propagation(); this.toggleRepo(repo, cx); }), radiusOf("micro")));
   }
 
   // A repo's worktrees with its checkout not open: the checkout's row, dimmed, with its fold arrow. It has no tab to go to,
   // so a click opens it, and it becomes the checkout's own row. A bare repo has nothing to open: there the click folds.
   repoHead(r, t, ps, ghost) {
     const { w, g, hiding = 0 } = r, rowId = w.id, foldId = `${rowId}-fold`;
-    const el = h_flex().h(ROW).flex_none().px(10).gap(10).items_center().rounded(8)
-      .child(div().flex_none().opacity(0.5).child(projectMark(w, 16, t, ps)))
+    const el = h_flex().h(ROW).flex_none().px(8).gap(10).items_center().rounded(8)
+      .child(div().flex_none().opacity(0.5).child(projectMark("mods/t3-spaces", w, 16, t, ps)))
       .child(div().flex_1().min_w(0).truncate().font_medium().text_color(t.dim).child(w.name))
       .child(this.foldButton(t, foldId, g.repo, hiding, ghost));
     return ghost ? el : stop(this, t, rowId, el.id(rowId)
       .when(!this.drag?.moved, el => el.hover(s => s.bg(t.hover)).active(s => s.bg(t.selected)))
       .role("button").accessibility_label(w.folder ? `Open ${w.name}` : `${this.foldedRepos.has(g.repo) ? "Expand" : "Collapse"} ${w.name}`)
-      .on_click((_e, cx) => { if (w.folder) this.openCheckout(r); else this.toggleRepo(g.repo, cx); cx.notify(); }), 8);
+      .on_click((_e, cx) => { if (w.folder) this.order.openCheckout(r); else this.toggleRepo(g.repo, cx); cx.notify(); })
+      // A bare repo has nothing to open or copy.
+      .when(Boolean(w.folder), el => el.on_mouse_down("right", (_e, cx) => openMenu(this, "checkout", { folder: w.folder, machine: w.machine ?? null }, cx))), 8);
   }
 
   row({ w, g, tree, kids = 0, hiding = kids }, t, ps, ghost) {
@@ -389,15 +343,15 @@ export default class Spaces extends View {
     const rowId = `space-${w.id}`;
     const el = v_flex()
       .relative()
-      .px(10)
+      .px(8)
       .h(ROW)
       .flex_none()
       .justify_center()
       .rounded(8)
       .when(on, (el) => el.bg(t.selected))
       // The same tree lines as sub-agents: from the checkout's avatar center, turning into the branch icon.
-      .when(tree === "├─", el => el.child(div().absolute().left(17.25).top(0).bottom(-STACK).w(1.5).bg(t.input)))
-      .when(Boolean(tree), el => el.child(div().absolute().left(17.25).top(-4).h(20).w(9.75).border_l(1.5).border_b(1.5).rounded_bl(6).border_color(t.input)))
+      .when(tree === "├─", el => el.child(div().absolute().left(15.25).top(0).bottom(-STACK).w(1.5).bg(t.input)))
+      .when(Boolean(tree), el => el.child(div().absolute().left(15.25).top(-4).h(20).w(9.75).border_l(1.5).border_b(1.5).rounded_bl(6).border_color(t.input)))
       .child(
         h_flex()
           .w_full().min_w(0)
@@ -405,13 +359,14 @@ export default class Spaces extends View {
           .items_center()
           .when(Boolean(tree), el => el.pl(20).child(h_flex().size(16).flex_none().items_center().justify_center()
             .child(svg("mods/t3-spaces/icons/git-branch.svg").size(16).text_color(t.dim))))
-          .when(!tree, el => el.child(projectMark(w, 16, t, ps)))
-          .child(div().min_w(0).max_w(150).truncate().font_medium().text_color(t.foreground + "e6").child(w.name))
+          .when(!tree, el => el.child(projectMark("mods/t3-spaces", w, 16, t, ps)))
+          .child(div().min_w(0).max_w(150).truncate().font_medium().text_color(alpha(t.foreground, "e6")).child(w.name))
           .child(g ? this.gitTail(g, tree, w.name, t, w.id, ghost) : div().flex_1())
           .when(kids > 0, el => el.child(this.foldButton(t, foldId, g.repo, hiding, ghost)))
           .when((this.spaceNum?.get(w.id) ?? 99) <= 9, el => el.child(keycap(t, this.spaceNum.get(w.id), on))),
       );
     if (ghost) return el;
+    const select = () => { prepareSpace(w.id); run("space.select", { id: w.id }); };
     return stop(this, t, rowId, el
       .id(rowId)
       .role("button")
@@ -425,12 +380,12 @@ export default class Spaces extends View {
       .on_mouse_up("left", (_e, cx) => {
         if (this.drag?.id !== w.id || this.drag.moved) return;
         this.drag = null;
-        run("space.select", { id: w.id });
+        select();
         cx.notify();
       })
-      .on_mouse_down("right", () => this.menu(w)),
+      .on_mouse_down("right", (_e, cx) => openMenu(this, "space", { id: w.id }, cx)),
     // A space goes by its mouse-up, which a key isn't.
-    8, { enter: () => run("space.select", { id: w.id }) });
+    8, { enter: select });
   }
 
   // Dragging, as T3's sidebar and the inbox do it: press a space and move 6px to lift it, with its worktrees when it's a
@@ -454,54 +409,9 @@ export default class Spaces extends View {
       });
     }
     d.moved = true;
-    // shortcut: measured from the press in window coordinates, so scrolling the list mid-drag isn't followed; take the rows' local_position if that matters.
+    // shortcut: measured from the press in window coordinates, so scrolling mid-drag isn't followed; use the rows' local_position if that matters.
     d.dy = dy;
     cx.notify();
-  }
-
-  // The lifted rows (a checkout takes its worktrees along) and the list without them.
-  lift(rows, key) {
-    const at = rows.findIndex((e) => e.key === key);
-    if (at < 0) return null;
-    let end = at + 1;
-    if (!rows[at].r.tree) while (rows[end]?.r?.tree) end++;
-    return { at, block: rows.slice(at, end), rest: [...rows.slice(0, at), ...rows.slice(end)] };
-  }
-
-  // Where they'd land, as an index into the rest, from the lifted top `y` and the rest's fixed pitch (never from
-  // the rows the gap is moving): the nearest boundary its kind may take, a group between its machine's groups or a
-  // worktree among its own. Half a row into another machine's rows, where it came from.
-  slot({ at, block, rest }, y) {
-    const lead = block[0], kid = Boolean(lead.r.tree);
-    const under = rest[Math.min(rest.length - 1, Math.floor((y - ROW / 2) / PITCH))];
-    if (under && under.m !== lead.m) return at;
-    let from = at, to = at;
-    if (kid) { while (rest[from - 1]?.r?.tree) from--; while (rest[to]?.r?.tree) to++; }
-    else { from = 0; to = rest.length; }
-    const starts = (e) => e?.r && !e.r.tree && e.m === lead.m;
-    let best = at;
-    for (let j = from; j <= to; j++) {
-      const ok = kid || starts(rest[j]) || (rest[j - 1]?.r && rest[j - 1].m === lead.m && rest[j]?.m !== lead.m);
-      if (ok && Math.abs(j * PITCH - y) < Math.abs(best * PITCH - y)) best = j;
-    }
-    return best;
-  }
-
-  // space.move's index for landing at the slot: before the next group (worktree) there, else after the one above.
-  // Read from the model as it is now, folded worktrees included.
-  dest({ at, block, rest }, { id, slot }) {
-    if (slot === at) return null;
-    const kid = Boolean(block[0].r.tree), order = spaces().map((s) => s.id), from = order.indexOf(id);
-    const unit = (r) => [...(r.head ? [] : [r.w.id]), ...(r.members ?? [])].map((x) => order.indexOf(x)).filter((i) => i >= 0);
-    const next = rest[slot];
-    if (next?.r && Boolean(next.r.tree) === kid && next.m === block[0].m) {
-      const u = Math.min(...unit(next.r));
-      return from < 0 || u === Infinity ? null : from > u ? u + 1 : u;
-    }
-    let k = slot - 1;
-    while (!kid && rest[k]?.r?.tree) k--;
-    const p = rest[k]?.r ? Math.max(...unit(rest[k].r)) : -Infinity;
-    return from < 0 || p === -Infinity ? null : from < p ? p + 1 : p + 2;
   }
 
   // Let go: it lands where the gap is (with `back`, where it came from), sliding there from where it was let go.
@@ -516,51 +426,38 @@ export default class Spaces extends View {
     }
     if (d?.drawn) {
       this.landed = { key: d.key, y: d.y };
-      const l = this.lift(this.rows, d.key), index = back || !l ? null : this.dest(l, /** @type {any} */ (d));
-      if (index) {
-        run("space.move", { id: d.id, index });
-        this.landing = { key: d.key, slot: d.slot, at: Date.now() };
-        cx.timer.after(1000, (cx) => cx.notify());
-      }
+      if (!back && d.edge) this.order.place(d.id, d.edge);
     }
     cx.notify();
   }
 
   render(cx) {
     const t = theme();
-    const sp = spaces();
+    const sp = spaces(), ps = panes();
     // While a row's lifted, nothing under the pointer lights or labels itself.
     if (this.drag?.moved) this.hot = this.overMachine = null;
     // The shipped mods (the Terminals picker) still color spaces from "space.colors": the same color, from the name.
-    const colors = Object.fromEntries(sp.filter(p => p.name !== "~").map(p => [p.id, tint(p.name, false)]));
+    const colors = Object.fromEntries(sp.filter(p => p.name !== "~").map(p => [p.id, monogramColor(p.name, false)]));
     if (JSON.stringify(colors) !== JSON.stringify(shared("space.colors") ?? {})) setShared("space.colors", colors);
-    const rows = this.rows = this.grouped(t);
+    const rows = this.rows = this.grouped(t, sp, ps);
     // New space here goes as the space it made arrives, with no leave to say so: it would come back lit.
     if (this.hot?.startsWith("machine-new-") && !rows.some((e) => e.key === this.hot)) this.hot = null;
     // A row that left the list (closed, folded away) can't be dropped.
     let d = this.drag, shown = rows, lifted = null;
     if (d && !rows.some((e) => e.key === d.key)) d = this.drag = null;
     if (d?.moved) {
-      const l = this.lift(rows, d.key), h = l.block.length * PITCH;
-      d.y = Math.max(0, Math.min(d.top + d.dy, l.rest.length * PITCH));
       // The first frame lifted keeps the gap where the row was, so a quick first move still slides the rows it passes.
-      d.slot = d.drawn ? this.slot(l, d.y) : l.at;
-      shown = [...l.rest.slice(0, d.slot), { key: "space-gap", h, el: div().h(h - STACK), ghost: () => div().h(h - STACK) }, ...l.rest.slice(d.slot)];
+      const { block, rest, slot, y, edge } = this.order.preview(rows, d.key, d.top + d.dy, d.drawn), h = block.length * PITCH;
+      d.y = y; d.edge = edge;
+      shown = [...rest.slice(0, slot), { key: "space-gap", h, el: div().h(h - STACK), ghost: () => div().h(h - STACK) }, ...rest.slice(slot)];
       lifted = v_flex().id("space-lifted").absolute().left(0).right(0).top(d.y).gap(STACK).rounded(8).bg(t.selected).shadow_lg()
-        .children(l.block.map((e) => e.ghost()));
-    } else if (this.landing) {
-      // Until the model's echo of the move arrives, the rows stay where they were let go.
-      const l = this.lift(rows, this.landing.key), slot = this.landing.slot;
-      if (!l || l.at === slot || Date.now() - this.landing.at >= 1000) this.landing = null;
-      else shown = [...l.rest.slice(0, slot), ...l.block, ...l.rest.slice(slot)];
+        .children(block.map((e) => e.ghost()));
     }
     // The first frame lifted is the list as it was, the gap where the row was: nothing to play.
     planMotion(this, shown, cx, { freeze: d?.moved && !d.drawn, from: this.landed });
     if (d?.moved) d.drawn = true;
     this.landed = null;
-    const asks = props()?.newMenu && machines().length > 1;
-    const tool = (id, label, icon, fn, more) => tip(this, t, id, label, stop(this, t, id, div().id(id).size(28).flex_none().flex().items_center().justify_center().rounded(8).text_color(this.hot === id ? t.foreground : t.dim).on_hover(glow(this, id)).on_mouse_down("left", () => pressed(this)).role("button").accessibility_label(label).hover(s => s.bg(t.hover))
-      .on_click(fn).child(svg(`mods/t3-spaces/icons/${icon}.svg`).size(16)), 8), more);
+    const tool = (id, label, icon, options) => trigger(this, t, id, { icon: `mods/t3-spaces/icons/${icon}.svg`, label, ...options });
     return focusRoot(this, v_flex().size_full().min_h(0).bg(t.chrome).text_size(14)
       .when(this.dragFocus, el => el.track_focus(this.dragKeys).on_key_down((e, cx) => {
         if (e.keystroke !== "escape" || !this.dragFocus) return;
@@ -572,15 +469,8 @@ export default class Spaces extends View {
         .child(div().text_color(t.muted).child("Spaces"))
         // The same two as Inbox's top row, so switching modes moves nothing.
         .child(h_flex().flex_none().items_center()
-          .child(tool("space-new", "New space", "folder-plus", (_e, cx) => {
-            this.hot = null;
-            // The layout's menu asks which machine, as its mod.json places it; the shipped one can't, so docked alone it's the active space's.
-            const closing = justClosed(this, `${props()?.newMenu}.pickClosed`);
-            if (!asks) run("space.new");
-            else if (!closing) openOverlay({ mod: props().newMenu, kind: "popup", frame: "none", at: /** @type {any} */ ("top"), offset: 96, width: 576, height: 420, props: { pick: true } });
-            cx.notify();
-          }, { action: asks ? null : "space.new" }))
-          .child(tool("space-new-tab", "New tab", "square-pen", (_e, cx) => { this.hot = null; const menu = props()?.newMenu ?? "new-menu"; if (!justClosed(this, `${menu}.closed`)) run("mod.open", { name: menu }); cx.notify(); }))))
+          .child(tool("space-new", "New space", "folder-plus", newSpaceButton(props()?.newMenu, sp)))
+          .child(tool("space-new-tab", "New tab in…", "square-pen", { closed: closedKey(props()?.newMenu ?? "new-menu"), onOpen: () => run("mod.open", { name: props()?.newMenu ?? "new-menu" }) }))))
       .child(v_flex().id("space-list").flex_1().min_h(0).overflow_y_scroll()
         .on_mouse_move((e, cx) => this.dragTo(e, cx))
         // Released anywhere in the list, it lands where the gap is.

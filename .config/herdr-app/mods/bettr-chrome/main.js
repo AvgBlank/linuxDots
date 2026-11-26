@@ -11,7 +11,8 @@ const mono = el => el.font_family(font);
 const readFont = () => { font = settings()?.font_family || "JetBrains Mono"; };
 
 // The footer's sample interval; slower while the window is in the background.
-const POLL_MS = 3000, BACKGROUND_POLL_MS = 15000;
+// Windows starts PowerShell for each sample, so it samples less often.
+const POLL_MS = 3000, WINDOWS_POLL_MS = 10000, BACKGROUND_POLL_MS = 15000;
 // How agents are ordered under their space; bettr-spaces reads the id from `bettr.agentSort`.
 const SORTS = [
   { id: "priority", label: "Priority", icon: "clock" },
@@ -39,7 +40,7 @@ export default class WorkspaceChrome extends View {
         const sample = sampler(window()?.platform);
         try { this.stats = sample ? await sample() : null; } catch { this.stats = null; }
         if (shown(this.stats) !== before) cx.notify();
-        const every = window()?.active === false ? BACKGROUND_POLL_MS : POLL_MS;
+        const every = window()?.active === false ? BACKGROUND_POLL_MS : window()?.platform === "windows" ? WINDOWS_POLL_MS : POLL_MS;
         await cx.sleep(Math.max(0, every - (Date.now() - start)));
       }
     });

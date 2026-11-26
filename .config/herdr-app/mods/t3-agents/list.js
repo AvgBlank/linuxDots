@@ -1,6 +1,6 @@
-// The one way a popup's list moves. scripts/sync.sh copies this to the mods that use it.
+// The one way a popup's list moves.
 import { div } from "gpui-kit";
-import { settings } from "herdr";
+import { settings, props, closeOverlay } from "herdr";
 
 // ↑/↓, round the ends; with nothing lit, ↓ is the first row and ↑ the last. The row to move to, or -1 for any other key.
 export function step(e, at, n) {
@@ -8,8 +8,8 @@ export function step(e, at, n) {
   return e.key === "down" ? (at + 1) % n : (at <= 0 ? n : at) - 1;
 }
 
-// A menu with no search field, as T3's Base UI menus: ↑/↓, Home, End, and typing a row's first letters (750ms apart at most);
-// the same letter again steps through the rows it starts. The row to move to, or -1 for any other key.
+// A menu with no search field, as T3's Base UI menus: ↑/↓, Home, End, and typing a row's first letters; the same letter
+// again steps through the rows it starts. The row to move to, or -1 for any other key.
 export function menuJump(view, e, labels, at) {
   const moved = step(e, at, labels.length);
   if (moved >= 0) return moved;
@@ -27,11 +27,17 @@ export function menuJump(view, e, labels, at) {
   return -1;
 }
 
+// The on_hover of row `i`, its highlight kept in `state[key]` (-1: none): lit while the pointer's on it, as T3's menus. Herdr can
+// report a leave after the next row's enter; that leave doesn't unlight the row the pointer is on now.
+export const litOnHover = (state, key, i) => (on, cx) => {
+  const to = on ? i : state[key] === i ? -1 : state[key];
+  if (to !== state[key]) { state[key] = to; cx.notify(); }
+};
+
 // A list that keeps the highlight in view: a scroll area can't be told to scroll, and a virtual list's rows can't hold handlers.
-// Every row is `row` px apart and only those in view are drawn. `at`: the highlighted row, or -1 if it's not in this list.
-// `height`: the list's, when the caller knows it; else the caller sizes the list and it's measured, a tall screen's rows drawn
-// until then: a render that draws a thousand rows runs past Herdr's limit, and one interrupted is never measured.
-// `wheeled(keep, cx)`: the wheel moved the list; put the highlight on row `keep` (-1: it's not in this list), or the next frame scrolls back to it.
+// Without `height` it's measured, a tall screen's rows drawn until then: a thousand rows run past Herdr's limit, and a render
+// cut short is never measured. `wheeled(keep, cx)` puts the highlight on row `keep` (-1: not here), or the next frame scrolls
+// back to it.
 const UNMEASURED = 2000;
 /** @param {any} view @param {string} id @param {{ count: number, row: number, at?: number, height?: number, draw: any, wheeled?: any }} options */
 export function scrollList(view, id, { count, row, at = -1, height, draw, wheeled }) {
@@ -63,4 +69,32 @@ export function scrollList(view, id, { count, row, at = -1, height, draw, wheele
       cx.notify();
     })
     .children(rows);
+}
+
+// A menu's lit row as it opens (docs/internals/t3-tokens.md「菜单行」): its first opened by keys, none by the pointer until an
+// arrow key. A popup menu's opener puts `litProp(keys)` in its props, and the popup reads it back with `propsLit()`.
+export const openLit = (keys) => (keys ? 0 : -1);
+export const litProp = (keys) => (keys ? { lit: 0 } : {});
+export const propsLit = () => props()?.lit ?? -1;
+
+/** A popup menu's keys, as T3's Base UI menus: ↑/↓, Home, End and typing move (menuJump); Enter or Space picks
+ *  `choose(at, cx, true)` (true: keys picked it); Escape closes the popup. `labels` the rows' words; `view[at]` the lit row.
+ *  `close(cx)`: what Escape does. `back`: ← closes too (a submenu). `sub(i)`: row `i` opens a submenu, so → picks it.
+ *  `disabled(i)`: moves skip row `i`. `enter()`: false leaves Enter and Space to what has the keyboard inside the row.
+ *  @param {any} view @param {string[]} labels @param {(at: number, cx: any, keys?: boolean) => void} choose
+ *  @param {{ at?: string, close?: (cx?: any) => void, back?: boolean, sub?: (i: number) => boolean, disabled?: (i: number) => boolean, enter?: () => boolean }} [o] */
+export function menuKeys(view, labels, choose, { at = "at", close = () => closeOverlay(props().overlay), back = false, sub = undefined, disabled = undefined, enter = undefined } = {}) {
+  return (e, cx) => {
+    const i = view[at];
+    if (e.key === "escape" || (back && e.key === "left")) close(cx);
+    else if (e.key === "enter" || e.key === "space") { if (enter?.() === false) return; if (i >= 0) choose(i, cx, true); }
+    else if (e.key === "right" && i >= 0 && sub?.(i)) choose(i, cx, true);
+    else {
+      const rows = labels.map((_, j) => j).filter((j) => !disabled?.(j));
+      const to = rows.length ? menuJump(view, e, rows.map((j) => labels[j]), rows.indexOf(i)) : -1;
+      if (to < 0) return;
+      view[at] = rows[to];
+    }
+    cx.stop_propagation(); cx.notify();
+  };
 }

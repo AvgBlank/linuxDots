@@ -1,45 +1,73 @@
 import { div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { settings, layout, props, openOverlay } from "herdr";
-import { glow, tip } from "./tip.js";
+import { settings, layout } from "herdr";
+import { glow, undoLabel } from "./tip.js";
 import { MOTION, planMotion, flying } from "./motion.js";
-import { stop } from "./focus.js";
+import { focusStop, onStop, stop } from "./focus.js";
 import { inboxTop } from "./filter.js";
-import { FIRST, MORE } from "./row-model.js";
+import { FIRST, MORE, ago } from "./row-model.js";
+import { projectMark } from "./project.js";
 
 // T3's slim rows and Show more (h-9) and its shelves' headers (h-8), logical px.
 export const SLIM = 36, SHELF = 32;
 // T3's list: 1px between its items (gap-px), a card's item adding 2 above and below (py-0.5); 8 in, and a card's 2 more at the top.
 export const STACK = 1, CARD_GAP = 5, LIST_TOP = 8;
 
-export function inboxList(view, t, model, actions, drag, draw, cx) {
-  const { list, every, sp, scope, kids, working, pinned, out, work, nap, put, busyRows, napRows, busy } = model;
+export function searchList(view, t, model, results) {
+  const { sp, ps, inView, since, now } = model;
+  const spaces = new Map(sp.map((s) => [s.id, s])), indices = new Map();
+  // Vertical padding lives in child spacers: pt/pb on an overflow_y_scroll container adds pt+pb of spurious scroll in GPUI.
+  const list = v_flex().id("inbox-search-results").role("list_box").accessibility_label("Inbox search results")
+    .flex_1().min_h(0).px(8).gap(STACK).overflow_y_scroll()
+    .when(Boolean(view.searchScroll), (el) => el.track_scroll(view.searchScroll))
+    .on_scroll_wheel(() => view.cancelReveal());
+  list.child(div().id("inbox-search-top-pad").flex_none().h(LIST_TOP - STACK));
+  for (const [i, { a, title }] of results.entries()) {
+    indices.set(a.address, i + 1);
+    const active = a.address === view.inline.at, current = a.address === inView;
+    const space = spaces.get(a.space) ?? { name: a.space_name ?? "" }, time = since(a);
+    list.child(h_flex().id(`search-result-${a.address}`).h(SLIM).px(8).gap(10).flex_none().items_center().rounded(6)
+      .role("list_box_option").accessibility_label(title).aria_selected(active).cursor_pointer()
+      .when(active || current, (el) => el.bg(t.selected)).text_color(t.foreground)
+      .on_mouse_move((_e, cx) => view.highlightInline(a.address, cx))
+      .on_click((_e, cx) => view.submitInline(cx, a.address))
+      .child(projectMark("mods/t3-inbox", space, 16, t, ps))
+      .child(div().flex_1().min_w(0).truncate().font_medium().child(title))
+      .when(time > 0, (el) => el.child(div().flex_none().text_size(12).text_color(t.dim).child(ago(time, now)))));
+  }
+  if (!results.length) list.child(div().px(8).py(24).text_center().text_size(12).text_color(t.dim).child("No matching cards."));
+  list.child(div().id("inbox-search-bottom-pad").flex_none().h(8 - STACK));
+  view.clockAt = Infinity;
+  view.revealDrawn(inView, indices, view.inline.query);
+  return { top: inboxTop(view, t, model), list };
+}
+
+export function inboxList(view, t, model, drag, draw, cx) {
+  const { now, list, every, sp, scope, kids, running, started, pinned, out, work, nap, put, busyRows, napRows, busy } = model;
   const { d, dragging, lifted, plan, cardH, rows, hot, aim, gap, others, placeholder, boundary, pinTo } = drag;
   const { card, slim } = draw;
-  const { doomed } = actions;
+  const showMore = view.open && put.length > view.limit;
   const zoom = Number(settings()?.zoom) || 1;
   const lit = (id, color) => view.hot === id ? t.foreground : color;
   const scoped = sp.filter((s) => scope.includes(s.id));
   const lane = (section, xs, draw, spacing) => drag.lane(section, xs, draw, spacing, fly);
   // A shelf's header, folding it: label, then count and chevron at the far edge; the chevron is an indicator, lit with its row.
   // As T3's: 2px in from the rows' edges, the count in normal weight.
-  const shelf = (id, label, count, open, toggle, extra) => stop(view, t, id, h_flex().id(id).h(SHELF).mx(2).px(8).gap(8).flex_none().items_center()
-    .text_size(12).font_medium().text_color(t.dim)
-    .role("button").accessibility_label(`${open ? "Hide" : "Show"} ${label.toLowerCase()} agents`)
-    .on_hover((on, cx) => {
-      if (on) view.overShelf = id;
-      else if (view.overShelf === id) view.overShelf = null;
-      cx.notify();
-    })
-    .on_click((_e, cx) => {
-      toggle();
-      cx.notify();
-    })
-    .child(div().flex_1().child(label))
-    .when(Boolean(extra), (el) => el.child(extra))
-    .child(div().font_normal().child(String(count)))
-        // 12px, as T3's section chevron; -2: its middle under the top row's last button, 22px from the sidebar's edge.
-    .child(svg(`mods/t3-inbox/icons/chevron-${open ? "down" : "right"}.svg`).size(12).mr(-2).flex_none().text_color(view.overShelf === id ? t.foreground : t.dim)));
+  const shelf = (id, label, count, open, toggle) => {
+    const header = h_flex().id(id).h(SHELF).mx(2).px(8).gap(8).flex_none().items_center()
+      .text_size(12).font_medium().text_color(t.dim)
+      .child(div().flex_1().child(label))
+      .child(div().font_normal().child(String(count)));
+    return stop(view, t, id, header.role("button").accessibility_label(`${open ? "Hide" : "Show"} ${label.toLowerCase()} agents`)
+      .on_hover((on, cx) => {
+        if (on) view.overShelf = id;
+        else if (view.overShelf === id) view.overShelf = null;
+        cx.notify();
+      })
+      .on_click((_e, cx) => { toggle(); cx.notify(); })
+      // 12px, as T3's section chevron; -2: its middle under the top row's last button, 22px from the sidebar's edge.
+      .child(svg(`mods/t3-inbox/icons/chevron-${open ? "down" : "right"}.svg`).size(12).mr(-2).flex_none().text_color(view.overShelf === id ? t.foreground : t.dim)));
+  };
 
   // The list's motion, as T3's (Sidebar.motion.ts): when the rows' order or sections change, a row that moved slides from
   // where it was, one that's new fades in from 40px above, one that left fades out where it was; 150ms ease-out. Not
@@ -67,7 +95,7 @@ export function inboxList(view, t, model, actions, drag, draw, cx) {
     if (put.length || dragging) {
       shelf.push(["m:settled", "marker", b]); b += SHELF + STACK;
       for (const a of rows) { if (dragging && plan?.gap === a.address) b += gapH; shelf.push([a, "slim", b]); b += a.address === d?.from && dragging && plan ? 0 : SLIM + STACK; }
-      if (view.open && put.length > view.limit) { shelf.push(["m:more", "marker", b]); b += SLIM; }
+      if (showMore) { shelf.push(["m:more", "marker", b]); b += SLIM; }
     }
     const base = Math.max(y, (view.listH ?? 0) - 8 - b);
     for (const [a, kind, off] of shelf) kind === "marker" ? mark(a, base + off) : put1(a, kind, base + off);
@@ -91,70 +119,127 @@ export function inboxList(view, t, model, actions, drag, draw, cx) {
     return div().id(`leaving-${x.key}-${view.motion.step}`).absolute().left(8).right(8).top(x.y + (away ? x.travel ?? 0 : 0))
       .opacity(away ? 0 : 1).transition("top", MOTION).transition("opacity", MOTION).child(drawn);
   };
-  view.ticking = busyRows.length > 0 || pinned.some(working);
+  // When a drawn Working time next reads differently: by the second under a minute, then by the minute (status-mark.js took).
+  view.clockAt = Math.min(Infinity, ...[...pinned, ...busyRows].filter(running).map(started).filter((at) => at > 0 && at < Infinity).map((at) => {
+    const s = Math.max(0, Math.floor((now - at) / 1000));
+    return at + (s < 60 ? s + 1 : (Math.floor(s / 60) + 1) * 60) * 1000;
+  }));
   // T3 shows the undo notice in the sidebar footer's row, so it covers nothing: the layout's footer (t3-chrome) draws it
-  // from shared("t3-inbox.notice"). Docked alone, with no footer, it goes over the first shelf's header.
+  // from shared(KEY.notice). Docked alone, with no footer, it goes over the first shelf's header.
   const n = view.notice;
   const footer = (x) => !x?.hidden && ((x?.content?.mod === "t3-chrome" && Boolean(x.content.props?.footer)) || (x?.children ?? []).some(footer));
-  const notice = n && !footer(layout()) && h_flex().id(`undo-notice-${n.gen}`).absolute().left(0).right(0).top(-24).h(24).px(10).gap(4).items_center()
+  const standaloneNotice = Boolean(n && !footer(layout()));
+  const noticeSummary = standaloneNotice ? `${n.action} ${n.count} agent${n.count === 1 ? "" : "s"},` : "";
+  const noticeUndo = standaloneNotice ? undoLabel("t3-tabs.undo", "t3-inbox.undo") : "";
+  const noteW = (key, sub, pad = 0) => (size, cx) => {
+    const w = Math.max(0, size.width / (Number(settings()?.zoom) || 1) - pad);
+    if (sub === undefined) {
+      if (view[key] === w) return;
+      view[key] = w;
+    } else {
+      const map = (view[key] ??= {});
+      if (map[sub] === w) return;
+      map[sub] = w;
+    }
+    cx.notify();
+  };
+  const summaryW = view.noticeSummaryW?.[noticeSummary], undoW = view.noticeUndoW?.[noticeUndo];
+  const showSummary = !(view.noticeW != null && summaryW > 0 && undoW > 0 && summaryW + 4 + undoW > view.noticeW + 0.5);
+  const notice = standaloneNotice && h_flex().id(`undo-notice-${n.gen}`).absolute().left(0).right(0).top(-24).h(24).px(10).gap(4).items_center()
     .bg(t.chrome).text_size(11).text_color(t.dim).opacity(n.shown ? 1 : 0).transition("opacity", { duration: 200, easing: "ease-out" })
-    .child(div().min_w(0).truncate().child(`${n.action} ${n.count} agent${n.count === 1 ? "" : "s"},`))
+    .on_size_change(noteW("noticeW", undefined, 20))
+    .when(showSummary, (el) => el.child(div().id("undo-notice-summary").flex_none().whitespace_nowrap().child(noticeSummary)))
     // As T3's InlineButton: medium, foreground, underlined on hover.
-    .when(n.live, (el) => el.child(div().id("undo-notice-undo").flex_none().font_medium().text_color(t.foreground).hover((s) => s.underline())
-      .role("button").accessibility_label("Undo")
+    .when(n.live, (el) => el.child(div().id("undo-notice-undo").flex_none().whitespace_nowrap().font_medium().text_color(t.foreground).hover((s) => s.underline())
+      .role("button").accessibility_label(`Undo: ${n.action} ${n.count} agent${n.count === 1 ? "" : "s"}`)
+      .on_size_change(noteW("noticeUndoW", noticeUndo))
       .on_click((_e, cx) => {
         cx.stop_propagation();
         view.undo(cx);
       })
-      .child("Undo")));
-  // The first shelf takes the free space above it, so both sit at the bottom.
-  const shelves = v_flex().id("shelves").relative().gap(STACK).flex_none()
-    .when(Boolean(notice), (el) => el.child(notice))
-    .when(work.length > 0, (el) => el
-      .child(fly("m:working", "marker", shelf("working-header", "Working", work.length, view.workOpen, () => {
-        view.workOpen = !view.workOpen;
-        localStorage.setItem("working-open", String(view.workOpen));
-      }).on_mouse_move((_e, cx) => aim(null, cx))))
-      // Folded, no wrapper: its py(2) and the gap before it would open Working's header 5px further from Snoozed's.
-      .when(busyRows.length > 0, (el) => el.child(v_flex().py(2).gap(CARD_GAP).children(busyRows.map((a) => fly(a.address, "work", card(a)))))));
-  // T3's Snoozed shelf, between Working and Settled. Nothing lands on it, so its header takes no drop.
-  const napShelf = v_flex().id("snoozed").gap(STACK).flex_none()
-    .child(fly("m:snoozed", "marker", shelf("snoozed-header", "Snoozed", nap.length, view.napOpen, () => {
+      .child(noticeUndo)));
+  const measureSummary = standaloneNotice && div().id(`undo-summary-measure-${noticeSummary}`).absolute().top(0).left(0).h(0).overflow_hidden().whitespace_nowrap()
+    .text_size(11).font_normal().child(noticeSummary).on_size_change(noteW("noticeSummaryW", noticeSummary));
+  const top = inboxTop(view, t, model);
+  // Vertical padding lives in child spacers: pt/pb on an overflow_y_scroll container with a flex_1 filler adds pt+pb of spurious scroll in GPUI.
+  const body = v_flex().id("inbox-list").relative().flex_1().min_h(0).px(8).overflow_y_scroll()
+    .when(Boolean(view.listScroll), (el) => el.track_scroll(view.listScroll))
+    .on_scroll_wheel(() => view.cancelReveal())
+    .on_size_change((size) => { view.listH = size.height / zoom; });
+  // Count actual direct layout children, not just agent rows. Keep the exit layer one child even as ghosts change.
+  const indices = new Map();
+  let index = 0;
+  const add = (el, address = null) => {
+    if (address !== null) indices.set(address, index);
+    body.child(el);
+    index++;
+  };
+  const addLane = (section, agents, drawRow, gap, append) =>
+    lane(section, agents, drawRow, gap).forEach((el, i) => append(el, agents[i].address));
+  add(div().absolute().left(0).right(0).top(0).children(view.motion.exits.map(leaving).filter(Boolean)));
+  add(div().id("inbox-top-pad").flex_none().h(LIST_TOP));
+  add(boundary("pinned", "Pinned", "pinned", pinTo(others(pinned)[0]?.address)));
+  add(gap("head-pinned"));
+  addLane("pinned", pinned, card, CARD_GAP, add);
+  add(boundary("active", "Active", "active", { section: "active" }));
+  if (dragging && others(out).length === 0 && !(out.length > 0 && !plan)) {
+    add(plan?.gap === "head-active" ? gap("head-active") : placeholder("active", "Active"));
+  }
+  addLane("active", out, card, CARD_GAP, add);
+  // Only a list with nothing in it says so; Active alone being empty stays blank.
+  if (list.length === 0) {
+    const filtered = scoped.length > 0 && every.length > 0;
+    const all = "show-all-spaces";
+    add(fly("m:empty", "marker", v_flex().px(8).py(24).gap(4).items_center().text_center().text_size(12).line_height("16px").text_color(t.dim)
+      .child(div().child(!every.length ? "Nothing here yet. Agents and panes that report a status show up here."
+        : !filtered ? "No matching cards." : scoped.length > 1 ? "Nothing in these spaces yet" : `Nothing in ${scoped[0].name} yet`))
+      .when(filtered, (el) => el.child(stop(view, t, all, div().id(all).px(4).rounded(4).font_medium().text_color(t.foreground)
+        .hover((s) => s.underline()).role("button").accessibility_label("Show all spaces")
+        .on_click((_e, cx) => {
+          const keyboard = onStop(view) === all;
+          view.pick({ id: null }, false, cx);
+          if (keyboard) focusStop(view, "inbox-scope");
+        }).child("Show all spaces"), 4)))));
+  }
+  // One native viewport: free space pushes the shelves down, but each shelf row is a direct scroll target.
+  add(div().id("active-rest").min_h(0).flex_1().on_mouse_move((_e, cx) => aim({ section: "active" }, cx)));
+  add(div().id("inbox-shelf-start").relative().flex_none().h(0)
+    .on_size_change(noteW("noticeW", undefined, 20))
+    .when(Boolean(notice), (el) => el.child(notice).child(measureSummary)));
+  let firstShelf = true;
+  const addShelf = (el, address = null, before = STACK, after = 0) => {
+    add(v_flex().flex_none().mt(firstShelf ? 0 : before).mb(after).child(el), address);
+    firstShelf = false;
+  };
+  if (work.length) {
+    addShelf(fly("m:working", "marker", shelf("working-header", "Working", work.length, view.workOpen, () => {
+      view.workOpen = !view.workOpen;
+      localStorage.setItem("working.open", String(view.workOpen));
+    }).on_mouse_move((_e, cx) => aim(null, cx))));
+    busyRows.forEach((a, i) => addShelf(fly(a.address, "work", card(a)), a.address,
+      i === 0 ? STACK + 2 : CARD_GAP, i === busyRows.length - 1 ? 2 : 0));
+  }
+  if (nap.length) {
+    addShelf(fly("m:snoozed", "marker", shelf("snoozed-header", "Snoozed", nap.length, view.napOpen, () => {
       view.napOpen = !view.napOpen;
-      localStorage.setItem("snoozed-open", String(view.napOpen));
-    }).on_mouse_move((_e, cx) => aim(null, cx))))
-    .children(lane("snoozed", napRows, (a) => slim(a), 0));
-  // With nothing to clear the button goes, and a gone element hears no pointer-leave: drop its hover.
-  if (doomed.length === 0 && view.hot === "settled-clear") view.hot = null;
-  const clearButton = doomed.length > 0 && tip(view, t, "settled-clear", "Clear settled agents", stop(view, t, "settled-clear", h_flex().id("settled-clear").h(20).px(6).flex_none().items_center().rounded(4).text_size(11)
-    .text_color(lit("settled-clear", t.dim)).on_hover(glow(view, "settled-clear"))
-    .role("button").accessibility_label("Clear settled agents")
-    .on_click((_e, cx) => {
-      cx.stop_propagation();
-      view.hot = null; // The dialog covers it, before the pointer can report leaving it.
-      const ask = {
-        title: `Close ${doomed.length} terminal${doomed.length === 1 ? "" : "s"}?`,
-        detail: "This ends the terminals of your settled agents. The tab you're on stays.",
-        command: { name: "t3-inbox.clear" },
-      };
-      // The layout's T3 dialog is t3-actions'; published alone (no `home` prop) this mod has only the shipped one.
-      openOverlay(props()?.home ? { mod: "t3-actions", kind: "dialog", frame: "none", width: 512, props: { actions: "confirm", ...ask } }
-        : { mod: "confirm", kind: "dialog", props: ask });
-      cx.notify();
-    })
-    .child("Clear"), 4));
-  const tail = v_flex().id("settled").gap(STACK).flex_none()
-    .child(fly("m:settled", "marker", shelf("settled-header", "Settled", put.length, view.open, () => {
+      localStorage.setItem("snoozed.open", String(view.napOpen));
+    }).on_mouse_move((_e, cx) => aim(null, cx))));
+    addLane("snoozed", napRows, slim, 0, addShelf);
+  }
+  // While dragging, Settled shows even empty: it's where a drop settles.
+  if (put.length > 0 || (dragging && !busy(lifted))) {
+    addShelf(fly("m:settled", "marker", shelf("settled-header", "Settled", put.length, view.open, () => {
       view.open = !view.open;
       view.limit = FIRST;
-      localStorage.setItem("open", String(view.open));
-    }, clearButton).on_mouse_move((_e, cx) => aim({ section: "settled" }, cx))
+      localStorage.setItem("settled.open", String(view.open));
+    }).on_mouse_move((_e, cx) => aim({ section: "settled" }, cx))
       // As T3's shelf header: brighter while anything is lifted, accent as the target.
-      .when(dragging, (el) => el.text_color(hot("settled") ? t.accent : t.foreground))))
-    .when(dragging && others(rows).length === 0 && !(rows.length > 0 && !plan), (el) => el
-      .child(plan?.gap === "head-settled" ? gap("head-settled") : placeholder("settled", "Settled")))
-    .children(lane("settled", rows, (a) => slim(a), 0))
-    .when(view.open && put.length > view.limit, (el) => el.child(fly("m:more", "marker", stop(view, t, "settled-more", h_flex().id("settled-more").h(SLIM).px(10).gap(10).flex_none().items_center().rounded(6)
+      .when(dragging, (el) => el.text_color(hot("settled") ? t.accent : t.foreground))));
+    if (dragging && others(rows).length === 0 && !(rows.length > 0 && !plan)) {
+      addShelf(plan?.gap === "head-settled" ? gap("head-settled") : placeholder("settled", "Settled"));
+    }
+    addLane("settled", rows, slim, 0, addShelf);
+    if (showMore) addShelf(fly("m:more", "marker", stop(view, t, "settled-more", h_flex().id("settled-more").h(SLIM).px(8).gap(10).flex_none().items_center().rounded(6)
       .text_color(lit("settled-more", t.dim)).hover((s) => s.bg(t.hover)).active((s) => s.bg(t.selected)).on_hover(glow(view, "settled-more"))
       .role("button").accessibility_label("Show more settled agents")
       .on_click((_e, cx) => {
@@ -163,28 +248,9 @@ export function inboxList(view, t, model, actions, drag, draw, cx) {
         cx.notify();
       })
       .child(svg("mods/t3-inbox/icons/chevron-down.svg").size(16).flex_none())
-      .child(`Show ${Math.min(MORE, put.length - view.limit)} more`)))));
-
-  const top = inboxTop(view, t, model);
-  const body = v_flex().id("inbox-list").relative().flex_1().min_h(0).px(8).pt(LIST_TOP).pb(8).overflow_y_scroll()
-      .on_size_change((size) => { view.listH = size.height / zoom; })
-      // Rows leaving fade out where they were, as T3's clones.
-      .children(view.motion?.exits.map(leaving).filter(Boolean) ?? [])
-      .child(boundary("pinned", "Pinned", "pinned", pinTo(others(pinned)[0]?.address)))
-      .child(gap("head-pinned"))
-      .children(lane("pinned", pinned, (a) => card(a), CARD_GAP))
-      .child(boundary("active", "Active", "active", { section: "active" }))
-      .when(dragging && others(out).length === 0 && !(out.length > 0 && !plan), (el) => el
-        .child(plan?.gap === "head-active" ? gap("head-active") : placeholder("active", "Active")))
-      .children(lane("active", out, (a) => card(a), CARD_GAP))
-      // As T3's: only a list with nothing in it says so; Active alone being empty stays blank.
-      .when(list.length === 0, (el) => el.child(fly("m:empty", "marker", div().px(8).py(24).text_center().text_size(12).line_height("16px").text_color(t.dim)
-        .child(!every.length ? "Nothing here yet. Agents and panes that report a status show up here."
-          : scoped.length > 1 ? "Nothing in these spaces yet" : `Nothing in ${scoped[0].name} yet`))))
-      // While dragging, Settled shows even empty: it's where a drop settles.
-      // The free space above the shelves pushes them to the bottom; a drag over it lands in Active, as T3's
-      // nearest-row drop does.
-      .child(div().id("active-rest").flex_1().min_h(0).on_mouse_move((_e, cx) => aim({ section: "active" }, cx)))
-      .child(shelves.when(nap.length > 0, (el) => el.child(napShelf)).when(put.length > 0 || (dragging && !busy(lifted)), (el) => el.child(tail)));
+      .child(`Show ${Math.min(MORE, put.length - view.limit)} more`))));
+  }
+  add(div().id("inbox-bottom-pad").flex_none().h(8));
+  view.revealDrawn(model.inView, indices);
   return { top, list: body };
 }

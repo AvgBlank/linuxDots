@@ -2,7 +2,7 @@ import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { spaces, panes, run, openOverlay, theme, window, shared, setShared, layout, settings, appHome, readTextFile, writeTextFile, watchFolder } from "herdr";
 import { exists, readdir } from "fs/promises";
-import { blocksDiffer, panelMod, withBlocks } from "./panel-mods.js";
+import { blocksDiffer, orderedPanels, panelMod, withBlocks } from "./panel-mods.js";
 
 // `color` (#rgb, #rrggbb or #rrggbbaa) at `alpha` (hex 00-ff); any other color as it is.
 // The same helper is in bettr-spaces (a mod cannot import another's files).
@@ -25,9 +25,19 @@ function find(node, id) {
 // hides its own. The first open child takes what is left (weight 1) and the others are
 // fixed (px), so dragging the panel's outer edge resizes only the first. Each child keeps
 // its own width; WIDTH is the width of a child the person never resized. Other mods add
-// their own panels: panel-mods.js.
-const PANELS = ["files", "changes", "activity", "context"], WIDTH = 368;
+// their own panels: panel-mods.js. The Layout dialog sets their order: shared "bettr.panelOrder".
+const ICONS = "mods/bettr-tabs/icons";
+const PANEL_BUTTONS = { files: ["Files", `${ICONS}/list-tree.svg`], changes: ["Changes", `${ICONS}/git-compare.svg`],
+  activity: ["Activity", `${ICONS}/activity.svg`], context: ["Context", `${ICONS}/gauge.svg`] };
+const PANELS = Object.keys(PANEL_BUTTONS), WIDTH = 368;
+const panelOrder = () => shared("bettr.panelOrder") ?? [];
 const BLOCK_CHECK_MS = 5000, WATCH_RETRY_MS = 30000;
+// The open panels leave MAIN_MIN px for the terminals; a panel squeezed to fit keeps PANEL_MIN.
+const MAIN_MIN = 320, PANEL_MIN = 200;
+// The open panels of this many spaces are remembered; then those of spaces that are gone are dropped, oldest first.
+const SPACES_MAX = 200;
+// A tab's close slot: the 7px gap before the 12px icon. It slides open when the tab is selected.
+const CLOSE_SLOT = 19, TAB_MOTION = { duration: 160, easing: "ease-out" };
 const gap = () => find(layout(), "panel-body")?.gap ?? 0;
 const same = (a, b) => a.length === b.length && a.every((id, i) => id === b[i]);
 
@@ -43,7 +53,7 @@ export default class Tabs extends View {
         await this.scanMods(dir, cx);
       }
     });
-    // Not only when mods change: an update of Bettr replaces the layout, and with it the blocks.
+    // Not only when mods change: a layout reset removes the blocks.
     cx.spawn(async cx => {
       for (;;) {
         await this.writeBlocks();
@@ -79,10 +89,12 @@ export default class Tabs extends View {
   // Make the shown layout's file hold one block per mod. The file, not layout.set: that forgets the sizes the
   // person dragged, and writes the rest of the tree too. A file that changed since the read is refused: the next check tries again.
   async writeBlocks() {
-    if (!this.mods || !blocksDiffer(layout(), this.mods)) return;
+    if (!this.mods || !blocksDiffer(layout(), this.mods, panelOrder())) return;
     try {
       const path = `${appHome()}/layouts/${shared("layout")}.json`, text = await readTextFile(path);
-      await writeTextFile(path, `${JSON.stringify(withBlocks(JSON.parse(text), this.mods), null, 2)}\n`, text);
+      const next = `${JSON.stringify(withBlocks(JSON.parse(text), this.mods, panelOrder()), null, 2)}\n`;
+      // The file is right already and the shown layout is not (Herdr has not read it, or refused it): no write.
+      if (next !== text) await writeTextFile(path, next, text);
     } catch {
       // Tried again at the next check.
     }
@@ -95,7 +107,7 @@ export default class Tabs extends View {
 
   // All the panels, in the order they show.
   panelIds(root) {
-    return [...PANELS, ...this.shownMods(root).map(mod => mod.id)];
+    return orderedPanels(root, [...PANELS, ...this.shownMods(root).map(mod => mod.id)]);
   }
 
   // The open children, in panel order: none while the panel is hidden.
@@ -107,7 +119,8 @@ export default class Tabs extends View {
   setOpen(want, now, panel) {
     const between = gap();
     // Record the widths the person left: fixed children have px, the first gets the rest.
-    if (now.length && panel?.size?.px) {
+    // Not after a squeeze: those widths are the window's, not the person's.
+    if (now.length && panel?.size?.px && !this.squeezed) {
       const root = layout();
       let rest = panel.size.px - between * (now.length - 1);
       const shared = [];
@@ -121,8 +134,16 @@ export default class Tabs extends View {
     for (const id of this.panelIds(layout())) run(want.includes(id) ? "layout.show" : "layout.hide", { id });
     if (!want.length) { run("layout.hide", { id: "panel" }); return; }
     const width = id => this.widths[id] ?? this.mods?.find(mod => mod.id === id)?.width ?? WIDTH;
-    want.forEach((id, i) => run("layout.resize", i ? { id, px: width(id) } : { id, weight: 1 }));
-    run("layout.resize", { id: "panel", px: want.reduce((sum, id) => sum + width(id), 0) + between * (want.length - 1) });
+    // All the panels fit in the panel's `max` and in the window (the tab bar is as wide as the work
+    // column): when they do not, each gets the same share less.
+    const body = find(layout(), "work-body"), edge = typeof body?.padding === "number" ? body.padding : 0;
+    const room = Math.min(panel?.max ?? Infinity, this.barWidth ? this.barWidth - 2 * edge - (body?.gap ?? 0) - MAIN_MIN : Infinity);
+    const gaps = between * (want.length - 1), total = want.reduce((sum, id) => sum + width(id), 0);
+    this.squeezed = total + gaps > room;
+    const share = this.squeezed ? Math.max(0, room - gaps) / total : 1;
+    const sizes = want.map(id => this.squeezed ? Math.max(PANEL_MIN, Math.floor(width(id) * share)) : width(id));
+    want.forEach((id, i) => run("layout.resize", i ? { id, px: sizes[i] } : { id, weight: 1 }));
+    run("layout.resize", { id: "panel", px: sizes.reduce((sum, px) => sum + px, 0) + gaps });
     run("layout.show", { id: "panel" });
   }
 
@@ -163,7 +184,13 @@ export default class Tabs extends View {
       this.pending = null;
     }
     if (same(this.panels[space.id] ?? [], now) && space.id in this.panels) return;
+    delete this.panels[space.id]; // Set again at the end: the newest choice is the last key.
     this.panels[space.id] = now;
+    const known = Object.keys(this.panels);
+    if (known.length > SPACES_MAX) {
+      const here = new Set(spaces().map(s => s.id));
+      for (const id of known.filter(id => !here.has(id)).slice(0, known.length - SPACES_MAX)) delete this.panels[id];
+    }
     try { localStorage.setItem("panels", JSON.stringify(this.panels)); } catch {}
   }
 
@@ -175,13 +202,17 @@ export default class Tabs extends View {
     const button = (id, label, action) => div().id(id).size(26).flex_none().flex().items_center().justify_center().rounded(6).text_color(t.dim).hover(s => s.bg(t.hover).text_color(t.foreground))
       .on_mouse_down("left", stop).on_click(action).child(label);
     // Shared by the tabs and the panel buttons.
-    const chip = (el, on) => el.h(29).flex_none().items_center().rounded(7).border(1).border_color(on ? t.input : t.chrome)
-      .bg(on ? tint(t.raised, "80") : t.chrome).text_color(on ? t.foreground : t.muted).cursor_pointer().hover(s => s.bg(t.hover));
+    // `outline`: the border even when off (every tab has one; a panel button only when on).
+    // On hover, an outlined chip's border takes the accent colour; any other chip's background changes.
+    const chip = (el, on, outline = false) => el.h(29).flex_none().items_center().rounded(7).border(1)
+      .border_color(on || outline ? t.input : t.chrome)
+      .bg(on ? tint(t.raised, "80") : t.chrome).text_color(on ? t.foreground : t.muted).cursor_pointer()
+      .hover(s => outline ? s.border_color(t.accent) : s.bg(t.hover));
     const ps = panes(); // Read once: each read copies every pane.
     const item = (c, i) => {
       const program = ps.find(p => p.tab === c.id && p.program?.agent)?.program ?? ps.find(p => p.tab === c.id)?.program;
       const name = /^tb\d+$/.test(c.name) ? program?.name ?? "Terminal" : c.name;
-      return chip(h_flex().id(`tab-${c.id}`).px(10).gap(7).text_size(13), c.active)
+      return chip(h_flex().id(`tab-${c.id}`).px(10).text_size(13), c.active, true)
         .on_mouse_down("left", (e, cx) => { cx.stop_propagation(); this.pressed = i; if (e.click_count === 2) run("tab.rename", { id: c.id }); })
         .on_mouse_up("left", () => {
           const from = this.pressed; this.pressed = null;
@@ -189,11 +220,19 @@ export default class Tabs extends View {
           else run("tab.select", { id: c.id });
         })
         .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); openOverlay({ mod: "menu", kind: "popup", width: 200, props: { tab: "tab", target: { id: c.id, space: space.id } } }); })
-        .when(Boolean(program?.icon), el => el.child(program.tint ? svg(program.icon).size(14).text_color(t.muted) : image(program.icon).size(14)))
-        .child(div().max_w(170).truncate().child(c.zoomed ? `${name} Z` : name))
-        .when(c.status === "working", el => el.child(svg("mods/workspace-chrome/spinner.svg").size(12).flex_none().text_color(t.working).spin(900)))
-        .when(c.status === "blocked" || c.status === "done", el => el.child(div().size(6).rounded(3).bg(t[c.status])))
-        .when(c.active, el => el.child(div().id(`close-${c.id}`).text_color(t.dim).on_mouse_down("left", stop).on_click((_e, cx) => { cx.stop_propagation(); run("tab.close", { id: c.id, confirmed: true }); }).child(svg("mods/pane/close.svg").size(12))));
+        .child(h_flex().min_w(0).gap(7).items_center()
+          .when(Boolean(program?.icon), el => el.child(program.tint ? svg(program.icon).size(14).text_color(t.muted) : image(program.icon).size(14)))
+          .child(div().max_w(170).truncate().child(c.zoomed ? `${name} Z` : name))
+          .when(c.status === "working", el => el.child(svg("mods/workspace-chrome/spinner.svg").size(12).flex_none().text_color(t.working).spin(900)))
+          .when(c.status === "blocked" || c.status === "done", el => el.child(div().size(6).rounded(3).bg(t[c.status]))))
+        // The close button is on the active tab only. Every tab has its slot: the slot's width
+        // (gap and icon, or 0) slides, so the tab grows and shrinks smoothly when selected.
+        .child(div().id(`close-slot-${c.id}`).flex_none().h(12).overflow_hidden()
+          .w(c.active ? CLOSE_SLOT : 0).transition("width", TAB_MOTION)
+          .opacity(c.active ? 1 : 0).transition("opacity", TAB_MOTION)
+          .child(div().id(`close-${c.id}`).flex_none().pl(CLOSE_SLOT - 12).text_color(t.dim)
+            .on_mouse_down("left", stop).on_click((_e, cx) => { cx.stop_propagation(); run("tab.close", { id: c.id, confirmed: true }); })
+            .child(svg("mods/pane/close.svg").size(12))));
     };
     const root = layout(), sidebar = find(root, "sidebar"), w = window();
     // The first tab starts on the pane's left edge (work-body's padding in the layout).
@@ -203,6 +242,9 @@ export default class Tabs extends View {
       ? Math.max(paneEdge, (root.traffic_lights[0] + 64) / settings().zoom - (sidebar?.hidden ? 0 : sidebar?.size?.px ?? 0))
       : paneEdge;
     const panel = find(root, "panel");
+    // A new order from the Layout dialog applies now, not at the next block check.
+    const order = JSON.stringify(panelOrder());
+    if (order !== this.order) { this.order = order; this.writeBlocks(); }
     // Set in the Layout dialog (bettr-chrome/layout-config.js, same default).
     // Set in the Layout dialog too: on until turned off, so a new mod's panel needs no setting.
     const off = shared("bettr.modPanelsOff") ?? [];
@@ -220,18 +262,20 @@ export default class Tabs extends View {
         .on_click(() => this.setOpen(on ? open.filter(p => p !== id) : this.panelIds(layout()).filter(p => p === id || open.includes(p)), open, panel))
         .child(icon ? svg(icon).size(14) : div().text_size(12).child(label.slice(0, 1).toUpperCase()));
     };
-    return h_flex().size_full().min_w(0).px(10).pl(lightsPadding).pt(8).gap(6).items_center().bg(t.chrome)
+    return h_flex().id("tab-bar").size_full().min_w(0).px(10).pl(lightsPadding).pt(8).gap(6).items_center().bg(t.chrome)
+      .on_size_change(size => { this.barWidth = size.width; })
       .on_mouse_up("left", () => { this.pressed = null; })
+      // The button released outside the bar gives no mouse-up here: the pointer's exit ends the drag.
+      .on_hover(on => { if (!on) this.pressed = null; })
       .on_scroll_wheel(e => { if (Math.abs(e.delta.y) >= 1) run(e.delta.y > 0 ? "tab.prev" : "tab.next"); })
       .when(Boolean(sidebar?.hidden), el => el.child(button("show-sidebar", svg("mods/workspace-chrome/panel-left.svg").size(15), () => run("layout.show", { id: "sidebar" }))
         .tooltip("Show sidebar (⌘B)")))
       .child(h_flex().id("tab-scroll").flex_1().min_w(0).h_full().items_center().gap(3).overflow_x_scrollbar().children(shown.map(item)))
       .child(button("tab-new", "+", () => openOverlay({ mod: "new-menu", kind: "popup", width: 250, height: 512 })))
-      .when(enabled.includes("files"), el => el.child(panelButton("files", "Files", "mods/bettr-tabs/icons/list-tree.svg")))
-      .when(enabled.includes("changes"), el => el.child(panelButton("changes", "Changes", "mods/bettr-tabs/icons/git-compare.svg")))
-      .when(enabled.includes("activity"), el => el.child(panelButton("activity", "Activity", "mods/bettr-tabs/icons/activity.svg")))
-      .when(enabled.includes("context"), el => el.child(panelButton("context", "Context", "mods/bettr-tabs/icons/gauge.svg")))
-      .children(mods.map(mod => panelButton(mod.id, mod.title, mod.icon)))
+      .children(this.panelIds(root).filter(id => enabled.includes(id)).map(id => {
+        const mod = mods.find(m => m.id === id);
+        return mod ? panelButton(id, mod.title, mod.icon) : panelButton(id, ...PANEL_BUTTONS[id]);
+      }))
       .when(w?.buttons, el => el.child(button("minimize", w.platform === "windows" ? svg("mods/tabs/win-min.svg").size(16) : "−", () => run("window.minimize")))
         .child(button("maximize", w.platform === "windows" ? svg(`mods/tabs/${w.maximized ? "win-restore" : "win-max"}.svg`).size(16) : "□", () => run("window.maximize")))
         .child(button("close-window", w.platform === "windows" ? svg("mods/tabs/win-close.svg").size(16) : svg("mods/pane/close.svg").size(13), () => run("window.close"))));

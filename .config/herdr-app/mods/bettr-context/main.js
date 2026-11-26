@@ -71,7 +71,10 @@ export default class Context extends View {
     let previous = null;
     try { previous = localStorage.getItem(key); } catch {}
     const waiting = this.asked && Date.now() < this.asked.until && px !== this.asked.px;
-    if (!force && !waiting && previous !== null && Math.abs((px ?? 0) - Number(previous)) > 1) return;
+    // At its minimum the block is new or reset (a layout install, a changed header height),
+    // not sized by the person: the stored height is old.
+    const manual = previous !== null && Math.abs((px ?? 0) - Number(previous)) > 1 && (px ?? 0) > (node.min ?? CLOSED);
+    if (!force && !waiting && manual) return;
     if (px === want || (waiting && this.asked.px === want)) return;
     try { localStorage.setItem(key, String(want)); } catch {}
     this.asked = { px: want, until: Date.now() + 1000 };
@@ -94,8 +97,8 @@ export default class Context extends View {
     const lines = view ? 1 + view.misses.length : 0;
     this.lines = lines;
     this.fit(lines);
-    const root = v_flex().id("cache").size_full().min_h(0).rounded(10).overflow_hidden()
-      .bg(t.background).border_1().border_color(t.border).text_color(t.foreground).text_size(12)
+    const root = v_flex().id("cache").size_full().min_h(0).overflow_hidden()
+      .text_color(t.foreground).text_size(12)
       .child(h_flex().h(HEADER).flex_none().px(14).gap(8).items_center().border_b(1).border_color(t.border)
         .child(div().id("cache-heading").flex_1().text_size(13).font_medium()
           .tooltip("Double-click to fit panel height")
@@ -138,8 +141,8 @@ export default class Context extends View {
     this.showCache(Boolean(terminal));
     const header = h_flex().h(HEADER).flex_none().px(14).items_center().border_b(1).border_color(t.border)
       .child(div().font_medium().child("Context"));
-    const root = v_flex().id("context").size_full().min_h(0).rounded(10).overflow_hidden()
-      .bg(t.background).border_1().border_color(t.border).text_color(t.foreground).text_size(13).child(header);
+    const root = v_flex().id("context").size_full().min_h(0).overflow_hidden()
+      .text_color(t.foreground).text_size(13).child(header);
     if (!state) {
       return root.child(v_flex().p(14).text_size(12).text_color(t.dim).child("Focus an agent to see its context"));
     }
@@ -153,8 +156,11 @@ export default class Context extends View {
     // bars: 5 px, radius 3. GPUI does not clip children to rounded corners, so the first
     // and last segments round their own outer ends.
     const segments = view.segments.filter(s => s.share > 0);
+    // More than the bar (context over the window, or many segments at the least width): all scaled to fit.
+    const widths = segments.map(s => Math.max(0.4, s.share * 100)), full = widths.reduce((sum, w) => sum + w, 0);
+    const fit = full > 100 ? 100 / full : 1;
     body.child(h_flex().w_full().h(5).mb(10).rounded(3).bg(t.raised)
-      .children(segments.map((s, i) => div().h_full().flex_none().w(`${Math.max(0.4, s.share * 100)}%`).bg(color(s.key, t))
+      .children(segments.map((s, i) => div().h_full().flex_none().w(`${widths[i] * fit}%`).bg(color(s.key, t))
         .when(i === 0, el => el.rounded_l(3)).when(i === segments.length - 1, el => el.rounded_r(3)))));
 
     for (const item of view.rows) {

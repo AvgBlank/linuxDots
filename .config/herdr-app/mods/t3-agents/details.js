@@ -1,9 +1,10 @@
-// A thing's details as T3's thread card, with its timing: for Inbox rows and tabs. scripts/sync.sh copies this to the mods that use it.
+// A thing's details as T3's thread card, with its timing: for Inbox rows and tabs.
 import { div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { POINTER_WATCH, pointerAt, pointerGone, pointerMoved } from "./tip.js";
+import { alpha } from "./color.js";
 
-// As T3's tooltip group: while a card is up, or was under 400ms ago, the next opens at once.
+// As T3's tooltip group: while a card is up, or was a moment ago, the next opens at once.
 export const detailsLive = (view) => Boolean(view.details) || Date.now() - (view.detailsClosed ?? 0) < 400;
 
 function fadeOut(view, key, cx) {
@@ -36,7 +37,7 @@ export function detailsWatch(view, key, cx) {
   });
 }
 
-// 150ms to the first card, which fades in. What opens at once does so unfaded, and what it replaces goes with no fade:
+// The first card waits, then fades in. What opens at once does so unfaded, and what it replaces goes with no fade:
 // T3's tooltip group (data-instant) switches cards in one frame, where two cards crossing would flicker.
 // A transition adopts the first value it sees, so a card draws clear for a frame or two before its target changes.
 export function detailsFor(view, key, cx) {
@@ -74,11 +75,11 @@ export function detailsFor(view, key, cx) {
   });
 }
 
-export const detailsLine = (t, mark, text) => h_flex().gap(8).min_w(0).items_center().child(mark).child(div().min_w(0).truncate().text_color(t.foreground + "bf").child(text));
+export const detailsLine = (t, mark, text) => h_flex().gap(8).min_w(0).items_center().child(mark).child(div().min_w(0).truncate().text_color(alpha(t.foreground, "bf")).child(text));
 
 // The title, then its lines. The caller hangs it from a Popup and gives it its gap from what it describes.
 // `wrap`: the title runs on over lines, for one the row it describes can't show whole (a commit's subject). `hide`: fades out and stays up, to come back.
-// `from`: where it slides from, 4px toward the row: T3's scales, which Herdr can't.
+// `from`: where it slides from, toward the row: T3's scales, which Herdr can't.
 const detailsFade = /** @type {const} */ ({ duration: 150, easing: "ease-out" });
 export function detailsCard(view, t, key, title, lines, { wrap, hide, from = -4 } = /** @type {{ wrap?: any, hide?: any, from?: number }} */ ({})) {
   const shown = view.details === key && view.detailsIn && !hide;

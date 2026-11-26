@@ -214,7 +214,7 @@ export default class Extras extends View {
     } else if (name === "tab" || name === "slot") {
       // tab-N: the tab numbered N, made if there's none. slot-N: only an existing one.
       await this.ready;
-      if (!space || space.id === shared("t3-home.space")) return;
+      if (!space || space.id === (shared("t3-tabs.home") ?? shared("t3-home.space"))) return;
       this.reconcile(cx);
       const slots = this.slots[space.id] ?? {};
       const id = Object.keys(slots).find((k) => slots[k] === n);
@@ -237,7 +237,7 @@ export default class Extras extends View {
       this.place(space.id, cx);
     } else if (name === "space") {
       // focus: the Nth space on the active machine (t3-spaces.by-machine, falling back to first non-empty machine / t3-spaces.order).
-      if (shared("layout") === "focus") {
+      if (shared("layout") === "t3") {
         const byMachine = shared("t3-spaces.by-machine");
         const key = space?.machine ?? "";
         const list = byMachine?.[key]?.length ? byMachine[key]
@@ -319,7 +319,7 @@ export default class Extras extends View {
     } else if (name === "agent") {
       // The order the agents list shows: focus's Inbox or Lists rows, bettr's shared order, else Herdr's own.
       const live = new Set(agents().map((a) => a.address));
-      const t3 = shared("layout") === "focus" ? shared(shared("t3-agent-order") === "lists" ? "t3-agents.rows" : "t3-inbox.rows")?.order : null;
+      const t3 = shared("layout") === "t3" ? shared((shared("t3.agentOrder") ?? shared("t3-agent-order")) === "lists" ? "t3-agents.rows" : "t3-inbox.rows")?.order : null;
       const order = (t3 ?? shared("agents.order") ?? []).filter((t) => live.has(t));
       const t = (order.length ? order : agents().map((a) => a.address))[n - 1];
       if (t) run("agent.focus", { terminal: t });
@@ -427,7 +427,7 @@ export default class Extras extends View {
     if (pane && pane !== this.cur) { this.prev = this.cur; this.cur = pane; }
     // Remember each machine's last active non-Home space so ctrl-a m returns where you left off.
     const activeSpace = spaces().find((s) => s.active);
-    if (activeSpace && activeSpace.id !== shared("t3-home.space")) {
+    if (activeSpace && activeSpace.id !== (shared("t3-tabs.home") ?? shared("t3-home.space"))) {
       const mKey = activeSpace.machine ?? "";
       this.lastByMachine = this.lastByMachine ?? {};
       if (this.lastByMachine[mKey] !== activeSpace.id) {

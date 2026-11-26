@@ -6,20 +6,21 @@ import { v_flex, h_flex, Scrollbar } from "gpui-base";
 import { run, props, closeOverlay, theme, shared, setShared, layout } from "herdr";
 import { machinesPage } from "./machines.js";
 
-export const PANELS = [["files", "Files", "list-tree"], ["changes", "Changes", "git-compare"], ["activity", "Activity", "activity"], ["context", "Context", "gauge"]];
-export const enabledPanels = () => shared("bettr.panels") ?? [...(shared("workspace.panels") ?? ["files", "changes"]), "activity", "context"];
+export const PANELS = [["files", "Files", "list-tree"], ["changes", "Changes", "git-compare"], ["review", "Review", "pulls-review", true], ["activity", "Activity", "activity"], ["context", "Context", "gauge"]];
+export const enabledPanels = () => shared("bettr.panels") ?? [...(shared("workspace.panels") ?? ["files", "changes"]), "review", "activity", "context"];
 export function find(node, id) {
   if (node?.id === id) return node;
   for (const child of node?.children ?? []) { const found = find(child, id); if (found) return found; }
   return null;
 }
-export const CUSTOMIZE_SIZE = { width: 760, height: 480 };
+export const CUSTOMIZE_SIZE = { width: 760, height: 540 };
 
 const icon = (name) => `mods/bar/icons/${name}.svg`;
 const SECTIONS = [{ id: "bar", title: "Top bar", icon: "layers" }, { id: "machines", title: "Machines", icon: "server" }];
 const ABOUT = {
   files: "The space's files, beside the terminals.",
   changes: "Git changes in the space, file by file.",
+  review: "pulls.review diff and AI review panel (requires jin.review).",
   activity: "What the agent is doing, tool by tool. Shown on tabs with an agent.",
   context: "How full the agent's context is. Shown on tabs with an agent.",
 };

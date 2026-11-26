@@ -30,10 +30,12 @@ import re  # noqa: E402
 import time  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-# `python3 -I` leaves this folder off sys.path. No bytecode: Herdr reloads a mod when its folder changes.
+# `python3 -I` leaves this folder off sys.path. Bytecode goes to the cache, not the mod folder:
+# Herdr reloads a mod when its folder changes. Without bytecode, each hook compiles every module (~25 ms).
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
-sys.dont_write_bytecode = True
+sys.pycache_prefix = str(Path.home() / ".cache/bettr/pycache")
+sys.dont_write_bytecode = False  # macOS's own python3 turns it off.
 
 import activity  # noqa: E402
 import context  # noqa: E402

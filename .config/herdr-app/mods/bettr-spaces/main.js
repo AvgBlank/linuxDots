@@ -1,19 +1,11 @@
-// Workspace spaces: names in stable colors, worktrees under their checkout,
-// grouped by machine when more than one is known. Git only places a worktree
-// space under its repo's space; no branch shows. Each space's agents are listed
-// under it, with their sub-agents. Click to switch, right-click for its menu,
-// drag to reorder.
+// Workspace spaces: names in stable colors, grouped by machine when more than
+// one is known. Each space's agents are listed under it, with their sub-agents.
+// Click to switch, right-click for its menu, drag to reorder.
 
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { spaces, machines, panes, agents, terminals, focused, setAgentOrder, run, openOverlay, exec, hc, theme, shared, setShared, settings } from "herdr";
+import { spaces, machines, panes, agents, terminals, focused, setAgentOrder, run, openOverlay, hc, theme, shared, setShared, settings } from "herdr";
 
-// Where a space is now: its first terminal's live folder, else where it was made.
-// `ps`: panes(), read once by the caller (each read copies every pane).
-function place(s, ps) {
-  const tabs = new Set((s.tabs ?? []).map((c) => c.id));
-  return ps.find((p) => tabs.has(p.tab) && p.cwd)?.cwd || s.folder;
-}
 // Agent and sub-agent rows are ROW tall. A space row is taller by the difference in text size
 // (15 - 12), so the space between the space name and its first agent's text equals the space
 // between two agents' texts. A space after the first has SPACE_GAP above it.
@@ -23,7 +15,8 @@ const ROW = 26, SPACE_ROW = ROW + 3, SPACE_GAP = 7;
 const BADGE = 15, BADGE_GAP = 6;
 // The space's number (ctrl-N) before its tab-count badge.
 const NUM = 12;
-const where = (s, ps) => JSON.stringify([s.machine ?? null, place(s, ps)]);
+// Where a space's tab count starts: the space row's padding, then its number.
+const COUNT_LEFT = 8 + NUM + BADGE_GAP;
 
 // Space colors: the soft rainbow of the Context panel (bettr-context COLORS), in its
 // order. `space.colors` stores the hex value. A new space gets the least-used one.
@@ -36,6 +29,13 @@ const tint = (color, alpha) => {
   if (!hex) return color;
   return `#${hex.length === 3 ? [...hex].map((c) => c + c).join("") : hex.slice(0, 6)}${alpha}`;
 };
+
+// Stored JSON, or `fallback` when it is missing or damaged. A full or blocked store loses only the save.
+const stored = (key, fallback) => {
+  try { return JSON.parse(localStorage.getItem(key) ?? "null") ?? fallback; } catch { return fallback; }
+};
+const store = (key, text) => { try { localStorage.setItem(key, text); } catch {} };
+const record = (value) => (value && typeof value === "object" && !Array.isArray(value) ? value : {});
 
 // Agent rows, from the former Agents panel.
 const clean = (s) => (s ?? "").replace(/^[^\p{L}\p{N}]+/u, "").trim();
@@ -75,60 +75,34 @@ function duration(ms) {
 
 export default class Spaces extends View {
   init(_props, cx) {
-    this.git = {}; // where() -> { repo, linked }, null: not a repo
-    this.unsure = new Set(); // where()s git couldn't answer for (a machine away)
-    this.pending = new Set(); // where()s to look at next
-    this.ready = {}; // machine -> its layout was readable at the last look
-    // Spaces made while this runs wait (at most a moment) for their git, so a
-    // worktree appears under its repo instead of jumping there.
-    this.shown = new Set(spaces().map((s) => s.id));
-    this.born = {};
     this.pressed = null;
     this.over = null;
     this.machines = [];
-    this.reconnecting = JSON.parse(localStorage.getItem("machines.reconnecting") ?? "{}");
+    this.reconnecting = Object.fromEntries(Object.entries(record(stored("machines.reconnecting", {})))
+      .filter(([, state]) => record(state) === state));
     for (const state of Object.values(this.reconnecting)) state.busy = false;
-    this.folded = new Set(JSON.parse(localStorage.getItem("machines.folded") ?? "[]"));
+    const folded = stored("machines.folded", []);
+    this.folded = new Set(Array.isArray(folded) ? folded : []);
     this.agentFolded = new Set(); // agents whose sub-agents are hidden
     // Each agent's last state and when it changed (ms), kept across restarts.
-    this.changed = JSON.parse(localStorage.getItem("changed") ?? "{}");
+    this.changed = record(stored("changed", {}));
     // Redraw the time each agent has been in its state (minutes).
     cx.timer.every(30000, (cx) => cx.notify());
     this.refreshMachines(cx);
     cx.timer.every(15000, cx => this.refreshMachines(cx));
-    // New places (a new space, a cd) get one git look; the timer itself only compares
-    // folders, so it is cheap.
-    cx.timer.every(250, (cx) => this.checkNew(cx));
-  }
-
-  checkNew(cx) {
-    const now = Date.now();
-    const sp = spaces();
-    for (const s of sp) if (!this.shown.has(s.id)) this.born[s.id] ??= now;
-    const due = this.due(sp, panes());
-    if (due.size) this.refreshGit(due, cx);
-    if (sp.some((s) => !this.shown.has(s.id)) || this.orderingDue(now)) cx.notify();
-  }
-
-  // Places git has not answered for: new ones, and those on a machine that is back.
-  // Whether a folder is a repo or a worktree does not change while a space is there,
-  // so a place is asked again only after the spaces leave it and come back.
-  due(sp, ps) {
-    const keys = new Set(sp.map((s) => where(s, ps)).filter((k) => JSON.parse(k)[1]));
-    for (const k of Object.keys(this.git)) if (!keys.has(k) && !this.pending.has(k)) delete this.git[k];
-    const due = new Set([...keys].filter((k) => !(k in this.git)));
-    for (const m of machines()) {
-      const ready = m.layout === "ready";
-      if (ready && this.ready[m.name] === false) for (const k of this.unsure) if (JSON.parse(k)[0] === m.name) due.add(k);
-      this.ready[m.name] = ready;
-    }
-    return due;
   }
 
   refreshMachines(cx) {
     cx.spawn(async cx => {
-      try { const r = await hc(["machine", "ls", "--json"]); if (r.code === 0) this.machines = (JSON.parse(r.stdout).machines ?? []).filter((m) => !m.temporary); } catch {}
-      cx.notify();
+      try {
+        const r = await hc(["machine", "ls", "--json"]);
+        if (r.code !== 0) return;
+        // Asked every 15 s: redraw only when the answer changes.
+        const machines = (JSON.parse(r.stdout).machines ?? []).filter((m) => !m.temporary), text = JSON.stringify(machines);
+        if (text === this.machinesText) return;
+        this.machinesText = text; this.machines = machines;
+        cx.notify();
+      } catch {}
     });
   }
 
@@ -142,7 +116,7 @@ export default class Spaces extends View {
     const state = this.reconnecting[name] ??= { machine, removed: false };
     state.busy = true;
     state.error = null;
-    localStorage.setItem("machines.reconnecting", JSON.stringify(this.reconnecting));
+    store("machines.reconnecting", JSON.stringify(this.reconnecting));
     cx.notify();
     cx.spawn(async cx => {
       try {
@@ -157,7 +131,7 @@ export default class Spaces extends View {
         if (!state.removed) {
           await ask(["machine", "rm", name]);
           state.removed = true;
-          localStorage.setItem("machines.reconnecting", JSON.stringify(this.reconnecting));
+          store("machines.reconnecting", JSON.stringify(this.reconnecting));
         }
         const args = ["machine", "add"];
         if (machine.via) args.push("--via", machine.target);
@@ -167,54 +141,16 @@ export default class Spaces extends View {
         if (machine.temporary) args.push("--temp");
         await ask(args);
         this.folded.delete(name);
-        localStorage.setItem("machines.folded", JSON.stringify([...this.folded]));
+        store("machines.folded", JSON.stringify([...this.folded]));
         delete this.reconnecting[name];
       } catch (e) {
         state.error = String(e.message ?? e);
         state.busy = false;
       }
-      localStorage.setItem("machines.reconnecting", JSON.stringify(this.reconnecting));
+      store("machines.reconnecting", JSON.stringify(this.reconnecting));
       this.refreshMachines(cx);
       cx.notify();
     });
-  }
-
-  // One look at a time, each place once however often it was asked for meanwhile.
-  refreshGit(keys, cx) {
-    for (const k of keys) this.pending.add(k);
-    if (this.refreshing) return;
-    this.refreshing = true;
-    cx.spawn(async (cx) => {
-      while (this.pending.size) {
-        const keys = [...this.pending];
-        this.pending.clear();
-        for (const key of keys) await this.check(key);
-      }
-      this.refreshing = false;
-      cx.notify();
-    });
-  }
-
-  // One place's repo: its shared git folder, and whether the place is a linked worktree
-  // (its top's own .git is not that folder).
-  async check(key) {
-    const [on, cwd] = JSON.parse(key);
-    this.unsure.delete(key);
-    try {
-      const r = await exec("git", ["rev-parse", "--path-format=absolute", "--show-toplevel", "--git-common-dir"], { cwd, on });
-      if (r.code !== 0) {
-        // Only git's own "no" is remembered as no repo; anything else is asked again.
-        if (!/not a git repository/i.test(r.stderr)) this.unsure.add(key);
-        this.git[key] = null;
-        return;
-      }
-      const [top, repo] = r.stdout.trim().split("\n").map((line) => line.trim());
-      this.git[key] = { repo: JSON.stringify([on, repo]), linked: repo !== `${top}/.git` };
-    } catch {
-      // Couldn't ask (the machine is away): keep what it showed, look again later.
-      this.git[key] ??= null;
-      this.unsure.add(key);
-    }
   }
 
   // Stamps agents whose state changed. Done and idle count as one: looking at a
@@ -231,7 +167,7 @@ export default class Spaces extends View {
     // Gone and old: the list alone is empty right after a start.
     const listed = new Set(list.map((a) => a.address));
     for (const [k, c] of Object.entries(this.changed)) if (!listed.has(k) && now - c.at > 30 * 86400000) delete this.changed[k];
-    localStorage.setItem("changed", JSON.stringify(this.changed));
+    store("changed", JSON.stringify(this.changed));
   }
 
   // Live sub-agents of `addr`, depth first, each with the tree lines in front of it.
@@ -254,14 +190,14 @@ export default class Spaces extends View {
     return div().size(7).mx(3).flex_none().rounded(4).when(a.status === "done", el => el.bg(t.done));
   }
 
-  subRow(t, s, shown, indent) {
+  subRow(t, s, shown) {
     const k = s.t;
     const st = kidStatus(k, this.listed);
     const on = k.address === shown;
     return h_flex()
       .id(`sub-${k.address}`)
       // The focused background starts at the space's tab count, with the same rounding.
-      .ml(indent - BADGE - BADGE_GAP)
+      .ml(COUNT_LEFT)
       .pl(BADGE + BADGE_GAP + 6)
       .pr(8)
       .rounded(4)
@@ -311,15 +247,14 @@ export default class Spaces extends View {
 
   // An agent under its space: its tab's name or its own title, never an automatic
   // tab number unless two rows in the space would otherwise read the same.
-  // `indent`: where its space's name starts, so the two line up.
-  agentRow(t, a, subs, now, indent) {
+  agentRow(t, a, subs, now) {
     const name = this.names.get(a.address);
     const when = this.changed[a.address]?.at ?? 0;
     return h_flex()
       .id(`ag-${a.address}`)
       .relative()
       // The focused background starts at the space's tab count, with the same rounding.
-      .ml(indent - BADGE - BADGE_GAP)
+      .ml(COUNT_LEFT)
       .pl(BADGE + BADGE_GAP)
       .pr(8)
       .h(ROW)
@@ -361,10 +296,12 @@ export default class Spaces extends View {
     this.all = terminals();
     this.track(list, now);
     this.hold(list);
+    // Each agent's live sub-agents, found once per render: the sort and the rows both use them.
+    this.subs = new Map(list.map((a) => [a.address, this.tree(this.all, a.address)]));
     // Priority (the default): most urgent first (counting its sub-agents), then most recently
     // changed. "order" keeps tab order. The sort button and its menu are in bettr-chrome.
     if (shared("bettr.agentSort") !== "order") {
-      const urgency = new Map(list.map((a) => [a.address, Math.max(this.rank(a), ...this.tree(this.all, a.address).map((s) => RANK[kidStatus(s.t, this.listed)] ?? 0))]));
+      const urgency = new Map(list.map((a) => [a.address, Math.max(this.rank(a), ...this.subs.get(a.address).map((s) => RANK[kidStatus(s.t, this.listed)] ?? 0))]));
       const since = (a) => this.changed[a.address]?.at ?? 0;
       list = [...list].sort((x, y) => urgency.get(y.address) - urgency.get(x.address) || since(y) - since(x) || y.seq - x.seq);
     }
@@ -374,18 +311,23 @@ export default class Spaces extends View {
       bySpace.get(a.space).push(a);
     }
     this.bySpace = bySpace;
+    // Sent only when it changes: render runs on each hover and timer tick.
     const order = rows.flatMap((r) => bySpace.get(r.w.id) ?? []).map((a) => a.address);
-    setAgentOrder(order);
+    if (order.join("\n") !== this.agentOrder) {
+      this.agentOrder = order.join("\n");
+      setAgentOrder(order);
+    }
     this.agentNum = new Map(order.map((t, i) => [t, i + 1]));
     // Share the shown order so extras' alt-shift-N picks the Nth agent on screen.
     if (JSON.stringify(shared("agents.order")) !== JSON.stringify(order)) setShared("agents.order", order);
 
     const ps = panes();
-    const tabs = spaces().flatMap((s) => s.tabs ?? []);
-    const label = (a) => {
+    const tabs = this.sp.flatMap((s) => s.tabs ?? []);
+    const labels = new Map(list.map((a) => {
       const tab = tabs.find((tab) => tab.id === a.tab);
-      return tab ? title(tab, lead(tab, ps)) : a.title || a.program?.name || "";
-    };
+      return [a.address, tab ? title(tab, lead(tab, ps)) : a.title || a.program?.name || ""];
+    }));
+    const label = (a) => labels.get(a.address);
     const detail = new Map(list.map((a) => [a.address, /^\d+$/.test(label(a)) ? null : label(a)]));
     const seen = {};
     for (const a of list) { const k = `${a.space}\u0000${detail.get(a.address) ?? ""}`; seen[k] = (seen[k] ?? 0) + 1; }
@@ -410,17 +352,13 @@ export default class Spaces extends View {
   }
 
   // A space's agent rows, each followed by its sub-agents unless folded.
-  // Agent text starts where the space's name does: the row's own padding, or
-  // after a worktree's indent and branch glyph (row(): px 8, then 22 + 13, gap 9).
-  agentRows({ w, tree }, t) {
-    const indent = (tree ? 8 + 22 + 13 + 9 : 8) + NUM + BADGE_GAP + BADGE + BADGE_GAP;
-    const all = this.all;
+  agentRows({ w }, t) {
     const shown = focused()?.agent;
     const now = Date.now();
     return (this.bySpace.get(w.id) ?? []).flatMap((a) => {
-      const subs = this.tree(all, a.address);
-      const r = this.agentRow(t, a, subs, now, indent);
-      return this.agentFolded.has(a.address) ? [r] : [r, ...subs.map((s) => this.subRow(t, s, shown, indent))];
+      const subs = this.subs.get(a.address) ?? [];
+      const r = this.agentRow(t, a, subs, now);
+      return this.agentFolded.has(a.address) ? [r] : [r, ...subs.map((s) => this.subRow(t, s, shown))];
     });
   }
 
@@ -429,63 +367,16 @@ export default class Spaces extends View {
     openOverlay({ mod: "menu", kind: "popup", width: 200, height: 260, props: { tab: "space", target: { id: w.id } } });
   }
 
-  orderingDue(now) {
-    return this.ordering && now - this.ordering.at >= 1000
-      && this.ordering.machines.every(name => machines().some(m => m.name === name && m.layout === "ready"));
-  }
-
-  // Spaces in order, each worktree space moved under its main checkout's. The spaces
-  // are moved to match, so space.next, the rail's numbers and dragging follow what shows.
-  ordered() {
-    const sp = spaces(), ps = panes();
-    const ready = (w) => this.shown.has(w.id) || where(w, ps) in this.git || Date.now() - (this.born[w.id] ??= Date.now()) > 1500;
-    for (const w of sp) if (!this.shown.has(w.id) && ready(w)) this.shown.add(w.id);
-    const list = sp.map((w, i) => ({ w, i, g: this.git[where(w, ps)] ?? null }));
-    const mains = new Set(list.filter((r) => r.g && !r.g.linked).map((r) => r.g.repo));
-    const nested = (r) => r.g?.linked && mains.has(r.g.repo);
-    const out = [];
-    const placed = new Set(); // repos whose worktrees are listed (under the first of its spaces)
-    for (const r of list) {
-      if (nested(r)) continue;
-      out.push({ ...r, tree: null });
-      if (!r.g || r.g.linked || placed.has(r.g.repo)) continue;
-      placed.add(r.g.repo);
-      const kids = list.filter((k) => nested(k) && k.g.repo === r.g.repo);
-      kids.forEach((k, n) => out.push({ ...k, tree: n === kids.length - 1 ? "└─" : "├─" }));
-    }
-    // Simulate the batch so later indexes include earlier moves. A write can lose a
-    // sync conflict: let the echo settle before trying again.
-    const order = sp.map(w => w.id);
-    const target = out.map(r => r.w.id);
-    const key = JSON.stringify([order, target, machines()]);
-    if (order.every((id, i) => id === target[i])) {
-      this.ordering = null;
-    } else if (this.ordering?.key !== key || this.orderingDue(Date.now())) {
-      const moved = new Set();
-      this.ordering = { key, at: Date.now(), machines: [] };
-      for (let i = 0; i < out.length; i++) {
-        const from = order.indexOf(out[i].w.id);
-        if (from === i) continue;
-        run("space.move", { id: out[i].w.id, index: i + 1 });
-        moved.add(out[i].w.machine ?? null);
-        order.splice(i, 0, order.splice(from, 1)[0]);
-      }
-      this.ordering.machines = [...moved];
-    }
-    return out.filter(r => this.shown.has(r.w.id));
-  }
-
   // The rows, under a header per machine once one isn't this computer.
   grouped(t) {
-    const rows = this.ordered();
+    const rows = this.sp.map((w, i) => ({ w, i }));
     this.prepareAgents(rows);
-    // A gap above each space after the first in its group; a worktree stays with its repo.
+    // A gap above each space after the first in its group.
     const draw = (r, n) => [this.row(r, t, n > 0), ...this.agentRows(r, t)];
     const remote = [...new Set([...rows.map(r => r.w.machine).filter(Boolean), ...this.machines.map(m => m.name), ...Object.keys(this.reconnecting)])].sort();
     const loading = m => {
       const layout = machines().find(k => k.name === m)?.layout;
-      return layout === "loading" || (!layout && this.machines.some(k => k.name === m && k.state === "connected"))
-        || spaces().some(s => (s.machine ?? null) === m && !this.shown.has(s.id));
+      return layout === "loading" || (!layout && this.machines.some(k => k.name === m && k.state === "connected"));
     };
     const loadingRow = m => div().id(`machine-loading-${m ?? "local"}`).h(28).flex_none().px(8).text_size(12).text_color(t.dim).child("Loading…");
     if (!remote.length) return loading(null) && !rows.length ? [loadingRow(null)] : rows.flatMap(draw);
@@ -511,7 +402,7 @@ export default class Spaces extends View {
         })
         .on_click((_e, cx) => {
           folded ? this.folded.delete(m) : this.folded.add(m);
-          localStorage.setItem("machines.folded", JSON.stringify([...this.folded]));
+          store("machines.folded", JSON.stringify([...this.folded]));
           cx.notify();
         })
         .child(mono(div()).min_w(0).truncate().text_color(t.muted).child(m ?? "This computer"))
@@ -541,10 +432,10 @@ export default class Spaces extends View {
     });
   }
 
-  row({ w, i, tree }, t, gap = false) {
-    const fromIndex = this.pressed === null ? -1 : spaces().findIndex(s => s.id === this.pressed);
-    const colors = shared("space.colors") ?? {};
-    const fill = colors[w.id] ?? PALETTE[0];
+  row({ w, i }, t, gap = false) {
+    // `this.sp` and `this.colors`: read once per render, not once per row.
+    const fromIndex = this.pressed === null ? -1 : this.sp.findIndex(s => s.id === this.pressed);
+    const fill = this.colors[w.id] ?? PALETTE[0];
     return v_flex()
       .relative()
       .id(`space-${w.id}`)
@@ -570,6 +461,7 @@ export default class Spaces extends View {
         this.over = w.id;
       })
       .on_mouse_move((_e, cx) => {
+        if (this.pressed === null) return; // No drag: nothing to do on a pointer move.
         const source = spaces().find(s => s.id === this.pressed);
         const over = source && (source.machine ?? null) === (w.machine ?? null) ? w.id : null;
         if (this.pressed !== null && this.over !== over) {
@@ -595,9 +487,7 @@ export default class Spaces extends View {
       })
       .child(
         h_flex()
-          .gap(9)
           .items_center()
-          .when(Boolean(tree), el => el.pl(22).child(svg("mods/workspace-chrome/branch.svg").size(13).text_color(t.dim)))
           // How many tabs, then the name: a solid fill in the space color for the selected space
           // (PALETTE is pastel in every theme, so dark digits), a faint tint of it on hover, solid grey otherwise.
           .child(h_flex().flex_1().min_w(0).gap(BADGE_GAP).items_center()
@@ -627,10 +517,13 @@ export default class Spaces extends View {
       changed = true;
     }
     if (changed) setShared("space.colors", kept);
+    this.sp = sp; this.colors = kept;
     const list = this.grouped(t);
     return v_flex().size_full().min_h(0).bg(t.chrome).text_size(13)
-      .child(v_flex().flex_1().min_h(0).px(8).pb(14).overflow_y_scrollbar().mode("always")
+      .child(v_flex().id("spaces-list").flex_1().min_h(0).px(8).pb(14).overflow_y_scrollbar().mode("always")
         .on_mouse_up("left", (_e, cx) => { this.pressed = null; cx.notify(); })
+        // The button released outside the list gives no mouse-up here: the pointer's exit ends the drag.
+        .on_hover((on, cx) => { if (!on && this.pressed !== null) { this.pressed = null; this.over = null; cx.notify(); } })
         .children(list));
   }
 }

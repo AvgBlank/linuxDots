@@ -5,11 +5,12 @@
 // setup (the welcome's "workspace.panels"); Activity and Context, ours, are on.
 // Other mods' panels (bettr-tabs/panel-mods.js) come from shared "bettr.modPanels", which
 // bettr-tabs publishes. They are on until turned off here: shared "bettr.modPanelsOff".
+// The arrows set the order of all the panels, in shared "bettr.panelOrder"; bettr-tabs applies it.
 // Machines lists each connected machine and whether the agent reporter there
 // (mods/bettr-reporter/setup.py: Activity and Context data) is set up and current; its
 // button installs or updates it.
 
-import { div } from "gpui-kit";
+import { div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { run, props, closeOverlay, layout, shared, setShared, exec, appHome, machines } from "herdr";
 
@@ -96,16 +97,44 @@ function setModPanel(id, on) {
   // Turned off while open: bettr-tabs closes it, as for setPanel.
 }
 
+// The panels' rows, in the saved order. One with no saved position goes last.
+function panelRows() {
+  const order = shared("bettr.panelOrder") ?? [];
+  const rank = (r) => { const i = order.indexOf(r.id); return i < 0 ? order.length : i; };
+  return [
+    ...[["files", "Files"], ["changes", "Changes"], ["activity", "Activity"], ["context", "Context"]].map(([id, label]) => (
+      { id, label, on: () => panels().includes(id), set: (on) => setPanel(id, on) })),
+    ...modPanels().map(({ id, title }) => (
+      { id, label: title, on: () => !modPanelsOff().includes(id), set: (on) => setModPanel(id, on) })),
+  ].sort((a, b) => rank(a) - rank(b));
+}
+
+function movePanel(all, from, to) {
+  const ids = all.map((r) => r.id);
+  [ids[from], ids[to]] = [ids[to], ids[from]];
+  setShared("bettr.panelOrder", ids);
+}
+
 const rows = () => [
   { section: "Sidebar" },
   { id: "usage", label: "Usage limits", on: () => !find(layout(), "usage-limits")?.hidden,
     set: (on) => run(on ? "layout.show" : "layout.hide", { id: "usage-limits" }) },
   { section: "Panels" },
-  ...[["files", "Files"], ["changes", "Changes"], ["activity", "Activity"], ["context", "Context"]].map(([id, label]) => (
-    { id, label, on: () => panels().includes(id), set: (on) => setPanel(id, on) })),
-  ...modPanels().map(({ id, title }) => (
-    { id, label: title, on: () => !modPanelsOff().includes(id), set: (on) => setModPanel(id, on) })),
+  ...panelRows().map((r, i, all) => ({ ...r, move: {
+    up: i > 0 ? () => movePanel(all, i, i - 1) : null,
+    down: i < all.length - 1 ? () => movePanel(all, i, i + 1) : null,
+  } })),
 ];
+
+// An arrow on a panel's row. It takes its own clicks, so the row does not toggle. `action` is null at the end of the list.
+function arrow(t, id, direction, action) {
+  return div().id(`layout-${id}-${direction}`).size(20).flex_none().flex().items_center().justify_center().rounded(5)
+    .text_color(action ? t.dim : t.input)
+    .when(Boolean(action), (el) => el.cursor_pointer().hover((s) => s.bg(t.input).text_color(t.foreground)))
+    .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
+    .on_click((_e, cx) => { cx.stop_propagation(); action?.(); cx.notify(); })
+    .child(svg(`mods/bettr-chrome/icons/chevron-${direction}.svg`).size(14));
+}
 
 function toggle(t, on) {
   return div().w(28).h(16).p(2).flex_none().flex().rounded(8).bg(on ? t.accent : t.input)
@@ -125,7 +154,10 @@ export function layoutConfig(t) {
       : h_flex().id(`layout-${r.id}`).h(30).px(8).mx(-8).gap(9).items_center().rounded(7).cursor_pointer()
         .hover((s) => s.bg(t.hover))
         .on_click((_e, cx) => { r.set(!r.on()); cx.notify(); })
-        .child(div().flex_1().text_color(t.foreground).child(r.label))
+        .child(div().flex_1().min_w(0).truncate().text_color(t.foreground).child(r.label))
+        .when(Boolean(r.move), (el) => el.child(h_flex().flex_none().gap(2)
+          .child(arrow(t, r.id, "up", r.move.up))
+          .child(arrow(t, r.id, "down", r.move.down))))
         .child(toggle(t, r.on()))))
     .when(remotes().length > 0, (el) => el
       .child(div().pt(10).pb(2).text_size(11).text_color(t.dim).child("Machines"))

@@ -3,7 +3,7 @@
 // - settings.js, the Customize panel (t3-chrome's palette button, or bar.customize): which controls show
 //   and whether the agent reporter is set up on each machine.
 // props.block: this block's id, sized to what it shows.
-import { View, div, svg } from "gpui-kit";
+import { View, div, image, svg } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { spaces, panes, terminals, run, theme, settings, props, layout, openOverlay, nextCommand } from "herdr";
 import { PANELS, enabledPanels, find, customizeView, CUSTOMIZE_SIZE } from "./settings.js";
@@ -83,13 +83,13 @@ export default class TopBar extends View {
     const enabled = enabledPanels();
     const root = layout(), panel = find(root, "panel");
     const open = panel && !panel.hidden ? PANELS.map(([id]) => id).filter(id => find(root, id) && !find(root, id).hidden) : [];
-    const panelButton = ([id, label, icon]) => {
+    const panelButton = ([id, label, icon, colored]) => {
       const on = open.includes(id);
       return div().id(`panel-${id}`).size(24).flex_none().flex().items_center().justify_center().rounded(8).cursor_pointer()
         .bg(on ? t.selected : t.chrome).text_color(on ? t.foreground : t.dim).hover(s => s.bg(on ? t.selected : t.hover).text_color(t.foreground))
         .tooltip(label).on_mouse_down("left", stop)
         .on_click(() => this.setPanels(on ? open.filter(p => p !== id) : PANELS.map(([p]) => p).filter(p => p === id || open.includes(p)), open))
-        .child(svg(`mods/bar/icons/${icon}.svg`).size(14));
+        .child(colored ? image(`mods/bar/icons/${icon}.svg`).size(14).opacity(on ? 1 : 0.75) : svg(`mods/bar/icons/${icon}.svg`).size(14));
     };
     // Activity and Context are about an agent: shown when the tab has one (or the panel is open, so it can be closed).
     const hasAgent = panes().some(p => p.tab === tab?.id && isAgent(p));
@@ -97,6 +97,6 @@ export default class TopBar extends View {
     const panels = panel ? PANELS.filter(([id]) => enabled.includes(id) && find(root, id) && forAgent(id)) : [];
     return h_flex().size_full().items_center().bg(t.chrome)
       .child(h_flex().id("bar-fit").flex_none().gap(6).items_center().on_size_change((size) => this.fit(size))
-        .when(panels.length > 0, el => el.mr(4).child(h_flex().flex_none().gap(2).items_center().children(panels.map(panelButton)))));
+        .when(panels.length > 0, el => el.pr(8).child(h_flex().flex_none().gap(2).items_center().children(panels.map(panelButton)))));
   }
 }

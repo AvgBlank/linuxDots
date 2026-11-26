@@ -1,7 +1,7 @@
 // A lazy file browser for the focused pane's folder, with bounded read-only previews.
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, Editor, EditorState } from "gpui-base";
-import { spaces, panes, focused, exec, readTextFile, watchFolder, theme, settings, window } from "herdr";
+import { spaces, panes, focused, exec, readTextFile, watchFolder, theme, settings, window, layout } from "herdr";
 
 function location() {
   const space = spaces().find(s => s.active), f = focused();
@@ -12,6 +12,25 @@ function location() {
 const key = () => JSON.stringify(location());
 const LANG = { ts: "js", tsx: "js", mts: "js", cts: "js", jsx: "js", mjs: "js", toml: "yaml", jsonc: "json", svelte: "html", vue: "html" };
 const PER_FOLDER = 500, TOTAL = 5000;
+// The folder watch is recursive on macOS and Windows (node_modules, build output, .git), so a
+// burst of changes (a build, an install) makes one refresh after WATCH_DEBOUNCE_MS, not one each.
+// While the watch works, the timer refreshes only every WATCHED_POLL_MS: it still catches what
+// the watch cannot see (a linked worktree's index, a remote machine has no watch).
+const WATCH_DEBOUNCE_MS = 400, POLL_MS = 10000, WATCHED_POLL_MS = 60000;
+// The opened folders and file of this many folders are kept, for when you come back to one.
+const SAVED_MAX = 50;
+
+function find(node, id) {
+  if (node?.id === id) return node;
+  for (const child of node?.children ?? []) {
+    const found = find(child, id);
+    if (found) return found;
+  }
+  return null;
+}
+// The panel's block in Bettr's layout. A hidden copy stays alive: its timer and folder watch do no
+// work until it is drawn again. In a layout without this block, the panel always refreshes.
+const hidden = () => Boolean(find(layout(), "files")?.hidden);
 
 async function directory(path, on) {
   const windowsDirectory = async () => {
@@ -43,7 +62,14 @@ export default class Files extends View {
     this.saved = new Map();
     this.entries = new Map(); this.folders = new Set(); this.pending = new Set(); this.marks = {};
     this.refresh(cx);
-    cx.timer.every(10000, cx => this.refresh(cx));
+    cx.timer.every(POLL_MS, cx => {
+      if (!this.watched || Date.now() - (this.refreshedAt ?? 0) >= WATCHED_POLL_MS) this.later(cx);
+    });
+  }
+
+  // A refresh from the timer or the folder watch. A hidden panel waits until it is drawn.
+  later(cx) {
+    if (hidden()) this.stale = true; else this.refresh(cx);
   }
 
   watch(root, cx) {
@@ -51,7 +77,13 @@ export default class Files extends View {
     this.watched = root;
     const context = this.context;
     cx.spawn(async cx => {
-      try { while (this.context === context) { await watchFolder(root); if (this.current(context)) this.refresh(cx); } }
+      try {
+        while (this.context === context) {
+          await watchFolder(root);
+          await cx.sleep(WATCH_DEBOUNCE_MS);
+          if (this.current(context)) this.later(cx);
+        }
+      }
       catch { if (this.context === context) this.watched = null; }
     });
   }
@@ -70,18 +102,26 @@ export default class Files extends View {
   }
 
   refresh(cx) {
+    this.stale = false;
     const { cwd, on } = location(), next = key();
     if (next !== this.context?.key) {
-      if (this.context) this.saved.set(this.context.key, { folders: this.folders, file: this.file });
+      if (this.context) {
+        // Set again at the end, so the folder not used for the longest time is the first to go.
+        this.saved.delete(this.context.key);
+        this.saved.set(this.context.key, { folders: this.folders, file: this.file });
+        if (this.saved.size > SAVED_MAX) this.saved.delete(this.saved.keys().next().value);
+      }
       const saved = this.saved.get(next);
       this.context = { key: next, cwd, on }; this.root = cwd; this.on = on; this.entries = new Map(); this.folders = new Set(saved?.folders);
       this.pending = new Set(); this.marks = {}; this.show(null); this.watched = null; this.error = null; this.limited = false;
-      this.loading = false;
+      this.loading = false; this.top = null;
       if (saved?.file) this.show(saved.file, cx);
     }
-    if (!cwd || this.loading) return;
+    if (!cwd) return;
+    // A change during a refresh may be missed by it: refresh again when it ends.
+    if (this.loading) { this.again = true; return; }
     const context = this.context;
-    this.loading = true;
+    this.loading = true; this.again = false; this.refreshedAt = Date.now();
     this.limited = false;
     cx.spawn(async cx => {
       try {
@@ -89,20 +129,33 @@ export default class Files extends View {
           if (!this.current(context)) return;
           await this.loadFolder(path, context);
         }
-        const top = await exec("git", ["rev-parse", "--show-toplevel"], { cwd, on }).catch(() => null);
+        // The repository root is found once per folder, and again after a status that failed.
+        let top = this.context === context ? this.top : null;
+        if (!top) {
+          const found = await exec("git", ["rev-parse", "--show-toplevel"], { cwd, on }).catch(() => null);
+          top = found?.code === 0 ? found.stdout.trim() : null;
+        }
         const marks = {};
-        if (top?.code === 0) {
+        if (top) {
           // Writes nothing under .git (index lock, fsmonitor cookie): the folder watch would refresh again.
           const status = await exec("git", ["--no-optional-locks", "-c", "core.fsmonitor=false", "status", "--porcelain=v1", "-z", "--no-renames", "--untracked-files=all"], { cwd, on }).catch(() => null);
           if (status?.code === 0) for (const entry of status.stdout.split("\0").filter(Boolean).slice(0, TOTAL)) {
             const xy = entry.slice(0, 2);
-            marks[`${top.stdout.trim()}/${entry.slice(3)}`] = xy === "??" || xy.includes("A") ? "A" : xy.includes("U") ? "U" : xy.includes("D") ? "D" : "M";
+            // A conflict first, as in Changes: "AA", "AU" and "UA" are not new files.
+            const conflict = xy.includes("U") || xy === "AA" || xy === "DD";
+            marks[`${top}/${entry.slice(3)}`] = conflict ? "U" : xy === "??" || xy.includes("A") ? "A" : xy.includes("D") ? "D" : "M";
           }
+          if (status?.code !== 0) top = null;
         }
         if (!this.current(context)) return;
+        this.top = top;
         this.marks = marks; this.error = null; this.watch(cwd, cx);
       } catch (e) { if (this.current(context)) this.error = String(e); }
-      finally { if (this.context === context) this.loading = false; cx.notify(); }
+      finally {
+        if (this.context === context) this.loading = false;
+        if (this.again && this.current(context)) this.refresh(cx);
+        cx.notify();
+      }
     });
   }
 
@@ -164,9 +217,9 @@ export default class Files extends View {
   }
 
   render(cx) {
-    if (key() !== this.context?.key) this.refresh(cx);
+    if (this.stale || key() !== this.context?.key) this.refresh(cx);
     const t = theme();
-    return v_flex().id("files").size_full().min_h(0).rounded(10).overflow_hidden().bg(t.background).border_1().border_color(t.border).text_color(t.foreground).text_size(13)
+    return v_flex().id("files").size_full().min_h(0).overflow_hidden().text_color(t.foreground).text_size(13)
       .child(h_flex().h(36).flex_none().px(14).gap(8).items_center().border_b(1).border_color(t.border)
         .when(Boolean(this.file), el => el.child(div().id("files-back").w(20).cursor_pointer().text_color(t.muted).on_click((_e, cx) => { this.show(null); cx.notify(); }).child("←")))
         .child(div().font_medium().child("Files"))

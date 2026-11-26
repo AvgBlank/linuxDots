@@ -1,12 +1,11 @@
-// Keyboard focus as T3's focus-visible: Tab walks the controls, and what it's on wears a 2px inset ring. The kit has neither a
-// focus_visible builder nor a way to read the input modality, so this keeps both. scripts/sync.sh copies this to the mods that use it.
-// A control tracking a handle takes the keyboard from the terminal when pressed, and the kit can't prevent that, so outside
-// an overlay the window's controls are tab stops only in keyboard mode: pane.go onto a sidebar mod ("focus") starts it, the
-// keyboard leaving every stop ends it. A terminal keeps Tab, so nothing else starts it, and with the mode off nothing here listens.
+// Keyboard focus as T3's focus-visible; the kit has neither a focus_visible builder nor the input modality, so this keeps both.
+// A control tracking a handle takes the keyboard from the terminal when pressed, so outside an overlay controls are tab stops
+// only in keyboard mode: pane.go onto a sidebar mod starts it, the keyboard leaving every stop ends it.
 import { div } from "gpui-kit";
 import { shared, setShared } from "herdr";
+import { KEY } from "./store.js";
 
-const MODE = "t3-focus";
+const MODE = KEY.focus;
 // A handle can't be made in render (the kit throws), and rows appear there.
 const POOL = 64;
 // Tab is the shell's action: a mod hears only its release, and only where it landed. Leaving by anything else, nobody tells it.
@@ -16,7 +15,8 @@ const LOST_TICKS = 3;
 
 // kind: "modal" for an overlay's copy, whose stops are always up: nothing's behind it to press.
 export function stopsInit(view, cx, kind) {
-  view.fs = { handles: new Map(), free: Array.from({ length: POOL }, () => cx.focus_handle()), modal: kind === "modal", me: String(Math.random()), keyboard: false, watch: null, last: null, hold: null };
+  const free = Array.from({ length: POOL }, () => cx.focus_handle());
+  view.fs = { handles: new Map(), free, own: new Set(free), modal: kind === "modal", me: String(Math.random()), keyboard: false, watch: null, last: null, hold: null };
   // Mods share one JS context, so the run's first copy knows nothing can be live yet: what's in shared state is a crash's.
   if (!globalThis.t3FocusRun) { globalThis.t3FocusRun = true; if (shared(MODE)) setShared(MODE, null); }
 }
@@ -38,6 +38,12 @@ export function onStop(view) {
   if (!s?.keyboard) return null;
   for (const [id, h] of s.handles) if (h.is_focused()) return id;
   return null;
+}
+
+// The keyboard onto stop `id`, ringed: Tab's work done by keys in an overlay (Details' arrows), or enter's. Not in render.
+export function focusStop(view, id) {
+  view.fs.keyboard = true;
+  handleOf(view.fs, id)?.focus();
 }
 
 // T3's group-focus-within: what a row shows hovered it shows with the keyboard on it or inside it.
@@ -63,18 +69,17 @@ function watch(view, cx) {
 // pane.go landed here: onto the stop it left, else `first`, which is always drawn. Once only: a stop gone from the list loses
 // the keyboard, and Herdr would hand it back here for another try.
 export function enter(view, cx, first) {
-  const s = view.fs, h = handleOf(s, s.last ?? first);
+  const s = view.fs, id = s.last ?? first;
   s.last = null;
-  s.keyboard = true;
   setShared(MODE, s.me);
-  h?.focus();
+  focusStop(view, id);
   watch(view, cx);
   cx.notify();
 }
 
-// A popup's button toggles it. The press that brings the click is a press outside it too, which already closed it, so the click
-// mustn't reopen it. The button calls pressed on its press and justClosed on its click, naming the shared key the popup's close()
-// stamps. 50 ms, for a close reported just before the press. No press (the keyboard, assistive tech), nothing to tell.
+// The press that brings a popup button's click is a press outside the popup too, which already closed it, so the click mustn't
+// reopen it: the button calls pressed on its press and justClosed on its click, with the shared key the popup's close() stamps.
+// The margin is for a close reported just before the press.
 export const pressed = (view) => { view.pressAt = Date.now(); };
 export function justClosed(view, key) {
   const closing = view.pressAt != null && (shared(key) ?? 0) >= view.pressAt - 50;
@@ -86,7 +91,7 @@ export function justClosed(view, key) {
 export function focusRoot(view, el) {
   const s = view.fs;
   if (!s.modal && !shared(MODE)) {
-    s.free.push(...s.handles.values());
+    for (const h of s.handles.values()) if (s.own.has(h)) s.free.push(h);
     s.handles.clear();
     return el;
   }
@@ -97,7 +102,7 @@ export function focusRoot(view, el) {
       const id = onStop(view);
       if (!id) { s.keyboard = false; return; }
       s.last = id;
-      while (s.free.length < POOL / 4) s.free.push(cx.focus_handle());
+      while (s.free.length < POOL / 4) { const h = cx.focus_handle(); s.own.add(h); s.free.push(h); }
       if (!s.modal) setShared(MODE, s.me);
       watch(view, cx);
       cx.notify();
@@ -105,13 +110,16 @@ export function focusRoot(view, el) {
     .on_mouse_down("left", (_e, cx) => { s.keyboard = false; cx.notify(); });
 }
 
-// Makes `el` a tab stop with T3's ring (focus-visible:ring-2 ring-inset ring-ring: its ring is the primary, here `accent`), drawn
-// over it so nothing moves. As T3's rows, every stop is in the Tab order: no roving. Call it last: the ring goes over the children.
-// Enter and Space click what has on_click; `enter` is for a row that goes by its mouse-up. `handle`: a stop that has its own.
+// Makes `el` a tab stop with T3's inset ring, drawn over it so nothing moves; call it last, so the ring covers the children.
+// As T3's rows, every stop is in the Tab order: no roving. `enter` is for a row that goes by its mouse-up; `handle` a stop's own.
 export function stop(view, t, id, el, radius = 6, { enter: act, handle } = /** @type {{ enter?: any, handle?: any }} */ ({})) {
   const s = view.fs;
   if (!s.modal && !shared(MODE)) return el;
-  if (handle) s.handles.set(id, handle);
+  if (handle) {
+    const prev = s.handles.get(id);
+    if (prev && prev !== handle && s.own.has(prev)) s.free.push(prev);
+    s.handles.set(id, handle);
+  }
   // shortcut: past the pool a new row isn't a stop until Tab lands in this mod and tops it up, enough for any list seen so far.
   const h = handleOf(s, id);
   if (!h) return el;
@@ -119,6 +127,9 @@ export function stop(view, t, id, el, radius = 6, { enter: act, handle } = /** @
     // Runs before the press takes the keyboard. No walk in this copy: the mode's another's or left over, and a press ends it, as
     // focus-visible's does. Next frame this isn't a stop, and Herdr hands the keyboard back.
     .when(!s.modal, (e) => e.on_mouse_down("left", () => { if (!s.watch) setShared(MODE, null); }))
+    // Enter or Space here is the keys' click (the host clicks on its release): a press before it that came to nothing (released
+    // off the control, so no click) is over, so neither its box (trigger.js openFrom) nor its time (pressed) carries over.
+    .on_key_down((k) => { if (k.keystroke === "enter" || k.keystroke === "space") { view.pressAt = null; view.openFrom = null; } })
     .when(Boolean(act), (e) => e.on_key_down((k, cx) => {
       // A control inside it shares its focus path: that's the control's key.
       if ((k.keystroke !== "enter" && k.keystroke !== "space") || !h.is_focused()) return;

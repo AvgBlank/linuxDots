@@ -166,14 +166,39 @@ function tally(pairs) {
   return { parts, text: parts.map(part => [part.name, part.count].filter(Boolean).join(" ")).join(", ") };
 }
 
-function outcome(entries) {
-  const failed = entries.filter(entry => entry.result === "failed").length;
-  if (failed) return { tail: entries.length > 1 ? `${failed} failed` : "failed", tone: "blocked" };
+// Failed commands that a later run of the same command in the turn fixed. The same
+// command: the verb table's key (`pytest`, `git commit`), else the same command text.
+// Kept per entries array and table, as `steps` is.
+const fixes = new WeakMap();
+export function fixedFailures(entries, table = noVerbs) {
+  const known = fixes.get(entries);
+  if (known?.table === table) return known.value;
+  const fixed = new Set(), failed = new Map();
+  for (const entry of entries) {
+    if (entry.kind !== "run") continue;
+    const id = resolve(entry, table).key ?? text(entry.label);
+    if (entry.result === "failed") failed.set(id, [...failed.get(id) ?? [], entry]);
+    else if (entry.result === "ok") {
+      for (const item of failed.get(id) ?? []) fixed.add(item);
+      failed.delete(id);
+    }
+  }
+  fixes.set(entries, { table, value: fixed });
+  return fixed;
+}
+
+function outcome(entries, fixed = new Set()) {
+  const failed = entries.filter(entry => entry.result === "failed");
+  const open = failed.filter(entry => !fixed.has(entry)).length;
+  if (open) return { tail: entries.length > 1 ? `${open} failed` : "failed", tone: "blocked" };
   const last = entries[entries.length - 1]?.result;
   if (last === "started") return { tail: "started", tone: "working" };
   if (last === "interrupted") return { tail: "stopped", tone: "dim" };
+  if (failed.length) return { tail: "fixed", tone: "dim" };
   return { tail: "", tone: "dim" };
 }
+
+const plural = (n, one, many = `${one}s`) => n > 0 ? `${n} ${n === 1 ? one : many}` : "";
 
 function cap(details) {
   return details.length > MAX_DETAILS
@@ -202,19 +227,22 @@ function mergedFiles(entries) {
 }
 
 // One row: an entry, or neighbours with the same kind and verb. `step` is from
-// `steps`, which already resolved the verb and each command's table key.
+// `steps` (or `explored`), which already resolved the verb and each command's table key.
+// `fixed`: failed commands a later run fixed (`fixedFailures`).
 // Returns { verb, text, parts?, tail, tone, repeat, details }; `tone` is a theme token.
-export function describe(entries, table = noVerbs, step = undefined) {
+export function describe(entries, table = noVerbs, step = undefined, fixed = new Set()) {
   entries = Array.isArray(entries) ? entries : [entries];
-  const [entry] = entries, kind = entry.kind;
+  const [entry] = entries, kind = step?.kind ?? entry.kind;
   const verb = step?.verb ?? resolve(entry, table).verb;
   const runs = entries.map(item => count(item.repeat) || 1);
+  if (kind === "explore") return exploration(entries, verb, runs);
   if (kind === "run") {
     const keys = step?.keys ?? entries.map(item => resolve(item, table).key);
+    const failure = item => item.result !== "failed" ? "" : fixed.has(item) ? "  — failed, fixed later" : "  — failed";
     // The full command, setup included, when the reporter kept it.
     const details = cap(entries.map((item, at) =>
-      times(text(item.detail) || text(item.label), runs[at]) + (item.result === "failed" ? "  — failed" : "")));
-    const line = { verb, repeat: "", details, ...outcome(entries),
+      times(text(item.detail) || text(item.label), runs[at]) + failure(item)));
+    const line = { verb, repeat: "", details, ...outcome(entries, fixed),
       ...tally(entries.map((item, at) => [keys[at] ?? program(item.label), runs[at]])) };
     if (entries.length === 1 && details[0] === text(entry.label)) line.details = [];
     return line;
@@ -245,6 +273,75 @@ export function describe(entries, table = noVerbs, step = undefined) {
   if (line.details.length === 1 && line.details[0] === line.text) line.details = [];
   line.details = cap(line.details);
   return line;
+}
+
+// Reads, searches and web lookups.
+const EXPLORE = new Set(["read", "search", "web"]);
+
+// A folded run of exploration steps: counts only, with each file, pattern and
+// lookup in its details. Failed reads and searches are not shown here.
+function exploration(entries, verb, runs) {
+  const of = kind => entries.filter(item => item.kind === kind);
+  const sum = kind => entries.reduce((total, item, at) => total + (item.kind === kind ? runs[at] : 0), 0);
+  const files = unique(of("read").flatMap(item => strings(item.items)));
+  const patterns = unique(of("search").flatMap(item => strings(item.items)));
+  const lookups = unique(of("web").map(item => text(item.label)).filter(Boolean));
+  return { verb, repeat: "", tail: "", tone: "dim",
+    text: [plural(files.length, "file"), plural(sum("search"), "search", "searches"),
+      plural(sum("web"), "web lookup")].filter(Boolean).join(", "),
+    details: cap([...files, ...patterns.map(item => `“${item}”`), ...lookups]) };
+}
+
+// In a finished turn, two or more exploration steps in a row fold into one
+// `Explored` step. They are rarely what you need when you catch up.
+function explored(found) {
+  const out = [];
+  let run = [];
+  const flush = () => {
+    if (run.length > 1) out.push({ index: run[0].index, kind: "explore", verb: "Explored",
+      entries: run.flatMap(step => step.entries), keys: [] });
+    else out.push(...run);
+    run = [];
+  };
+  for (const step of found) {
+    if (EXPLORE.has(step.kind)) { run.push(step); continue; }
+    flush();
+    out.push(step);
+  }
+  flush();
+  return out;
+}
+
+const MILESTONES = { Committed: "committed", Pushed: "pushed" };
+
+// What a closed turn did, on one line under its heading: edited files with line
+// counts, failures no later run fixed, commits and pushes. With none of these,
+// the first line of the reply. Parts are { text, tone?, diff? }. A finished turn's
+// entries and reply never change, so the result is kept per entries array, `found` and reply.
+const digests = new WeakMap();
+export function turnDigest(turn, found, fixed) {
+  const known = digests.get(turn.entries);
+  if (known?.found === found && known.reply === turn.reply) return known.value;
+  const parts = [];
+  const files = mergedFiles(turn.entries.filter(entry => entry.kind === "edit"));
+  if (files.length) {
+    const known = files.some(file => Number.isSafeInteger(file[1]) || Number.isSafeInteger(file[2]));
+    const lines = known ? ` +${files.reduce((n, file) => n + count(file[1]), 0)} −${files.reduce((n, file) => n + count(file[2]), 0)}` : "";
+    parts.push({ text: (files.length === 1 ? base(files[0][0]) : plural(files.length, "file")) + lines, diff: true });
+  }
+  const failed = turn.entries.filter(entry => entry.kind === "run" && entry.result === "failed" && !fixed.has(entry));
+  if (failed.length) parts.push({ text: `${failed.length} failed`, tone: "blocked" });
+  for (const [verb, label] of Object.entries(MILESTONES)) {
+    if (found.some(step => step.verb === verb && step.entries.some(entry => entry.result !== "failed"))) {
+      parts.push({ text: label });
+    }
+  }
+  if (!parts.length) {
+    const [first] = plainText(turn.reply);
+    if (first) parts.push({ text: first });
+  }
+  digests.set(turn.entries, { found, reply: turn.reply, value: parts });
+  return parts;
 }
 
 // Neighbouring entries that share a row, after hidden steps are dropped: a
@@ -310,6 +407,8 @@ function noticeTitle(item, names) {
 //   newest turn and any working turn are open, and older turns closed.
 //   The key `<session>#~older` shows the finished turns before the newest: by
 //   default two or more of them fold into one "older" row (the panel's header toggle).
+//   A closed turn's heading has a `digest` (`turnDigest`). A finished turn folds
+//   its exploration steps (`explored`).
 // - `open`: keys of step and message rows the user opened.
 // - `verbs`: from `verbTable`. `cut`: keys of message rows the panel found longer than
 //   their one closed line (it measures the wrapped text); only those open.
@@ -325,20 +424,25 @@ export function activityRows(state, { now = Date.now() / 1000, names = new Map()
       opened: long && open.has(key) };
   };
   // Finished turns before the newest, up to the first working one.
+  const summaries = all.map(turn => turnSummary(turn, now, names));
   let older = 0;
-  while (older < all.length - 1 && !turnSummary(all[older], now, names).live) older += 1;
+  while (older < all.length - 1 && !summaries[older].live) older += 1;
   const olderKey = `${state?.sessionId}#~older`, folded = older >= 2 && !expanded.get(olderKey);
   if (older < 2) older = 0;
   for (const [index, turn] of all.entries()) {
     if (folded && index < older) continue;
     const id = `${state.sessionId}#${turn.id}`;
-    const summary = turnSummary(turn, now, names);
-    const found = steps(turn.entries, verbs);
+    const summary = summaries[index];
+    const grouped = steps(turn.entries, verbs);
+    const found = summary.live ? grouped : explored(grouped);
+    const fixed = fixedFailures(turn.entries, verbs);
     const content = found.length > 0 || text(turn.reply) !== "";
     // The newest turn stays open after it ends; it closes when the next one starts.
     const shown = content && (expanded.get(id) ?? (summary.live || index === all.length - 1));
     // Every turn has the same heading, whether a prompt or a message started it.
-    const head = { type: "prompt", key: id, expandable: content, expanded: shown, ...summary };
+    // A closed turn also says what it did.
+    const digest = shown || summary.live ? [] : turnDigest(turn, grouped, fixed);
+    const head = { type: "prompt", key: id, expandable: content, expanded: shown, digest, ...summary };
     // Blocks in the order they happened; a step keeps its detail rows under it.
     const blocks = [];
     if (shown) {
@@ -359,7 +463,7 @@ export function activityRows(state, { now = Date.now() / 1000, names = new Map()
             text: noticeTitle(step.entries[0], names) || "Notice" }]);
           continue;
         }
-        const line = describe(step.entries, verbs, step);
+        const line = describe(step.entries, verbs, step, fixed);
         const opened = open.has(key) && line.details.length > 0;
         blocks.push([{ type: step.kind === "steer" ? "steer" : "entry", key, opened,
           expandable: line.details.length > 0, ...line },

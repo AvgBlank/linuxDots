@@ -1,33 +1,23 @@
 import { div, svg } from "gpui-kit";
 import { v_flex, h_flex, Popup } from "gpui-base";
-import { settings } from "herdr";
+import { settings, props } from "herdr";
 import { namer } from "./name.js";
 import { projectMark } from "./project.js";
 import { glow, tip, tipMark, keyOf } from "./tip.js";
 import { MOTION } from "./motion.js";
 import { detailsLive, detailsFor, detailsLine, detailsCard } from "./details.js";
 import { programIcon } from "./program.js";
+import { statusMark, took } from "./status-mark.js";
 import { stop, within } from "./focus.js";
 import { snoozeButton } from "./snooze.js";
 import { SLIM } from "./list-view.js";
+import { ago } from "./row-model.js";
+import { openMenu } from "./menu.js";
+import { button, radiusOf } from "./button.js";
+import { worktreeLabel } from "./worktree.js";
 
 // The settle key: the layout's tab bar holds it; a standalone Inbox, its own command.
 const settleKey = () => keyOf("t3-tabs.settle") ? "t3-tabs.settle" : "t3-inbox.settle";
-
-// As T3's sidebar times: no "ago", nothing past days.
-function ago(ms, now) {
-  const m = Math.floor((now - ms) / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m`;
-  if (m < 1440) return `${Math.floor(m / 60)}h`;
-  return `${Math.floor(m / 1440)}d`;
-}
-
-// How long it's been working, as T3's Working pill: 9s, 4m, 1h 5m.
-function took(ms, now) {
-  const s = Math.max(0, Math.floor((now - ms) / 1000)), m = Math.floor(s / 60);
-  return s < 60 ? `${s}s` : m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
-}
 
 // Time left on a snooze, rounded up as T3's: 10m, 3h, 2d.
 function left(ms, now) {
@@ -36,11 +26,22 @@ function left(ms, now) {
 }
 
 export function inboxRowView(view, t, model, actions, drag) {
-  const { now, ps, sp, state, viewing, running, woke, busy, pins, started, since, wake, hidden, napUntil, settledAt } = model;
-  const { settle, unsettle, away, pick } = actions;
-  const { dragging, plan, verb, badge, swept, row, open, sweepFrom, justDropped } = drag;
+  const { now, ps, sp, facts, state, viewing, running, woke, busy, pins, started, since, wake, hidden, napUntil, settledAt, pinned, out, busyRows, napRows } = model;
+  const { settle, unsettle, away, pick, unpinRow } = actions;
+  const { dragging, plan, verb, badge, swept, row, open, sweepFrom, justDropped, rows: settledRows = [] } = drag;
+  // 1-9 hotkey numbers matching extras' Alt+Shift+1..9 order (t3-inbox.rows.order filtered to live agents).
+  const hotkey = new Map();
+  for (const a of [...pinned, ...out, ...busyRows, ...napRows, ...settledRows]) {
+    if (!a.mod && hotkey.size < 9) hotkey.set(a.address, hotkey.size + 1);
+  }
+  const slotNum = (a, on, ghost) => {
+    const n = !ghost && hotkey.get(a.address);
+    return n ? div().id(`hotkey-${a.address}`).flex_none().min_w(16).h(16).px(4).flex().items_center().justify_center().rounded(4)
+      .border_1().border_color(t.border).text_size(10.5).text_color(on ? t.muted : t.dim).child(String(n)) : null;
+  };
   const zoom = Number(settings()?.zoom) || 1;
-  const title = namer();
+  const title = namer({ terminals: model.all, spaces: sp });
+  const checkouts = view.worktrees.frame();
   const hover = (a) => (on, cx) => {
     if (on) { view.hovered = a.address; detailsFor(view, a.address, cx); }
     else if (view.hovered === a.address) { view.hovered = null; detailsFor(view, null, cx); }
@@ -49,60 +50,87 @@ export function inboxRowView(view, t, model, actions, drag) {
   // A button's icon and text brighten together: a hover style reaches the text but not the svg, so it's state.
   const lit = (id, color) => (view.hot === id ? t.foreground : color);
   // A space's mark, as t3-spaces draws it.
-  const avatar = (id, name, size) => projectMark(sp.find((s) => s.id === id) ?? { name: name ?? "" }, size, t, ps);
+  const avatar = (id, name, size) => projectMark("mods/t3-inbox", sp.find((s) => s.id === id) ?? { name: name ?? "" }, size, t, ps);
   // A control's label in a row belongs to the same group as the row's card, so it too opens at once.
   const delay = detailsLive(view) ? 0 : 150;
-  const machineOf = (a) => a.address.includes("/") ? a.address.split("/")[0] : null;
-  // The card's machine line names this one too, as "local".
-  const machineName = (a) => machineOf(a) ?? "local";
-  const branchOf = (a) => ps.find((p) => p.pane === a.pane)?.branch;
+  const pin = (a, ghost) => {
+    if (ghost) return h_flex().size(16).flex_none().items_center().justify_center()
+      .child(svg("mods/t3-inbox/icons/pin.svg").size(12).text_color(t.dim));
+    const id = `unpin-${a.address}`, label = "Unpin agent", hot = view.hot === id || within(view, [id]);
+    const el = button(t, id, { size: "tiny", surface: "row", label, hot,
+      icon: hot ? "mods/t3-inbox/icons/pin-off.svg" : "mods/t3-inbox/icons/pin.svg" })
+      .on_hover(glow(view, id)).on_mouse_down("left", (_e, cx) => cx.stop_propagation())
+      .on_click((_e, cx) => {
+        cx.stop_propagation();
+        if (justDropped()) return;
+        view.hot = null;
+        away(a, cx);
+        unpinRow(a.address, cx);
+        cx.notify();
+      });
+    return tip(view, t, id, label, stop(view, t, id, el, radiusOf("tiny")), { delay });
+  };
+  // A right-click: the agent's menu, as an Agents row's and the tab bar title's; a page's card (Review) is its pane's. The
+  // layout names the menu (props.menu); the Inbox on its own has none.
+  const menuMod = props()?.menu;
+  const context = (a) => (el) => el.on_mouse_down("right", (_e, cx) => {
+    detailsFor(view, null, cx);
+    openMenu(view, a.mod ? "pane" : "agent", a.mod ? { pane: a.pane } : { address: a.address }, cx, menuMod);
+  });
+  const gitMark = () => svg("mods/t3-inbox/icons/git-branch.svg").size(12).flex_none().text_color(t.muted);
   // A row's details, as T3's thread card: on the row's right from its top. A 1px anchor just outside its top right corner, as
   // a Popup hangs from its trigger's bottom left; clamped at the window's bottom the card slides up and still clears the row.
   // A control lit in the row speaks for itself instead, as T3's group lets one tooltip up at a time: the card fades, up clear until the pointer goes.
   // The whole corner holds it, so the gap between two controls doesn't flash it.
   const details = (a) => {
-    const machine = machineOf(a), branch = branchOf(a), pic = programIcon(a.program, 12, t.muted);
+    const { machine, branch, hasError } = facts(a), pic = programIcon(a.program, 12, t.muted);
     const up = view.details === a.address || view.detailsOut === a.address;
     return Popup.new(`details-${a.address}`, div()).absolute().top(-1).right(-1).size(1)
       .when(up && !view.napMenu && !dragging && !view.sweep?.moved, (pop) => pop.content(detailsCard(view, t, a.address, title(a), [
         a.space_name && detailsLine(t, avatar(a.space, a.space_name, 12), a.space_name),
         machine && detailsLine(t, svg("mods/t3-inbox/icons/server.svg").size(12).flex_none().text_color(t.muted), machine),
-        branch && detailsLine(t, svg("mods/t3-inbox/icons/git-branch.svg").size(12).flex_none().text_color(t.muted), branch),
+        branch && detailsLine(t, gitMark(), branch),
         pic && detailsLine(t, div().flex_none().opacity(0.6).child(pic), a.program.name),
+        hasError && h_flex().gap(8).items_center().text_color(t.ansi1).child(statusMark("mods/t3-inbox", t, "error")).child("Error occurred"),
       ], { hide: Boolean(view.hot) || view.detailsHold === a.address }).ml(4)));
+  };
+  const worktreeMark = (a, root, branch, ghost) => {
+    const icon = svg("mods/t3-inbox/icons/folder-git-2.svg").size(14).flex_none().text_color(t.muted);
+    if (ghost) return icon;
+    const label = worktreeLabel(root, branch);
+    return tipMark(view, t, `worktree-${a.address}`, label, div().role("image").accessibility_label(label).child(icon), { delay });
   };
 
   // `ghost`: the copy that follows the pointer, drawn without handlers or ids the list already uses.
   const card = (a, ghost) => {
     const st = state(a), on = viewing(a);
-    const branch = branchOf(a);
-    // As T3's sidebar, a card says nothing of its sub-agents: its state takes theirs in (tree.js).
-    const meta = branch ?? "";
+    const fact = facts(a), { machine, branch, attention, failed } = fact;
+    const linked = checkouts.get(fact, !ghost);
     const pic = programIcon(a.program, 14, t.muted);
     // Snooze is offered for anything not needing the person, working too, as T3's. A failed turn counts as needing them
     // here, and a mod pane has no terminal to hold the label.
     const canNap = !ghost && !a.mod && st !== "blocked", menu = canNap && view.napMenu === a.address;
     // The pointer or keys going into its menu leave the card, but it stays as it was: the menu hangs from the clock, and
     // Settle going would pull the clock, and the menu with it, out from under the pointer.
-    const over = !dragging && !view.sweep?.moved && (menu || view.hovered === a.address || within(view, [`card-${a.address}`, `settle-${a.address}`, `snooze-${a.address}`, `woke-${a.address}`]));
+    const over = !dragging && !view.sweep?.moved && (menu || view.hovered === a.address || within(view, [`card-${a.address}`, `unpin-${a.address}`, `settle-${a.address}`, `snooze-${a.address}`, `woke-${a.address}`]));
     // As T3's rows: what you're on or what wants you leads; the rest recede until hovered, in color only so nothing reflows.
     const leads = on || ghost || st === "blocked" || st === "done" || woke(a);
+    // The card's last line names its machine, this one as "local"; the marks keep the program.
+    const machineName = machine ?? "local";
     const marks = pic ? h_flex().gap(4).flex_none().items_center()
       .child(div().flex_none().opacity(0.6).child(pic)) : null;
     // Hovered, the corner offers Settle, but only for what's finished: a working or stuck tree stays in sight.
     const offer = over && !busy(a);
     const id = `settle-${a.address}`;
     const napOffer = canNap && over;
-    // As in T3, the corner says the state when there's one worth saying (Working, Needs you, Done: finished
-    // and not yet seen), else how long ago it last changed. Sized as T3's: 16px mark, 4px gaps, and the
-    // time in monospace children, one per part, so spacing and width don't hang on the interface font and
-    // a monospace space (a full cell) doesn't open "1h 5m" wider than the 4px gaps.
+    // As in T3, the corner says the state worth saying (Working, Needs you, Done: finished and not yet seen), else how long ago it
+    // changed. The time is monospace children, one per part, so a monospace space doesn't open "1h 5m" wider than the gaps.
     const pill = (color, mark, label, time) => h_flex().id(`state-${a.address}`).h(20).gap(4).flex_none().items_center().font_medium().text_color(color)
       .child(mark).child(div().child(label))
       .when(Boolean(time), (el) => el.children(time.split(" ").map((part) => div().font_family(settings().font_family ?? "JetBrains Mono").child(part))));
     // It wakes where it was, so this carries the weight, as T3's; a click dismisses it, and it stays on hover.
-    const wokeMark = woke(a) && tip(view, t, `woke-${a.address}`, "Dismiss Woke notification", stop(view, t, `woke-${a.address}`, h_flex().id(`woke-${a.address}`).h(20).gap(4).flex_none().items_center().font_medium().text_color(t.blocked)
-      .hover((s) => s.underline()).on_hover(glow(view, `woke-${a.address}`)).role("button").accessibility_label("Dismiss Woke notification")
+    const wokeMark = woke(a) && tip(view, t, `woke-${a.address}`, "Clear Woke mark", stop(view, t, `woke-${a.address}`, h_flex().id(`woke-${a.address}`).h(20).gap(4).flex_none().items_center().font_medium().text_color(t.blocked)
+      .hover((s) => s.underline()).on_hover(glow(view, `woke-${a.address}`)).role("button").accessibility_label("Clear Woke mark")
       .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
       .on_click((_e, cx) => {
         cx.stop_propagation();
@@ -115,17 +143,17 @@ export function inboxRowView(view, t, model, actions, drag) {
     // Lifted, or marked by a sweep, the corner says what letting go will do instead.
     // The state or the time, faded out on hover where Settle fades in over it, as T3's corner.
     const word = running(a)
-        ? pill(t.working, svg("mods/workspace-chrome/spinner.svg").size(16).flex_none().text_color(t.working).spin(900),
+        ? pill(t.working, svg("mods/t3-inbox/icons/circle-dashed.svg").size(16).flex_none().text_color(t.working),
           "Working", started(a) > 0 && started(a) < Infinity ? took(started(a), now) : null)
         : st === "blocked"
-          ? pill(t.blocked, div().size(16).flex_none().rounded(4).bg(t.blocked + "26").text_size(11).font_bold().flex().items_center().justify_center().child("!"), "Needs you")
+          ? pill(failed ? t.ansi1 : t.blocked, statusMark("mods/t3-inbox", t, failed ? "error" : "blocked", 16), attention ?? "Needs you", null)
           : wokeMark
             || (st === "done"
               ? pill(t.ansi2, svg("mods/t3-inbox/icons/circle-check.svg").size(16).flex_none().text_color(t.ansi2), "Done")
               : div().id(`state-${a.address}`).flex_none().child(since(a) > 0 ? ago(since(a), now) : ""));
     // Still at work when it wakes, it says both, as T3's row; hovered, Woke stays and Working makes way.
     const status = running(a) && wokeMark ? h_flex().gap(4).flex_none().items_center().when(!acting, (el) => el.child(word)).child(wokeMark) : word;
-    // T3's align="end" with its flip: right edges together if the menu fits to the clock's left, else from the clock's left edge and out over the sidebar's. Popover only clamps, so the flip is here; no press (the keyboard), the flip.
+    // T3's align="end" with its flip, here since Popover only clamps: right edges together if the menu fits left of the clock, else out over the sidebar.
     const clock = canNap && snoozeButton(view, t, a, { now, offer: napOffer, delay }, pick);
     const corner = ghost ? (verb ? badge(verb) : div())
       : swept(a) ? badge("settle")
@@ -149,33 +177,35 @@ export function inboxRowView(view, t, model, actions, drag) {
         .child(svg("mods/t3-inbox/icons/check.svg").size(14).flex_none().text_color(lit(id, t.muted)))
         .child("Settle")
         .when(offer, (el) => stop(view, t, id, el, 6)), { action: on ? settleKey() : undefined, delay }))));
-    // T3's card row: 10 and 8 in, rounded-md, its lines 20, 20 and 16 tall, 4 and 2 apart: 78 with all three.
-    const base = v_flex().id(`${ghost ? "ghost-" : ""}card-${a.address}`).px(10).py(8).flex_none().rounded(6)
+    // T3's card row, 8 in, not T3's 10, so its words and icons end where the buttons' icons above do (t3-tokens「规则」R3).
+    const base = v_flex().id(`${ghost ? "ghost-" : ""}card-${a.address}`).px(8).py(8).flex_none().rounded(6)
       // A working row recedes until it's hovered or in view, as T3's.
       .when(!ghost, (el) => el.opacity(running(a) && !woke(a) && !on && !over ? 0.7 : 1).transition("opacity", MOTION));
-    return (ghost ? base : row(base, a, details).role("button").accessibility_label(title(a)).on_hover(hover(a))
+    return (ghost ? base : row(base, a, details).role("button").accessibility_label(title(a)).on_hover(hover(a)).when(Boolean(menuMod), context(a))
       .on_click(open(a)).on_size_change((size) => { view.cardH = size.height / zoom; }))
       .when(on, (el) => el.bg(t.selected))
       .when(!on && !ghost && !dragging && !view.sweep?.moved, (el) => el.when(menu, (m) => m.bg(t.hover)).hover((s) => s.bg(t.hover)).active((s) => s.bg(t.selected)))
       .child(h_flex().h(20).gap(6).items_center().text_size(12).text_color(t.dim)
         .child(avatar(a.space, a.space_name, 16))
         // Lifted, a pin keeps its glyph only while it stays among the pins.
-        .when(pins.includes(a.address) && (!ghost || plan?.section === "pinned" || !plan), (el) => el.child(svg("mods/t3-inbox/icons/pin.svg").size(12).flex_none().text_color(t.dim)))
+        .when(pins.includes(a.address) && (!ghost || plan?.section === "pinned" || !plan), (el) => el.child(pin(a, ghost)))
         .child(div().flex_1().min_w(0).truncate().child(a.space_name ?? ""))
         .child(corner))
       .child(h_flex().h(20).mt(4).gap(6).items_center()
         .child(div().flex_1().min_w(0).truncate().text_size(14).when(leads, (el) => el.font_medium())
           .text_color(leads || over || swept(a) ? t.foreground : t.muted).child(title(a)))
-        // Marks go on the third line when there is one, as in T3, so the title keeps its whole line.
-        .when(Boolean(marks) && !meta, (el) => el.child(marks)))
-      .when(Boolean(meta), (el) => el.child(h_flex().h(16).mt(2).gap(6).items_center().text_size(12).text_color(t.dim)
+        // Hotkey sits directly above the agent icon (on the title line when there's no branch, else on the branch line).
+        .when(!branch && Boolean(slotNum(a, on, ghost)), (el) => el.child(slotNum(a, on, ghost))))
+      .when(Boolean(branch), (el) => el.child(h_flex().h(16).mt(2).gap(6).items_center().text_size(12).text_color(t.dim)
+        .when(Boolean(linked), (m) => m.child(worktreeMark(a, linked, branch, ghost)))
         // T3's MiddleTruncate: a branch's start and end tell it apart.
-        .child(div().flex_1().min_w(0).overflow_hidden().whitespace_nowrap().text_ellipsis_middle().child(meta))
-        .when(Boolean(marks), (m) => m.child(marks))))
+        .child(div().flex_1().min_w(0).overflow_hidden().whitespace_nowrap().text_ellipsis_middle().child(branch))
+        .when(Boolean(slotNum(a, on, ghost)), (m) => m.child(slotNum(a, on, ghost)))))
       .child(h_flex().h(16).mt(2).gap(4).items_center().text_size(12).text_color(t.dim)
-        .when(!ghost, (m) => m.id(`machine-${a.address}`).accessibility_label(`On ${machineName(a)}`))
+        .when(!ghost, (m) => m.id(`machine-${a.address}`).accessibility_label(`On ${machineName}`))
         .child(svg("mods/t3-inbox/icons/server.svg").size(12).flex_none().text_color(t.dim))
-        .child(div().flex_1().min_w(0).truncate().child(machineName(a))))
+        .child(div().flex_1().min_w(0).truncate().child(machineName))
+        .when(Boolean(marks), (m) => m.child(marks)))
       .when(!ghost, (el) => stop(view, t, `card-${a.address}`, el));
   };
 
@@ -203,12 +233,13 @@ export function inboxRowView(view, t, model, actions, drag) {
     const time = napping
       ? h_flex().gap(4).items_center().text_color(t.accent).child(svg("mods/t3-inbox/icons/alarm-clock.svg").size(12).flex_none().text_color(t.accent)).child(left(napUntil(a), now))
       : !ghost && ago(settledAt(a)[0], now);
-    const base = h_flex().id(`${ghost ? "ghost-" : ""}slim-${a.address}`).h(SLIM).px(10).gap(10).flex_none().items_center().rounded(6);
-    return (ghost ? base : row(base, a, details).role("button").accessibility_label(title(a)).on_hover(hover(a)).on_click(open(a)))
+    const base = h_flex().id(`${ghost ? "ghost-" : ""}slim-${a.address}`).h(SLIM).px(8).gap(10).flex_none().items_center().rounded(6);
+    return (ghost ? base : row(base, a, details).role("button").accessibility_label(title(a)).on_hover(hover(a)).when(Boolean(menuMod), context(a)).on_click(open(a)))
       .when(on, (el) => el.bg(t.selected))
       .when(!on && !ghost && !dragging && !view.sweep?.moved, (el) => el.hover((s) => s.bg(t.hover)).active((s) => s.bg(t.selected)))
       .child(h_flex().id(`slim-mark-${a.address}`).size(16).flex_none().items_center().justify_center().opacity(bright ? 1 : 0.4).transition("opacity", MOTION).child(ghost ? mark : tipMark(view, t, `slim-space-${a.address}`, a.space_name, mark, { delay })))
       .child(div().flex_1().min_w(0).truncate().when(on, (el) => el.font_medium()).text_color(bright ? t.foreground : t.muted).child(title(a)))
+      .when(Boolean(slotNum(a, on, ghost)), (el) => el.child(slotNum(a, on, ghost)))
       .child(ghost ? (verb ? badge(verb) : div()) : swept(a) ? badge(view.sweep.action === "unsnooze" ? "wake" : "unsettle")
         // T3's corner: the time fades out on hover as the undo arrow fades in over it.
         : h_flex().id(`slim-corner-${a.address}`).relative().h(24).min_w(32).flex_none().items_center().justify_end()
@@ -218,5 +249,5 @@ export function inboxRowView(view, t, model, actions, drag) {
   };
 
 
-  return { card, slim };
+  return { card, slim, flushCheckouts: checkouts.flush };
 }
